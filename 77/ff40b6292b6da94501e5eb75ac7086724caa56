@@ -1,0 +1,14 @@
+widget_service/cloud/custom/a2ui_model_client.py
+  h_22e274a52827b7 336
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.25.116",
+  "base_commit_sha": "77ff40b6292b6da94501e5eb75ac7086724caa56",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  }
+}
