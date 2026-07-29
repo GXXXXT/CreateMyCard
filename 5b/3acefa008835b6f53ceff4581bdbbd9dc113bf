@@ -1,0 +1,21 @@
+skills/harmony-card-generation-online/references.md
+  s_b4e26d8b217623::t_29fa9e0b52b31f 3
+skills/harmony-card-generation-online/SKILL.md
+  s_b4e26d8b217623::t_29fa9e0b52b31f 11,18,20-21,23,29-30,36,72-75,80-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.25.116",
+  "base_commit_sha": "5b3acefa008835b6f53ceff4581bdbbd9dc113bf",
+  "prompts": {},
+  "sessions": {
+    "s_b4e26d8b217623": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fabaa-7f5e-7e40-a1f8-c466d684771d",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  }
+}
