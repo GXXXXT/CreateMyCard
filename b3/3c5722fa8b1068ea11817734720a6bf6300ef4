@@ -1,0 +1,25 @@
+widget_service/cloud/services/template_generation/resources/source/providers/weather/templates/weather-overview.cardtpl
+  h_22e274a52827b7 493-494,496,500-502,525,531,541,566-567,608,615,618,622,647-648,664,676,688,749,791,801,817-818,824,829-830,838,840,843-847,851-857,866,879,903,906-907,915,923-924,935-936,944-952,954-956,974,983,1003-1004,1015-1016
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "3.31.1604",
+  "base_commit_sha": "b33c5722fa8b1068ea11817734720a6bf6300ef4",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_772e1642396b76": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0467e-0bb4-7843-9c0b-c5d30652632f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yan_shuifeng <yanshuifeng@huawei.com>",
+      "total_deletions": 798
+    }
+  }
+}
