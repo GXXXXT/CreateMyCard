@@ -22,6 +22,7 @@ from services.template_generation.engine.advanced.models import (
     TemplateRouteSelection,
 )
 
+from .provider_bundle import provider_template_layout_kind
 from .registry import CardPlanRegistry
 from .retrieval_index import FieldToken, TemplateVariantSearchRecord
 
@@ -74,7 +75,6 @@ def build_template_retrieval_prompt(
     coverage_bindings: tuple[CandidateDataBinding, ...],
 ) -> list[dict[str, str]]:
     """Build the first-layer marker prompt without exposing final UI choices."""
-    _require_supported_search_size(task_spec)
     data_shape = extract_data_shape(task_spec)
     capability_ids = tuple(binding.capabilityId for binding in coverage_bindings)
     component_ids = _component_ids_for_capabilities(registry, capability_ids)
@@ -119,7 +119,7 @@ def build_template_retrieval_prompt(
         "也不得补全用户未要求展示的字段。"
         "不得为了迁就布局限制而省略用户明确要求的其他业务字段；"
         "2x2 模板 Search 当前只接受一个可完整覆盖的业务，"
-        "多个业务由服务端确定性判定模板不适用。"
+        "多个业务由服务端确定性判定模板不适用；2x4 可按 Wide 布局容量保留多个业务。"
         "用户只要求某领域卡片、未明确字段时，该 capability 输出空数组。"
         "action 仅当用户明确要求点击、跳转或操作时才选择 actionCandidates 中"
         "语义一致的零到两个不重复 eventId；不能因候选事件存在而默认选择。"
@@ -142,7 +142,6 @@ def retrieve_template_variants(
     preferred_template_ids: tuple[str, ...] = (),
 ) -> TemplateRouteSelection:
     """Return component candidate sets; never choose a final CardTpl variant."""
-    _require_supported_search_size(task_spec)
     selected_theme = registry.require_theme(query.theme_id)
     if selected_theme.supported_layout_ids:
         raise TemplateRetrievalMiss("first-layer Theme must not be layout-scoped")
@@ -198,10 +197,6 @@ def retrieve_template_variants(
             required_groups,
         )
     else:
-        if len(candidates) > 1:
-            raise TemplateRetrievalMiss(
-                "template Search supports one data business with optional Actions"
-            )
         candidates = tuple(
             _candidate_with_complete_field_coverage(candidate, required_groups)
             for candidate in candidates
@@ -250,12 +245,6 @@ def restrict_query_to_preferred_templates(
     return query.model_copy(
         update={"required_output_fields_by_capability": required_fields}
     )
-
-
-def _require_supported_search_size(task_spec: TaskSpec) -> None:
-    """Reject card sizes that are not yet supported by Provider Template Search."""
-    if task_spec.size == "2x4":
-        raise TemplateRetrievalMiss("template Search does not support 2x4 cards")
 
 
 def _apply_2x2_combination_policy(
@@ -469,8 +458,7 @@ def _component_templates_for_capability(
             )
             if record.template_id not in template_ids:
                 continue
-            size_is_supported = not record.supported_card_sizes
-            size_is_supported = size_is_supported or task_spec.size in record.supported_card_sizes
+            size_is_supported = _template_can_participate_in_size(record, task_spec.size)
             if not size_is_supported:
                 continue
             if not _template_required_fields_are_available(record, task_spec, card_spec):
@@ -599,8 +587,7 @@ def _template_record_evaluation(
     rejection_reasons: list[str] = []
     if record.template_id not in enabled_template_ids:
         rejection_reasons.append("template_disabled")
-    size_is_supported = not record.supported_card_sizes
-    size_is_supported = size_is_supported or task_spec.size in record.supported_card_sizes
+    size_is_supported = _template_can_participate_in_size(record, task_spec.size)
     if not size_is_supported:
         rejection_reasons.append("card_size_not_supported")
     if missing_required_fields:
@@ -624,6 +611,22 @@ def _template_record_evaluation(
             not missing_required_fields and not required_type_mismatches
         ),
         "rejectionReasons": rejection_reasons,
+    }
+
+
+def _template_can_participate_in_size(
+    record: TemplateVariantSearchRecord,
+    card_size: str,
+) -> bool:
+    """Allow standard business shapes inside a 2x4 composition layout."""
+    if not record.supported_card_sizes or card_size in record.supported_card_sizes:
+        return True
+    if card_size != "2x4":
+        return False
+    return provider_template_layout_kind(record.template_id) in {
+        "Full",
+        "Hero",
+        "Compact",
     }
 
 

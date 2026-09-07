@@ -47,6 +47,30 @@ def test_template_preview_a2ui_has_surface_components_and_data():
         assert slot["styles"]["height"] == case.content_height_vp
 
 
+def test_weather_wide_previews_use_the_weather_theme_background():
+    weather_wide_ids = {
+        "WeatherOverviewWideHero@1",
+        "WeatherOverviewWideFull@1",
+        "WeatherOverviewWideHalf@1",
+    }
+
+    cases = {
+        case.template_id: case
+        for case in build_template_preview_cases()
+        if case.template_id in weather_wide_ids
+    }
+
+    assert set(cases) == weather_wide_ids
+    for case in cases.values():
+        components = case.messages[1]["updateComponents"]["components"]
+        root = next(component for component in components if component["id"] == "root")
+        assert root["styles"]["backgroundColor"] == "#FF121259"
+        assert root["styles"]["linearGradient"]["colors"] == [
+            ["#FF121259", 0],
+            ["#FF2B65D9", 1],
+        ]
+
+
 def test_template_preview_assets_are_bundled_by_genui_evaluation():
     cases = build_template_preview_cases()
     paths = validate_preview_asset_paths(cases)

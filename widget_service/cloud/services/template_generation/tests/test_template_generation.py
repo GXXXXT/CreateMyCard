@@ -4953,14 +4953,7 @@ async def test_disabled_fusion_feature_rejects_forged_fusion_theme() -> None:
 
 
 @pytest.mark.asyncio
-async def test_template_pipeline_rejects_2x4_before_any_model_call() -> None:
-    class NoModelCall:
-        async def generate_json(self, *_args: Any, **_kwargs: Any) -> dict[str, Any]:
-            pytest.fail("2x4 template Search must not call the model")
-
-        async def generate(self, *_args: Any, **_kwargs: Any) -> str:
-            pytest.fail("2x4 template Search must not call the model")
-
+async def test_template_pipeline_supports_2x4_wide_template() -> None:
     task_spec = _weather_task_spec().model_copy(update={"size": "2x4"})
     card_spec = _weather_card_spec() | {"suggestSize": "2x4"}
     binding = CandidateDataBinding(
@@ -4968,15 +4961,26 @@ async def test_template_pipeline_rejects_2x4_before_any_model_call() -> None:
         writeResultTo="/data/weather",
         candidateOutputFields=["/current/temperatureText", "/current/condition"],
     )
-
-    with pytest.raises(TemplateRouteNotApplicable, match="does not support 2x4"):
-        await generate_template_a2ui(
-            task_spec,
-            card_spec,
-            (binding,),
-            NoModelCall(),
-            enable_fusion_ball=True,
+    model = WeatherTemplateModel(
+        body=(
+            'Template("WideFullOnlyLayout@1",{},'
+            'Template("WeatherOverviewWideFull@1",{}));'
         )
+    )
+
+    output = await generate_template_a2ui(
+        task_spec,
+        card_spec,
+        (binding,),
+        model,
+        enable_fusion_ball=True,
+    )
+
+    assert model.body_called is True
+    assert output.template_ids == (
+        "WeatherOverviewWideFull@1",
+        "WideFullOnlyLayout@1",
+    )
 
 
 @pytest.mark.asyncio

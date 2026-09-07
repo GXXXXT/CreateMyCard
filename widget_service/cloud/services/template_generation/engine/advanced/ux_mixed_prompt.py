@@ -648,6 +648,16 @@ def _layout_output_option(
         "CompactTwoActionLayout": "Compact",
         "TwoSupportLayout": "Support",
         "WideSingleFocusLayout": "WideHero" if selected_actions else "WideFull",
+        "WideFullOnlyLayout": "WideFull",
+        "WideTwoFullLayout": "Full",
+        "WideFullHeroActionLayout": "Full",
+        "WideFullTwoCompactLayout": "Full",
+        "WideFullHeroTwoActionLayout": "Full",
+        "WideFullFourActionLayout": "Full",
+        "WideTwoHalfLayout": "WideHalf",
+        "WideHalfTwoCompactLayout": "WideHalf",
+        "WideHalfCompactTwoLargeActionLayout": "WideHalf",
+        "WideHalfFourLargeActionLayout": "WideHalf",
     }[layout_id]
     business_template_ids = tuple(
         tuple(
@@ -662,6 +672,11 @@ def _layout_output_option(
         "FullIconActionLayout": _ICON_ACTION_TEMPLATE_ID,
         "CompactTwoActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideSingleFocusLayout": _PILL_ACTION_TEMPLATE_ID if selected_actions else None,
+        "WideFullHeroActionLayout": _PILL_ACTION_TEMPLATE_ID,
+        "WideFullHeroTwoActionLayout": _PILL_ACTION_TEMPLATE_ID,
+        "WideFullFourActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
+        "WideHalfCompactTwoLargeActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
+        "WideHalfFourLargeActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
     }.get(layout_id)
     if action_template_id not in action_template_ids:
         action_template_id = None
@@ -686,7 +701,10 @@ def _action_output_syntax(
     action_template_id: str,
     action: dict[str, str],
 ) -> str:
-    if action_template_id == _ICON_ACTION_TEMPLATE_ID:
+    if action_template_id in {
+        _ICON_ACTION_TEMPLATE_ID,
+        _LARGE_ICON_ACTION_TEMPLATE_ID,
+    }:
         props = {
             "actionId": action["actionId"],
             "icon": "<one semantically matching trustedAssetSource>",
@@ -954,13 +972,26 @@ def _prune_layout_selection(
     pairs = tuple(pairs_values)
     if not pairs:
         raise ValueError("Second-layer layout candidates have no complete business Template")
-    has_pill_layout = any(layout_id != "FullIconActionLayout" for layout_id, _ in pairs)
+    large_icon_layout_ids = {
+        "WideFullFourActionLayout",
+        "WideHalfCompactTwoLargeActionLayout",
+        "WideHalfFourLargeActionLayout",
+    }
+    has_large_icon_layout = any(
+        layout_id in large_icon_layout_ids for layout_id, _ in pairs
+    )
     has_icon_layout = any(layout_id == "FullIconActionLayout" for layout_id, _ in pairs)
+    has_pill_layout = any(
+        layout_id not in large_icon_layout_ids | {"FullIconActionLayout"}
+        for layout_id, _ in pairs
+    )
     action_templates: list[str] = []
     for template_id in selection.action_template_ids:
         if template_id == _PILL_ACTION_TEMPLATE_ID and has_pill_layout:
             action_templates.append(template_id)
         if template_id == _ICON_ACTION_TEMPLATE_ID and has_icon_layout:
+            action_templates.append(template_id)
+        if template_id == _LARGE_ICON_ACTION_TEMPLATE_ID and has_large_icon_layout:
             action_templates.append(template_id)
     return _SecondLayerLayoutSelection(
         layout_ids=tuple(layout_id for layout_id, _ in pairs),
