@@ -242,7 +242,8 @@ invoke(functionName:"generateWidgetCardCompactDsl", arguments:{
 
 ## 工具调用
 
-依赖 frontmatter 声明的三个微服务工具和一个端工具。使用统一调用格式；仅要求 `arguments` 内各键对应的值是合法 JSON 值，保留现有 invoke 外层和键名格式：
+依赖 frontmatter 声明的三个微服务工具和一个端工具。使用统一调用格式；
+**注意**：要求 `arguments` 是合法 JSON 值；`skillName` 固定为 `harmony-card-generation-online`。
 
 ```text
 invoke(functionName:"<toolName>", arguments:{bundleName:"com.omega_w_0823.hmservice", ...},"skillName":"harmony-card-generation-online")
