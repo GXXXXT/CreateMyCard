@@ -24,8 +24,13 @@
       "entry": "templates/layout.cardtpl"
     },
     {
+      "templateId": "HeroTitleContentActionLayout@1",
+      "description": "2x2 双业务与底部动作布局；内容区以 8vp 间距纵向承载 HeroTitle 和 HeroContent，不固定两个业务位置高度，底部固定承载一个 36vp PillAction。",
+      "entry": "templates/layout.cardtpl"
+    },
+    {
       "templateId": "TwoSupportLayout@1",
-      "description": "仅供兼容 LLM 路径与原子预览使用的 2x2 双业务支撑布局，纵向承载两个可在内部绑定事件的 Support 业务模板；当前 Search 不可达。",
+      "description": "2x2 双业务支撑布局，纵向承载两个可在内部绑定事件的 Support 业务模板；由 Planner 根据数据候选与 Action 消费位置选择。",
       "entry": "templates/layout.cardtpl"
     },
     {
@@ -211,7 +216,7 @@
     },
     {
       "name": "TwoSupportLayout",
-      "description": "仅供兼容 LLM 路径与原子预览使用；在 2x2 纵向承载两个 Support 业务 child，事件只允许绑定在 child 内部；当前 Search 不可达。",
+      "description": "在 2x2 纵向承载两个 Support 业务 child，事件只允许绑定在 child 内部；由 Planner 根据数据候选与 Action 消费位置选择。",
       "supportedCardSizes": [
         "2x2"
       ],
@@ -225,6 +230,32 @@
       },
       "maxActionChildrenBySize": {
         "2x2": 0
+      },
+      "parametersSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "loweringBySize": {
+        "2x2": "column"
+      }
+    },
+    {
+      "name": "HeroTitleContentActionLayout",
+      "description": "仅用于 2x2；内容区以 8vp 间距按顺序承载一个 HeroTitle 和一个 HeroContent，两个业务位置不固定高度，末尾承载一个 36vp PillAction。",
+      "supportedCardSizes": [
+        "2x2"
+      ],
+      "minChildren": 2,
+      "maxChildrenBySize": {
+        "2x2": 2
+      },
+      "actionPolicy": "required",
+      "minActionChildrenBySize": {
+        "2x2": 1
+      },
+      "maxActionChildrenBySize": {
+        "2x2": 1
       },
       "parametersSchema": {
         "type": "object",

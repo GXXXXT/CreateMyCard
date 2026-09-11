@@ -6,8 +6,8 @@ import json
 from typing import Any
 
 import json_repair
-from app.logger import logger
 
+from app.logger import logger
 from config.config import get_settings
 from custom.model_runtime import ModelExecutionRuntime
 from custom.unified_model_client import UnifiedModelClient

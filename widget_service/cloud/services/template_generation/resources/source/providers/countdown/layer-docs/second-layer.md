@@ -7,8 +7,13 @@
   `IconAction@1`。
 - `CountdownOverviewWideFull@1` 用于完整宽屏或 Full 组合布局；`CountdownOverviewWideHero@1`
   用于 WideHero + PillAction；`CountdownOverviewWideHalf@1` 用于对应半高组合布局。
-- 当前没有 Support、Compact 或 2x2 Hero，因此不进入双业务、双 PillAction 或单 PillAction 的 `2x2`
-  组合；不得用 Full 冒充缺失形态。
+- `CountdownOverviewHero@1` 展示同一份 `/countdownDays`，将单位“天”放在数字右侧，可传入本轮可信
+  `title`，用于 `HeroActionLayout@1` 加一个 `PillAction@1`。
+- `CountdownOverviewSupport@1` 第一行主文本展示“剩余 /countdownDays 天”，第二行辅助文本展示
+  本轮可信 `title` 或默认“倒计时”；只用于 `TwoSupportLayout@1`。当前没有关联事件，必须省略
+  `actionId`，不能用闹钟或免打扰设置替代倒计时入口。
+- 当前没有 Compact，因此不进入单业务双 PillAction 的 `2x2` 组合；不得用 Full、Hero 或 Support
+  冒充缺失形态。
 - `title` 只能来自本轮可信文本，例如“高考倒数”“运动会倒数日”“马拉松倒计时”；不得由天数反推
   事件名或目标日期。
 - 选择模板前必须确认 `/countdownDays` 可用；0 天合法。

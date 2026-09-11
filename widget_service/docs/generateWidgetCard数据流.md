@@ -181,7 +181,8 @@ SourceArtifactRepository.load(sourceArtifactUrl)
 
 ```text
 11.7.5.205 + 6.0
-→ app-11.7.5.205_rom-6.0
+→ 未直接命中 registry_ranges.json
+→ 默认回退开关开启时使用 app-11.7.5.205_rom-6.0
 ```
 
 未命中版本目录且默认回退开关开启时，使用配置中的默认能力目录。
@@ -445,6 +446,9 @@ meta
 
 ## 12. 响应数据流
 
+生成结果暂不返回 `message`。内部话术继续保留，统一由响应模型的
+`Field(exclude=True)` 排除；需要恢复输出时移除该标记。错误详情中的 `error.message` 不受影响。
+
 业务响应示例：
 
 ```json
@@ -453,7 +457,6 @@ meta
   "artifactUrl": "上传后的地址",
   "artifactDigest": "sha256:...",
   "suggestSize": "2x4",
-  "message": "已为你生成卡片。",
   "removedCapabilities": [],
   "errorCode": "",
   "effectiveCapabilities": {

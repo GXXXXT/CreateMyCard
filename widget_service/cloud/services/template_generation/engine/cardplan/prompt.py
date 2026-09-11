@@ -14,8 +14,15 @@ from services.template_generation.engine.advanced.content_selectors import (
     extract_bluetooth_device_overview_facts,
 )
 
+from .business_actions import supports_business_action
 from .generated.prompts import BODY_SYSTEM_PROMPT_KERNEL, UX_MIXED_SYSTEM_PROMPT_KERNEL
-from .models import ActionBinding, Fact, HybridBodyContract, HybridLimits
+from .models import (
+    CARDTPL_SOURCE_FORMATS,
+    ActionBinding,
+    Fact,
+    HybridBodyContract,
+    HybridLimits,
+)
 from .provider_bundle import (
     provider_template_admission,
     provider_template_family_identity,
@@ -82,10 +89,18 @@ _ASSET_SEMANTIC_TERMS = {
     "pulse": ("pulse", "bpm", "脉搏", "心率"),
     "call": ("call", "phone", "电话", "拨打"),
     "weather": ("weather", "天气"),
+    "weather-condition": ("晴天", "天气降雨", "台风", "大风提醒"),
+    "weather-indicator": (
+        "晴天", "天气降雨", "台风", "大风提醒", "体感温度", "天气温度", "当前气温",
+    ),
+    "sleep": ("sleep", "睡眠", "月亮"),
     "alert": ("alert", "warning", "预警", "警告"),
     "product": ("product", "earphone", "headphone", "耳机"),
     "audio": ("audio", "music", "earphone", "headphone", "音频", "音乐", "耳机"),
     "earphone": ("earphone", "earbud", "headphone", "耳机", "耳塞"),
+    "earphone-body": ("耳机本体", "左右分体", "earphone body", "earbuds body"),
+    "earphone-case": ("耳机收纳盒", "耳机充电盒", "earphone case", "earbud case"),
+    "app-icon": ("应用图标", "品牌", "app icon"),
     "phone-device": ("smartphone", "phone icon", "icon_phone", "手机图标"),
     "music": ("music", "playlist", "音乐", "歌单"),
     "favorite": ("favorite", "like", "heart", "收藏", "心动", "心形"),
@@ -167,10 +182,18 @@ def build_hybrid_prompt(
         if ux_layout_root_ids
         else [str(card_spec.get("title", "")), str(card_spec.get("description", ""))]
     )
+    binding_argument_literals: list[str] = []
+    for binding in card_spec.get("dataBindings", []):
+        if not isinstance(binding, dict) or not isinstance(binding.get("arguments"), dict):
+            continue
+        for value in binding["arguments"].values():
+            if isinstance(value, str) and value.strip():
+                binding_argument_literals.append(str(value))
     trusted_literals = _unique(
         [
             *((task_spec.userQuery,) if expose_data_facts else ()),
             *card_literals,
+            *binding_argument_literals,
             *(str(fact.value) for fact in facts if isinstance(fact.value, str)),
             *(_action_label(event) for event in task_spec.eventCandidates),
         ]
@@ -192,7 +215,7 @@ def build_hybrid_prompt(
         actions = ()
     selected_definitions = [registry.require_template(wire_id) for wire_id in requested]
     if ux_layout_root_ids:
-        maximum_actions = max(
+        maximum_actions = 2 if task_spec.size == "2x2" else max(
             registry.require_ux_layout_component(layout_id).max_action_children_by_size[
                 task_spec.size
             ]
@@ -432,10 +455,12 @@ def _system_prompt(
                         contract,
                     )
                 params[name] = parameter
-            if definition.source_format != "cardtpl/1" or variant.size != "default":
+            if definition.source_format not in CARDTPL_SOURCE_FORMATS:
                 raise ValueError(
-                    f"Template is outside the supported cardtpl/1 contract: {wire_id}"
+                    f"Template is outside the supported CardTemplate contract: {wire_id}"
                 )
+            if variant.size != "default":
+                raise ValueError(f"Template variant is not default: {wire_id}")
             call = f"Template({wire_id!r}, props)"
             if ux_layout_root:
                 layout_kind = provider_template_layout_kind(wire_id)
@@ -577,10 +602,12 @@ def build_template_prompt_contracts(
                 continue
             if not _variant_has_available_required_assets(variant, definition, contract):
                 continue
-            if definition.source_format != "cardtpl/1" or variant.size != "default":
+            if definition.source_format not in CARDTPL_SOURCE_FORMATS:
                 raise ValueError(
-                    f"Template is outside the supported cardtpl/1 contract: {wire_id}"
+                    f"Template is outside the supported CardTemplate contract: {wire_id}"
                 )
+            if variant.size != "default":
+                raise ValueError(f"Template variant is not default: {wire_id}")
             properties = variant.parameters_schema.get("properties", {})
             parameter_sources: dict[str, dict[str, Any]] = {}
             for name, schema in properties.items():
@@ -593,7 +620,11 @@ def build_template_prompt_contracts(
                     )
                     allowed_paths = tuple(
                         dict.fromkeys(
-                            (*definition.primary_data, *definition.secondary_data, *definition.optional_data)
+                            (
+                                *definition.primary_data,
+                                *definition.secondary_data,
+                                *definition.optional_data,
+                            )
                         )
                     )
                     if wire_id.startswith("GenericMetricOverview"):
@@ -626,6 +657,15 @@ def build_template_prompt_contracts(
                         definition,
                         contract,
                     )
+                if name == "actionId" and definition.business_id is not None:
+                    allowed_action_ids: list[str] = []
+                    for action in contract.action_bindings:
+                        if action.action_id not in contract.content_action_ids:
+                            continue
+                        if supports_business_action(definition, action, task_spec.size):
+                            allowed_action_ids.append(action.action_id)
+                    source_contract["allowedActionIds"] = allowed_action_ids
+                    source_contract["supportedEventIds"] = definition.supported_event_ids
                 parameter_sources[name] = source_contract
             prompt_contracts.append(
                 {
@@ -657,7 +697,8 @@ def _composition_rules(ux_layout_root: bool) -> tuple[str, ...]:
             "除 TwoSupportLayout 外，所有 Action 必须是布局根的连续末尾直接 children，"
             "禁止放进 Column/Row/Stack/List/业务 Template；Action 数量必须符合所选布局 Contract。"
             "TwoSupportLayout 禁止 Action child，批准事件只能各一次写入 Support 业务"
-            "Template 的可选 actionId Prop。",
+            "Template 的可选 actionId Prop。HeroTitleContentActionLayout 必须恰好按位置放置 "
+            "HeroTitle、HeroContent、PillAction 三个直接 children，不得交换、重复或嵌套。",
             "禁止独立整卡 Header。若 cardComposition.businessTitleCandidate 能准确命名"
             "当前业务，"
             "可在业务内容区使用；若局部 Template 或事实已表达则省略，"
@@ -668,6 +709,9 @@ def _composition_rules(ux_layout_root: bool) -> tuple[str, ...]:
             'Template("LargeIconAction@1", props)，WideFull 仅可在对应组合布局中使用 Action；'
             "Support 仅使用内部 "
             "actionId Prop。Action 不得被改写、丢弃或重复；Support 内部事件需按语义归属业务；"
+            "actionId 只能来自该模板 parameterSources.actionId.allowedActionIds，"
+            "空列表必须省略；事件还须与所展示城市或日程项一致。"
+            "HeroTitle/HeroContent 仅允许按位置组合到 HeroTitleContentActionLayout；"
             "禁止直接调用 PillAction/IconAction/LargeIconAction/ActionTile、"
             "标准 Button 和事件对象。",
         )
@@ -1053,13 +1097,20 @@ def _provider_variant_matches_trusted_state(
     }
     if wire_id == "BatteryOverview@1":
         state_independent_variants = {
+            "compact",
             "chargingDiagnosticsHero",
+            "chargingProgressFull",
             "chargingProgressHero",
+            "chargingRingHero",
+            "full",
+            "hero",
             "healthLevelHero",
             "percentRingHero",
             "progressCompact",
             "statusIconCompact",
             "temperatureIconCompact",
+            "temperatureFull",
+            "wideFull",
         }
         if variant_name in state_independent_variants:
             return True
@@ -1075,15 +1126,26 @@ def _provider_variant_matches_trusted_state(
         facts = extract_bluetooth_device_overview_facts(task_spec.dataModelSchema)
         if facts is None:
             return False
-        if variant_name in {"caseStatus", "caseStatusCompact"}:
+        if variant_name in {
+            "caseStatus",
+            "caseStatusCompact",
+            "earphoneCaseCompact",
+            "earphoneCaseHero",
+        }:
             return (
                 facts.case_battery_level is not None
                 and facts.case_charging_status is not None
             )
+        if variant_name == "earphoneHero":
+            return facts.earphone_name is not None and facts.case_battery_level is not None
+        if variant_name == "earphoneCompact":
+            return facts.earphone_name is not None and facts.case_battery_level is not None
         has_left = facts.left_battery_level is not None
         has_right = facts.right_battery_level is not None
         has_case = facts.case_battery_level is not None
         if variant_name == "earbudsSupport":
+            return has_left and has_right
+        if variant_name == "earbudsFull":
             return has_left and has_right
         if facts.is_connected is None or facts.earphone_name is None:
             return False
@@ -1233,6 +1295,16 @@ def _build_action_bindings(task_spec: TaskSpec) -> tuple[ActionBinding, ...]:
             )
         )
     return tuple(actions)
+
+
+def action_bindings(task_spec: TaskSpec) -> tuple[ActionBinding, ...]:
+    """从完整候选构造稳定动作实例，供 Planner 和 Prompt 共用。"""
+    return _build_action_bindings(task_spec)
+
+
+def action_binding_ids(task_spec: TaskSpec) -> tuple[str, ...]:
+    """Return stable per-occurrence Action IDs used by prompt and compiler contracts."""
+    return tuple(action.action_id for action in action_bindings(task_spec))
 
 
 def _asset_semantic_tags(asset: dict[str, Any]) -> tuple[str, ...]:

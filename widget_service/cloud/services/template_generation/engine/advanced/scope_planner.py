@@ -923,6 +923,22 @@ def resolve_scope_layout_ids(
             )
             if missing_support:
                 continue
+        if layout_id == "HeroTitleContentActionLayout":
+            has_required_slot_shapes = len(components) == 2
+            if has_required_slot_shapes:
+                has_hero_title = _component_has_layout_suffix(
+                    components[0],
+                    "HeroTitle",
+                    registry,
+                )
+                has_hero_content = _component_has_layout_suffix(
+                    components[1],
+                    "HeroContent",
+                    registry,
+                )
+                has_required_slot_shapes = has_hero_title and has_hero_content
+            if not has_required_slot_shapes:
+                continue
         if (
             not layout.minimum_children(task_spec.size)
             <= count
@@ -1338,6 +1354,7 @@ def _layout_rank(layout_id: str, count: int, action_count: int) -> tuple[int, st
         (1, 2): ("CompactTwoActionLayout",),
         (2, 0): ("TwoSupportLayout",),
         (2, 1): (
+            "HeroTitleContentActionLayout",
             "TwoSupportLayout",
             "WideFullHeroActionLayout",
             "WideHeroActionFullLayout",

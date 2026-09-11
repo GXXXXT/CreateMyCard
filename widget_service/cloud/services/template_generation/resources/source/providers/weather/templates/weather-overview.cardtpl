@@ -1,3 +1,51 @@
+#Template WeatherOverviewHeroTitle@1(props: { location?: string })
+data = {
+    city: $optionalPath("/location/prefectureName"),
+    district: $optionalPath("/location/districtName"),
+    temperature: $optionalPath("/current/temperatureText"),
+    condition: $optionalPath("/current/condition"),
+}
+
+Row(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "width": "matchParent",
+    "height": 18,
+    "itemMargin": 4,
+    "justifyContent": "start",
+    "alignItems": "top",
+    "clip": true,
+    "constraintSize": { "minWidth": 0, "minHeight": 0 }
+  },
+  Text(
+    #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+    {
+      "fontSize": 12,
+      "fontWeight": 700, "fontColor": $theme('supportContentColor'),
+      "maxLines": 1,
+      "textOverflow": "ellipsis",
+      "constraintSize": { "minWidth": 0, "minHeight": 0 }
+    }
+  ),
+  #if data.condition && data.temperature
+    Text(
+      `${data.condition} | ${data.temperature}`,
+      { "fontSize": 12, "fontWeight": 700, "fontColor": $theme('supportContentColor'), "maxLines": 1, "flexShrink": 0 }
+    )
+  #elseif data.condition
+    Text(
+      data.condition,
+      { "fontSize": 12, "fontWeight": 700, "fontColor": $theme('supportContentColor'), "maxLines": 1, "flexShrink": 0 }
+    )
+  #elseif data.temperature
+    Text(
+      data.temperature,
+      { "fontSize": 12, "fontWeight": 700, "fontColor": $theme('supportContentColor'), "maxLines": 1, "flexShrink": 0 }
+    )
+  #endif
+)
+#End
+
 #Template WeatherOverviewCompact@1(props: { location?: string, conditionIcon?: asset })
 data = {
     city: $optionalPath("/location/prefectureName"),
@@ -35,7 +83,7 @@ Column(
         "constraintSize": {"minWidth": 0, "minHeight": 0}
       },
       Text(
-            (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+            #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
             {
               "fontSize": 16,
               "fontWeight": 700, "fontColor": $theme('primaryColor'),
@@ -49,8 +97,7 @@ Column(
             {"fontSize": 16, "fontWeight": 800, "fontColor": $theme('primaryColor'), "maxLines": 1, "flexShrink": 0}
           )
     ),
-    IfPresent(
-      props.conditionIcon,
+    #if props.conditionIcon
       Image(
         props.conditionIcon,
         {
@@ -61,10 +108,9 @@ Column(
           "fillColor": $theme('supportContentColor'),
         }
       )
-    )
+    #endif
   ),
-  IfPresent(
-    data.coldLevel,
+  #if data.coldLevel
     Text(
       `${data.condition}｜感冒风险${data.coldLevel}`,
       {
@@ -77,9 +123,7 @@ Column(
         "constraintSize": { "minWidth": 0, "minHeight": 0 }
       }
     )
-  ),
-  IfAbsent(
-    data.coldLevel,
+  #else
     Text(
       `${data.condition}`,
       {
@@ -92,7 +136,7 @@ Column(
         "constraintSize": { "minWidth": 0, "minHeight": 0 }
       }
     )
-  )
+  #endif
 )
 #End
 
@@ -138,16 +182,15 @@ Row(
       Row(
         {"width": "matchParent", "height": 20, "itemMargin": 4, "alignItems": "center"},
         Text(
-          (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+          #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
           {"fontSize": 14, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "layoutWeight": 1}
         ),
-        IfPresent(
-          props.conditionIcon,
+        #if props.conditionIcon
           Image(
             props.conditionIcon,
             {"width": 20, "height": 20, "objectFit": "contain", "flexShrink": 0, "fillColor": $theme('supportContentColor')}
           )
-        )
+        #endif
       ),
       Text(
         data.temperature,
@@ -158,13 +201,12 @@ Row(
         {"fontSize": 14, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"}
       )
     ),
-    IfPresent(
-      data.temperatureRange,
+    #if data.temperatureRange
       Text(
         `今日 ${data.temperatureRange}`,
         {"fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"}
       )
-    )
+    #endif
   ),
   Column(
     {
@@ -177,8 +219,7 @@ Row(
       "clip": true,
       "constraintSize": {"minWidth": 0, "minHeight": 0}
     },
-    IfPresent(
-      data.feelsLike,
+    #if data.feelsLike
       Row(
         {"width": "matchParent", "itemMargin": 2, "alignItems": "center"},
         Text(
@@ -194,9 +235,8 @@ Row(
           {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1}
         )
       )
-    ),
-    IfPresent(
-      data.humidity,
+    #endif
+    #if data.humidity
       Row(
         {"width": "matchParent", "itemMargin": 2, "alignItems": "center"},
         Text(
@@ -212,18 +252,15 @@ Row(
           {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1}
         )
       )
-    ),
-    IfPresent(
-      data.airQuality,
+    #endif
+    #if data.airQuality
       Text(
         `空气 ${data.airQuality}`,
         {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"}
       )
-    ),
-    IfPresent(
-      data.windDirection,
-      IfPresent(
-        data.windLevel,
+    #endif
+    #if data.windDirection
+      #if data.windLevel
         Row(
           {"width": "matchParent", "itemMargin": 2, "alignItems": "center"},
           Text(
@@ -239,25 +276,23 @@ Row(
             {"fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1}
           )
         )
-      )
-    ),
-    IfPresent(
-      data.windDirection,
-      IfAbsent(
-        data.windLevel,
+      #endif
+    #endif
+    #if data.windDirection
+      #if data.windLevel
+      #else
         Text(
           data.windDirection,
           {"fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"}
         )
-      )
-    ),
-    IfPresent(
-      data.rainProbability,
+      #endif
+    #endif
+    #if data.rainProbability
       Text(
         `降雨 ${data.rainProbability}`,
         {"fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"}
       )
-    )
+    #endif
   )
 )
 #End
@@ -295,7 +330,7 @@ Row(
       "constraintSize": {"minWidth": 0, "minHeight": 0}
     },
     Text(
-      (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+      #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
       {"fontSize": 14, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"}
     ),
     Text(
@@ -317,22 +352,19 @@ Row(
       "alignItems": "end",
       "constraintSize": {"minWidth": 0, "minHeight": 0}
     },
-    IfPresent(
-      props.conditionIcon,
+    #if props.conditionIcon
       Image(
         props.conditionIcon,
         {"width": 40, "height": 40, "objectFit": "contain", "flexShrink": 0, "fillColor": $theme('supportContentColor')}
       )
-    ),
-    IfPresent(
-      data.temperatureRange,
+    #endif
+    #if data.temperatureRange
       Text(
         data.temperatureRange,
         {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "textAlign": "end"}
       )
-    ),
-    IfPresent(
-      data.feelsLike,
+    #endif
+    #if data.feelsLike
       Row(
         {"width": "matchParent", "itemMargin": 2, "justifyContent": "end", "alignItems": "center"},
         Text(
@@ -348,14 +380,13 @@ Row(
           {"fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1}
         )
       )
-    ),
-    IfPresent(
-      data.rainProbability,
+    #endif
+    #if data.rainProbability
       Text(
         `降雨 ${data.rainProbability}`,
         {"fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "textAlign": "end"}
       )
-    )
+    #endif
   )
 )
 #End
@@ -384,7 +415,7 @@ Row(
   Column(
     {"width": "matchParent", "layoutWeight": 1, "itemMargin": 2, "alignItems": "start"},
     Text(
-      (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+      #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
       {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"}
     ),
     Row(
@@ -399,29 +430,26 @@ Row(
       )
     )
   ),
-  IfPresent(
-    props.conditionIcon,
+  #if props.conditionIcon
     Image(
       props.conditionIcon,
       {"width": 32, "height": 32, "objectFit": "contain", "flexShrink": 0, "fillColor": $theme('supportContentColor')}
     )
-  ),
+  #endif
   Column(
     {"width": 76, "itemMargin": 2, "alignItems": "end", "flexShrink": 0},
-    IfPresent(
-      data.airQuality,
+    #if data.airQuality
       Text(
         `空气 ${data.airQuality}`,
         {"fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "textAlign": "end"}
       )
-    ),
-    IfPresent(
-      data.rainProbability,
+    #endif
+    #if data.rainProbability
       Text(
         `降雨 ${data.rainProbability}`,
         {"fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "textAlign": "end"}
       )
-    )
+    #endif
   )
 )
 #End
@@ -463,7 +491,7 @@ Column(
         "constraintSize": {"minWidth": 0, "minHeight": 0}
       },
       Text(
-            (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+            #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
             {
               "fontSize": 16,
               "fontWeight": 700, "fontColor": $theme('primaryColor'),
@@ -477,8 +505,7 @@ Column(
             {"fontSize": 16, "fontWeight": 800, "fontColor": $theme('primaryColor'), "maxLines": 1, "flexShrink": 0}
           )
     ),
-    IfPresent(
-      props.conditionIcon,
+    #if props.conditionIcon
       Image(
         props.conditionIcon,
         {
@@ -489,7 +516,7 @@ Column(
           "fillColor": $theme('supportContentColor'),
         }
       )
-    )
+    #endif
   ),
   Text(
       `${data.condition}｜紫外线等级 ${data.uvIndex}`,
@@ -506,19 +533,126 @@ Column(
 )
 #End
 
-#Template WeatherOverviewTemperatureSupport@1(props: { conditionIcon?: asset, actionId?: string })
+#Template WeatherOverviewTemperatureSupport@1(props: { location?: string, conditionIcon?: asset, actionId?: string })
 data = {
     condition: $path("/current/condition"),
-    city: $path("/location/districtName"),
-    temperature: $path("/current/temperatureText"),
-    coldLevel: $path("/current/coldLevel")
+    city: $optionalPath("/location/prefectureName"),
+    district: $optionalPath("/location/districtName"),
+    temperatureText: $optionalPath("/current/temperatureText"),
+    temperatureC: $optionalPath("/current/temperatureC"),
+    feelsLikeC: $optionalPath("/current/feelsLikeC"),
 }
 
 Row(
   {
     "_advancedComponent": "WeatherOverviewTemperatureSupport",
     "width": "matchParent",
-    "padding": { "left": 12, "top": 0, "right": 16, "bottom": 0 },
+    "padding": { "left": 8, "top": 0, "right": 8, "bottom": 0 },
+    "justifyContent": "spaceBetween",
+    "alignItems": "center",
+    "clip": true,
+    "constraintSize": { "minWidth": 0, "minHeight": 0 },
+    "onClick": EventAction(props?.actionId)
+  },
+  Column(
+    {
+      "itemMargin": 2,
+      "layoutWeight": 1,
+      "justifyContent": "start",
+      "alignItems": "start",
+      "clip": true,
+      "constraintSize": { "minWidth": 0, "minHeight": 0 }
+    },
+    Row(
+      {
+        "itemMargin": 2,
+        "justifyContent": "start",
+        "alignItems": "center",
+        "clip": true,
+        "constraintSize": { "minWidth": 0, "minHeight": 0 }
+      },
+      Text(
+        #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+        {
+          "fontSize": 14,
+          "fontWeight": 700, "fontColor": $theme('primaryColor'),
+          "maxLines": 1,
+          "textOverflow": "ellipsis",
+          "constraintSize": { "minWidth": 0, "minHeight": 0 }
+        }
+      ),
+      #if data.temperatureText
+        Text(
+          data.temperatureText,
+          { "fontSize": 14, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "flexShrink": 0 }
+        )
+      #else
+        #if data.temperatureC
+          Text(
+            Expr(data.temperatureC + "℃"),
+            { "fontSize": 14, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "flexShrink": 0 }
+          )
+        #endif
+      #endif
+    ),
+    #if data.feelsLikeC
+      Text(
+        Expr(data.condition + " · 体感 " + data.feelsLikeC + "℃"),
+        {
+          "width": "matchParent",
+          "height": 16,
+          "fontSize": 12,
+          "fontWeight": 500, "fontColor": $theme('supportContentColor'),
+          "maxLines": 1,
+          "textOverflow": "ellipsis",
+          "constraintSize": { "minWidth": 0, "minHeight": 0 }
+        }
+      )
+    #else
+      Text(
+        data.condition,
+        {
+          "width": "matchParent",
+          "height": 16,
+          "fontSize": 12,
+          "fontWeight": 500, "fontColor": $theme('supportContentColor'),
+          "maxLines": 1,
+          "textOverflow": "ellipsis",
+          "constraintSize": { "minWidth": 0, "minHeight": 0 }
+        }
+      )
+    #endif
+  ),
+  #if props.actionId
+    #if props.conditionIcon
+      Image(
+        props.conditionIcon,
+        {
+          "width": 24,
+          "height": 24,
+          "objectFit": "contain",
+          "flexShrink": 0,
+          "fillColor": $theme('supportContentColor'),
+        }
+      )
+    #endif
+  #endif
+)
+#End
+
+#Template WeatherOverviewTemperatureUvSupport@1(props: { location?: string, actionId?: string })
+data = {
+    condition: $path("/current/condition"),
+    city: $optionalPath("/location/prefectureName"),
+    district: $optionalPath("/location/districtName"),
+    uvIndex: $path("/current/uvIndex")
+}
+
+Row(
+  {
+    "_advancedComponent": "WeatherOverviewTemperatureSupport",
+    "width": "matchParent",
+    "padding": { "left": 8, "top": 0, "right": 8, "bottom": 0 },
     "justifyContent": "spaceBetween",
     "alignItems": "center",
     "clip": true,
@@ -543,7 +677,75 @@ Row(
         "constraintSize": { "minWidth": 0, "minHeight": 0 }
       },
       Text(
-        data.city,
+        #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+        {
+          "fontSize": 14,
+          "fontWeight": 700, "fontColor": $theme('primaryColor'),
+          "maxLines": 1,
+          "textOverflow": "ellipsis",
+          "constraintSize": { "minWidth": 0, "minHeight": 0 }
+        }
+      ),
+      Text(
+        data.condition,
+        { "fontSize": 14, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "flexShrink": 0 }
+      )
+    ),
+    Text(
+      `紫外线等级 ${data.uvIndex}`,
+      {
+        "width": "matchParent",
+        "height": 16,
+        "fontSize": 12,
+        "fontWeight": 400, "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "constraintSize": { "minWidth": 0, "minHeight": 0 }
+      }
+    )
+  )
+)
+#End
+
+#Template WeatherOverviewTemperaturecoldLevelSupport@1(props: { location?: string, actionId?: string })
+data = {
+    condition: $path("/current/condition"),
+    city: $optionalPath("/location/prefectureName"),
+    district: $optionalPath("/location/districtName"),
+    temperature: $path("/current/temperatureText"),
+    coldLevel: $path("/current/coldLevel")
+}
+
+Row(
+  {
+    "_advancedComponent": "WeatherOverviewTemperatureSupport",
+    "width": "matchParent",
+    "padding": { "left": 8, "top": 0, "right": 8, "bottom": 0 },
+    "justifyContent": "spaceBetween",
+    "alignItems": "center",
+    "clip": true,
+    "constraintSize": { "minWidth": 0, "minHeight": 0 },
+    "onClick": EventAction(props?.actionId)
+  },
+  Column(
+    {
+      "itemMargin": 4,
+      "justifyContent": "start",
+      "alignItems": "start",
+      "clip": true,
+      "constraintSize": { "minWidth": 0, "minHeight": 0 }
+    },
+    Row(
+      {
+        "height": 20,
+        "itemMargin": 2,
+        "justifyContent": "start",
+        "alignItems": "center",
+        "clip": true,
+        "constraintSize": { "minWidth": 0, "minHeight": 0 }
+      },
+      Text(
+        #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
         {
           "fontSize": 14,
           "fontWeight": 700, "fontColor": $theme('primaryColor'),
@@ -554,7 +756,7 @@ Row(
       ),
       Text(
         data.temperature,
-        { "fontSize": 14, "fontWeight": 800, "fontColor": $theme('primaryColor'), "maxLines": 1, "flexShrink": 0 }
+        { "fontSize": 14, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "flexShrink": 0 }
       )
     ),
     Text(
@@ -567,99 +769,6 @@ Row(
         "maxLines": 1,
         "textOverflow": "ellipsis",
         "constraintSize": { "minWidth": 0, "minHeight": 0 }
-      }
-    )
-  ),
-  IfPresent(
-    props.conditionIcon,
-    Image(
-      props.conditionIcon,
-      {
-        "width": 32,
-        "height": 32,
-        "objectFit": "contain",
-        "flexShrink": 0,
-        "fillColor": $theme('supportContentColor'),
-      }
-    )
-  )
-)
-#End
-
-#Template WeatherOverviewTemperatureUvSupport@1(props: { conditionIcon?: asset, actionId?: string })
-data = {
-    condition: $path("/current/condition"),
-    city: $path("/location/districtName"),
-    temperature: $path("/current/temperatureText"),
-    uvIndex: $path("/current/uvIndex")
-}
-
-Row(
-  {
-    "_advancedComponent": "WeatherOverviewTemperatureSupport",
-    "width": "matchParent",
-    "padding": { "left": 12, "top": 0, "right": 16, "bottom": 0 },
-    "justifyContent": "spaceBetween",
-    "alignItems": "center",
-    "clip": true,
-    "constraintSize": { "minWidth": 0, "minHeight": 0 },
-    "onClick": EventAction(props?.actionId)
-  },
-  Column(
-    {
-      "itemMargin": 4,
-      "justifyContent": "start",
-      "alignItems": "start",
-      "clip": true,
-      "constraintSize": { "minWidth": 0, "minHeight": 0 }
-    },
-    Row(
-      {
-        "height": 20,
-        "itemMargin": 2,
-        "justifyContent": "start",
-        "alignItems": "center",
-        "clip": true,
-        "constraintSize": { "minWidth": 0, "minHeight": 0 }
-      },
-      Text(
-        data.city,
-        {
-          "fontSize": 14,
-          "fontWeight": 700, "fontColor": $theme('primaryColor'),
-          "maxLines": 1,
-          "textOverflow": "ellipsis",
-          "constraintSize": { "minWidth": 0, "minHeight": 0 }
-        }
-      ),
-      Text(
-        data.temperature,
-        { "fontSize": 14, "fontWeight": 800, "fontColor": $theme('primaryColor'), "maxLines": 1, "flexShrink": 0 }
-      )
-    ),
-    Text(
-      `${data.condition}｜紫外线等级 ${data.uvIndex}`,
-      {
-        "width": "matchParent",
-        "height": 16,
-        "fontSize": 12,
-        "fontWeight": 400, "fontColor": $theme('supportContentColor'),
-        "maxLines": 1,
-        "textOverflow": "ellipsis",
-        "constraintSize": { "minWidth": 0, "minHeight": 0 }
-      }
-    )
-  ),
-  IfPresent(
-    props.conditionIcon,
-    Image(
-      props.conditionIcon,
-      {
-        "width": 32,
-        "height": 32,
-        "objectFit": "contain",
-        "flexShrink": 0,
-        "fillColor": $theme('supportContentColor'),
       }
     )
   )
@@ -694,7 +803,7 @@ Column(
       "alignItems": "top",
     },
     Text(
-        (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+        #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
         {
           "width": "matchParent",
           "fontSize": 12,
@@ -704,8 +813,7 @@ Column(
           "constraintSize": {"minWidth": 0, "minHeight": 0}
         }
       ),
-    IfPresent(
-      props.conditionIcon,
+    #if props.conditionIcon
       Image(
         props.conditionIcon,
         {
@@ -716,7 +824,7 @@ Column(
           "fillColor": $theme('supportContentColor'),
         }
       )
-    )
+    #endif
   ),
   Column(
     {
@@ -731,8 +839,7 @@ Column(
         data.temperature,
         {"fontSize": 38, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
       ),
-    IfPresent(
-      data.coldLevel,
+    #if data.coldLevel
       Text(
         `${data.condition}｜感冒风险${data.coldLevel}`,
         {
@@ -744,9 +851,7 @@ Column(
           "constraintSize": { "minWidth": 0, "minHeight": 0 }
         }
       )
-    ),
-    IfAbsent(
-      data.coldLevel,
+    #else
       Text(
         `${data.condition}`,
         {
@@ -758,9 +863,590 @@ Column(
           "constraintSize": { "minWidth": 0, "minHeight": 0 }
         }
       )
-    )
+    #endif
   ),
 )
+#End
+
+#Template WeatherOverviewDailyDateFull@1(props: { conditionIcon?: asset })
+data = {
+    district: $optionalPath("/location/districtName"),
+    date: $path("/daily/1/date"),
+    weekday: $path("/daily/1/weekday"),
+    condition: $path("/daily/1/condition")
+}
+
+Column(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 8,
+    "justifyContent": "spaceBetween",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+    {"width": "matchParent", "height": 20, "justifyContent": "spaceBetween", "alignItems": "top"},
+    Text(#Expr(data.district ? data.district : "明日天气"), {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}),
+    #if props.conditionIcon
+      Image(props.conditionIcon, {"width": 20, "height": 20, "objectFit": "contain", "fillColor": $theme('supportContentColor'), "flexShrink": 0})
+    #endif
+  ),
+  Column(
+    {"width": "matchParent", "height": 48, "itemMargin": 3, "justifyContent": "end", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Text(data.condition, {"width": "matchParent", "fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"}),
+    Text(`${data.weekday} ${data.date}`, {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"})
+  )
+)
+#End
+
+#Template WeatherOverviewDailyRainFull@1(props: { rainIcon?: asset })
+data = {
+    rainProbability: $path("/daily/1/rainProbabilityPercent"),
+    temperatureRange: $path("/daily/1/temperatureRangeText")
+}
+
+Column(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 6,
+    "justifyContent": "start",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+    {"width": "matchParent", "height": 20, "justifyContent": "spaceBetween", "alignItems": "top"},
+    Text(
+      "明日降雨",
+      {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+    ),
+    #if props.rainIcon
+      Image(props.rainIcon, {"width": 20, "height": 20, "objectFit": "contain", "fillColor": $theme('supportContentColor'), "flexShrink": 0})
+    #endif
+  ),
+  Column(
+    {"width": "matchParent", "height": 60, "layoutWeight": 1, "itemMargin": 3, "justifyContent": "start", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Text(data.rainProbability, {"width": "matchParent", "fontSize": 28, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"}),
+    Text("空气湿度", {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1})
+  ),
+  Column(
+    {"width": "matchParent", "height": 40, "layoutWeight": 1, "itemMargin": 3, "justifyContent": "end", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Text(
+    "温度范围", {"fontSize": 14, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}),
+    Text(data.temperatureRange, {"fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1})
+  ),
+
+)
+#End
+
+#Template WeatherOverviewDailyCompareFull@1(props: { })
+data = {
+    todayCondition: $path("/daily/0/condition"),
+    todayAirQuality: $path("/daily/0/airQuality"),
+    tomorrowCondition: $path("/daily/1/condition"),
+    tomorrowAirQuality: $path("/daily/1/airQuality")
+}
+
+Column(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 6,
+    "justifyContent": "spaceBetween",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+    {"width": "matchParent", "height": 14, "justifyContent": "spaceBetween", "alignItems": "top"},
+    Text("两日天气", {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}})
+  ),
+  Stack(
+    {"width": "matchParent", "height": 50, "padding": {"left": 10, "right": 10, "top": 6, "bottom": 6}, "borderRadius": 12, "backgroundColor": $theme('supportContentStyle.backgroundColor'), "alignContent": "center", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Column(
+      {"width": "matchParent", "height": "matchParent", "itemMargin": 3, "justifyContent": "center", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+      Row(
+        {"width": "matchParent", "justifyContent": "spaceBetween", "alignItems": "start"},
+        Text(data.todayCondition, {"width": "matchParent", "layoutWeight": 1, "fontSize": 14, "fontWeight": 700, "fontColor": $theme('primaryColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}),
+        Text("今天", {"fontSize": 10, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "flexShrink": 0})
+      ),
+      Text(`空气质量 ${data.todayAirQuality}`, {"width": "matchParent", "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis"})
+    )
+  ),
+  Stack(
+    {"width": "matchParent", "height": 50, "padding": {"left": 10, "right": 10, "top": 6, "bottom": 6}, "borderRadius": 12, "backgroundColor": $theme('supportContentStyle.backgroundColor'), "alignContent": "center", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Column(
+      {"width": "matchParent", "height": "matchParent", "itemMargin": 3, "justifyContent": "center", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+      Row(
+        {"width": "matchParent", "itemMargin": 1, "justifyContent": "spaceBetween", "alignItems": "start"},
+        Text(data.tomorrowCondition, {"width": "matchParent", "layoutWeight": 1, "fontSize": 14, "fontWeight": 700, "fontColor": $theme('primaryColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}),
+        Text("明天", {"fontSize": 10, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "flexShrink": 0})
+      ),
+      Text(`空气质量 ${data.tomorrowAirQuality}`, {"width": "matchParent", "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis"})
+    )
+  )
+)
+#End
+
+#Template WeatherOverviewDailyHealthFull@1(props: { uvIcon?: asset })
+data = {
+    airQuality: $path("/daily/1/airQuality"),
+    uvIndex: $path("/daily/1/uvIndex"),
+    coldLevel: $path("/daily/1/coldLevel")
+}
+
+Column(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 6,
+    "justifyContent": "start",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+    {"width": "matchParent", "height": 20, "justifyContent": "spaceBetween", "alignItems": "top"},
+    Text("明日健康指数", {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}),
+    #if props.uvIcon
+      Image(props.uvIcon, {"width": 20, "height": 20, "objectFit": "contain", "fillColor": $theme('supportContentColor'), "flexShrink": 0})
+    #endif
+  ),
+  Column(
+    {"width": "matchParent", "height": 48, "layoutWeight": 1, "itemMargin": 3, "justifyContent": "start", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Text(data.uvIndex, {"width": "matchParent", "fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"}),
+    Text("紫外线", {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1})
+  ),
+  Column(
+    {"width": "matchParent", "height": 40, "itemMargin": 4, "justifyContent": "end", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Text(`空气质量 ${data.airQuality}`, {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"}),
+    Text(`感冒指数 ${data.coldLevel}`, {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"})
+  )
+)
+#End
+
+#Template WeatherOverviewCareAlertFull@1(props: { uvIcon?: asset })
+data = {
+    city: $path("/location/prefectureName"),
+    alertLevel: $path("/current/alertLevel"),
+    uvIndex: $path("/current/uvIndex"),
+    airQuality: $path("/current/airQuality")
+}
+
+Column(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 6,
+    "justifyContent": "start",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+    {
+      "width": "matchParent",
+      "height": 20,
+      "justifyContent": "spaceBetween",
+      "alignItems": "top"
+    },
+    Text(
+      data.city,
+      {
+        "width": "matchParent",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    ),
+    #if props.uvIcon
+      Image(
+        props.uvIcon,
+        {
+          "width": 20,
+          "height": 20,
+          "objectFit": "contain",
+          "flexShrink": 0,
+          "fillColor": $theme('supportContentColor')
+        }
+      )
+    #endif
+  ),
+  Column(
+    {"width": "matchParent", "layoutWeight": 1, "itemMargin": 3, "justifyContent": "start", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Text(
+      Expr(data.alertLevel ? data.alertLevel : '无预警信息'),
+      {"width": "matchParent", "fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 2, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+    ),
+    Text(
+      "天气预警",
+      {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1}
+    )
+  ),
+  Column(
+    {
+      "width": "matchParent",
+      "height": 40,
+      "padding": {"right": 34},
+      "itemMargin": 4,
+      "justifyContent": "end",
+      "alignItems": "start",
+      "clip": true,
+      "constraintSize": {"minWidth": 0, "minHeight": 0}
+    },
+    Text(
+      `紫外线 ${data.uvIndex}`,
+      {
+        "width": "matchParent",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis"
+      }
+    ),
+    Text(
+      `空气质量 ${data.airQuality}`,
+      {
+        "width": "matchParent",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis"
+      }
+    )
+  )
+)
+#End
+
+#Template WeatherOverviewDualCityFull@1(props: { })
+data = {
+    firstCity: $optionalPath(0, "/location/prefectureName"),
+    firstTemperature: $path(0, "/current/temperatureC"),
+    firstCondition: $path(0, "/current/condition"),
+    secondCity: $optionalPath(1, "/location/prefectureName"),
+    secondTemperature: $path(1, "/current/temperatureC"),
+    secondCondition: $path(1, "/current/condition")
+}
+
+Column(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 6,
+    "justifyContent": "end",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Stack(
+    {"width": "matchParent", "height": 60, "padding": {"left": 10, "right": 10, "top": 7, "bottom": 7}, "borderRadius": 12, "backgroundColor": $theme('supportContentStyle.backgroundColor'), "alignContent": "center", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Column(
+      {"width": "matchParent", "height": "matchParent", "itemMargin": 2, "justifyContent": "center", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+      Row(
+        {"width": "matchParent", "justifyContent": "spaceBetween", "alignItems": "start"},
+        Row(
+          {"width": "matchParent", "layoutWeight": 1, "itemMargin": 1, "justifyContent": "start", "alignItems": "end", "constraintSize": {"minWidth": 0, "minHeight": 0}},
+          Text(data.firstTemperature, {"fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}),
+          Text("°", {"fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1})
+        ),
+        Text(#Expr(data.firstCity ? data.firstCity : "城市一"), {"fontSize": 10, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "flexShrink": 0})
+      ),
+      Text(data.firstCondition, {"width": "matchParent", "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis"})
+    )
+  ),
+  Stack(
+    {"width": "matchParent", "height": 60, "padding": {"left": 10, "right": 10, "top": 7, "bottom": 7}, "borderRadius": 12, "backgroundColor": $theme('supportContentStyle.backgroundColor'), "alignContent": "center", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Column(
+      {"width": "matchParent", "height": "matchParent", "itemMargin": 2, "justifyContent": "center", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+      Row(
+        {"width": "matchParent", "justifyContent": "spaceBetween", "alignItems": "start"},
+        Row(
+          {"width": "matchParent", "layoutWeight": 1, "itemMargin": 1, "justifyContent": "start", "alignItems": "end", "constraintSize": {"minWidth": 0, "minHeight": 0}},
+          Text(data.secondTemperature, {"fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}),
+          Text("°", {"fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1})
+        ),
+        Text(#Expr(data.secondCity ? data.secondCity : "城市二"), {"fontSize": 10, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "flexShrink": 0})
+      ),
+      Text(data.secondCondition, {"width": "matchParent", "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis"})
+    )
+  )
+)
+#End
+
+#Template WeatherOverviewAlertFull@1(props: { location?: string, alertIcon?: asset, timeIcon?: asset })
+data = {
+    alertLevel: $optionalPath("/current/alertLevel"),
+    updatedAt: $path("/updatedAt")
+}
+
+Column(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 8,
+    "justifyContent": "start",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+    {
+      "width": "matchParent",
+      "height": 20,
+      "justifyContent": "spaceBetween",
+      "alignItems": "top"
+    },
+    Text(
+      #Expr(props.location ? props.location : "天气预警"),
+      {
+        "width": "matchParent",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    ),
+    #if props.alertIcon
+      Image(
+        props.alertIcon,
+        {
+          "width": 20,
+          "height": 20,
+          "objectFit": "contain",
+          "flexShrink": 0,
+          "fillColor": $theme('supportContentColor')
+        }
+      )
+    #endif
+  ),
+  #if data.alertLevel
+    Text(
+      Expr(data.alertLevel ? data.alertLevel : '无预警信息'),
+      {
+        "width": "matchParent",
+        "layoutWeight": 1,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "fontColor": $theme('primaryColor'),
+        "maxLines": 2,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    ),
+  #else
+    Text(
+      "无预警信息",
+      {
+        "width": "matchParent",
+        "layoutWeight": 1,
+        "fontSize": 20,
+        "fontWeight": 700,
+        "fontColor": $theme('primaryColor'),
+        "maxLines": 2,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    ),
+  #endif
+  Row(
+    {
+      "width": "matchParent",
+      "height": 20,
+      "itemMargin": 4,
+      "justifyContent": "start",
+      "alignItems": "center"
+    },
+    Text(
+      data.updatedAt,
+      {
+        "width": "matchParent",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    )
+  )
+)
+
+#End
+
+#Template WeatherOverviewWindHero@1(props: { locationIcon?: asset })
+data = {
+    city: $path("/location/prefectureName"),
+    windDirection: $path("/current/windDirection"),
+    windLevel: $path("/current/windLevel"),
+    updatedAt: $path("/updatedAt")
+}
+
+Column(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "_consumeLayoutAction": true,
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 6,
+    "justifyContent": "start",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+    {
+      "width": "matchParent",
+      "height": 20,
+      "justifyContent": "spaceBetween",
+      "alignItems": "top"
+    },
+    Text(
+      data.city,
+      {
+        "width": "matchParent",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    ),
+    #if props.locationIcon
+      Image(
+        props.locationIcon,
+        {
+          "width": 20,
+          "height": 20,
+          "objectFit": "contain",
+          "flexShrink": 0,
+          "fillColor": $theme('supportContentColor')
+        }
+      )
+    #endif
+  ),
+  Column(
+    {"width": "matchParent", "height": 48, "layoutWeight": 1, "itemMargin": 3, "justifyContent": "start", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Row(
+      {"width": "matchParent", "itemMargin": 0, "justifyContent": "start", "alignItems": "baseline", "constraintSize": {"minWidth": 0, "minHeight": 0}},
+      Text(data.windDirection, {"fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"}),
+      Text(data.windLevel, {"fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}),
+      Text("级", {"fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1})
+    ),
+    Text("当前风向", {"width": "matchParent", "fontSize": 14, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1})
+  ),
+  Column(
+    {"width": "matchParent", "height": 20, "layoutWeight": 1, "justifyContent": "end", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Text(`${data.updatedAt}`,
+    {"fontSize": 12, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "left", "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}})
+  ),
+
+)
+
+#End
+
+#Template WeatherOverviewConditionHero@1(props: { location?: string, conditionIcon?: asset })
+data = {
+    city: $optionalPath("/location/prefectureName"),
+    district: $optionalPath("/location/districtName"),
+    condition: $path("/current/condition")
+}
+
+Column(
+  {
+    "_advancedComponent": "WeatherOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 6,
+    "justifyContent": "start",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+    {
+      "width": "matchParent",
+      "height": 20,
+      "justifyContent": "spaceBetween",
+      "alignItems": "top"
+    },
+    Text(
+      #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+      {
+        "width": "matchParent",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    ),
+    #if props.conditionIcon
+      Image(
+        props.conditionIcon,
+        {
+          "width": 20,
+          "height": 20,
+          "objectFit": "contain",
+          "flexShrink": 0,
+          "fillColor": $theme('supportContentColor')
+        }
+      )
+    #endif
+  ),
+  Column(
+    {
+      "width": "matchParent",
+      "height": 48,
+      "layoutWeight": 1,
+      "itemMargin": 3,
+      "justifyContent": "start",
+      "alignItems": "start",
+      "clip": true,
+      "constraintSize": {"minWidth": 0, "minHeight": 0}
+    },
+    Text(
+      data.condition,
+      {
+        "width": "matchParent",
+        "fontSize": 20,
+        "fontWeight": 700,
+        "fontColor": $theme('primaryColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis"
+      }
+    ),
+    Text(
+      "当前天气",
+      {
+        "width": "matchParent",
+        "fontSize": 14,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1
+      }
+    )
+  )
+)
+
 #End
 
 #Template WeatherOverviewFull@1(props: { location?: string, conditionIcon?: asset })
@@ -804,7 +1490,7 @@ Column(
         "constraintSize": { "minWidth": 0, "minHeight": 0 }
       },
       Text(
-        (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+        #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
         {
           "fontSize": 12,
           "fontWeight": 400, "fontColor": $theme('supportContentColor'),
@@ -813,8 +1499,7 @@ Column(
           "constraintSize": { "minWidth": 0, "minHeight": 0 }
         }
       ),
-      IfPresent(
-        props.conditionIcon,
+      #if props.conditionIcon
         Image(
           props.conditionIcon,
           {
@@ -825,7 +1510,7 @@ Column(
             "fillColor": $theme('supportContentColor'),
           }
         )
-      )
+      #endif
     ),
     Row(
       {
@@ -852,8 +1537,7 @@ Column(
       "clip": true,
       "constraintSize": { "minWidth": 0, "minHeight": 0 }
     },
-    IfPresent(
-      data.airQuality,
+    #if data.airQuality
       Text(
         `${data.condition}｜空气${data.airQuality}`,
         {
@@ -865,9 +1549,7 @@ Column(
           "constraintSize": { "minWidth": 0, "minHeight": 0 }
         }
       ),
-    ),
-    IfAbsent(
-      data.airQuality,
+    #else
       Text(
         `${data.condition}`,
         {
@@ -879,14 +1561,13 @@ Column(
           "constraintSize": { "minWidth": 0, "minHeight": 0 }
         }
       ),
-    ),
-    IfPresent(
-      data.coldLevel,
+    #endif
+    #if data.coldLevel
       Text(
         `感冒风险 ${data.coldLevel}`,
         { "width": "matchParent", "fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1 }
       )
-    )
+    #endif
   )
 )
 #End
@@ -933,7 +1614,7 @@ Column(
         "constraintSize": {"minWidth": 0, "minHeight": 0}
       },
       Text(
-        (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+        #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
         {
           "fontSize": 12,
           "fontWeight": 400, "fontColor": $theme('supportContentColor'),
@@ -963,7 +1644,7 @@ Column(
         "constraintSize": {"minWidth": 0, "minHeight": 0}
       },
       Text(
-        Expr(`'' + ${data.humidity} + '%'`),
+        Expr('' + data.humidity + '%'),
         {"fontSize": 38, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
       )
     )
@@ -988,33 +1669,26 @@ Column(
         "constraintSize": { "minWidth": 0, "minHeight": 0 }
       }
     ),
-    IfPresent(
-      data.airQuality & data.coldLevel,
+    #if data.airQuality && data.coldLevel
       Text(
         `空气${data.airQuality}｜感冒风险${data.coldLevel}`,
         { "width": "matchParent", "fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1 }
       )
-    ),
-    IfAbsent(
-      data.airQuality,
-      IfPresent(
-        data.coldLevel,
-        Text(
-          `感冒风险${data.coldLevel}`,
-          { "width": "matchParent", "fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1 }
-        )
-      )
-    ),
-    IfAbsent(
-      data.coldLevel,
-      IfPresent(
-        data.airQuality,
+    #else
+      #if data.airQuality
         Text(
           `空气${data.airQuality}`,
           { "width": "matchParent", "fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1 }
         )
-      )
-    )
+      #else
+        #if data.coldLevel
+          Text(
+            `感冒风险${data.coldLevel}`,
+            { "width": "matchParent", "fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1 }
+          )
+        #endif
+      #endif
+    #endif
   )
 )
 
@@ -1062,7 +1736,7 @@ Column(
         "constraintSize": {"minWidth": 0, "minHeight": 0}
       },
       Text(
-        (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+        #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
         {
           "fontSize": 12,
           "fontWeight": 400, "fontColor": $theme('supportContentColor'),
@@ -1117,33 +1791,26 @@ Column(
         "constraintSize": {"minWidth": 0, "minHeight": 0}
       }
     ),
-    IfPresent(
-      data.airQuality & data.coldLevel,
+    #if data.airQuality && data.coldLevel
       Text(
         `空气${data.airQuality}｜感冒风险${data.coldLevel}`,
         { "width": "matchParent", "fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1 }
       )
-    ),
-    IfAbsent(
-      data.airQuality,
-      IfPresent(
-        data.coldLevel,
-        Text(
-          `感冒风险${data.coldLevel}`,
-          { "width": "matchParent", "fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1 }
-        )
-      )
-    ),
-    IfAbsent(
-      data.coldLevel,
-      IfPresent(
-        data.airQuality,
+    #else
+      #if data.airQuality
         Text(
           `空气${data.airQuality}`,
           { "width": "matchParent", "fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1 }
         )
-      )
-    )
+      #else
+        #if data.coldLevel
+          Text(
+            `感冒风险${data.coldLevel}`,
+            { "width": "matchParent", "fontSize": 12, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1 }
+          )
+        #endif
+      #endif
+    #endif
   )
 )
 
@@ -1178,7 +1845,7 @@ Column(
       "alignItems": "top",
     },
     Text(
-      (data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
+      #Expr(data.city ? data.city : (data.district ? data.district : (props.location ? props.location : "当前城市"))),
       {
         "fontSize": 12,
         "fontWeight": 400, "fontColor": $theme('supportContentColor'),
@@ -1215,8 +1882,7 @@ Column(
         "maxLines": 1
       }
     ),
-    IfPresent(
-      data.coldLevel,
+    #if data.coldLevel
       Text(
         `${data.condition}｜感冒风险${data.coldLevel}`,
         {
@@ -1228,9 +1894,7 @@ Column(
           "constraintSize": { "minWidth": 0, "minHeight": 0 }
         }
       )
-    ),
-    IfAbsent(
-      data.coldLevel,
+    #else
       Text(
         `${data.condition}`,
         {
@@ -1242,7 +1906,7 @@ Column(
           "constraintSize": { "minWidth": 0, "minHeight": 0 }
         }
       )
-    )
+    #endif
   ),
 )
 

@@ -25,6 +25,7 @@ from services.template_generation.engine.theme_reference import (
 )
 
 from .models import (
+    CARDTPL_SOURCE_FORMATS,
     TEMPLATE_CHILD_SLOT_COMPONENT,
     BusinessTemplateGroup,
     StrictModel,
@@ -34,6 +35,7 @@ from .models import (
     TemplateValue,
     TemplateVariant,
 )
+from .runtime_expression import parse_runtime_expression, translate_runtime_expressions
 
 _COMPONENTS = frozenset(
     {
@@ -55,6 +57,7 @@ _LAYOUT_COMPONENTS = frozenset(
         "HeroActionLayout",
         "FullIconActionLayout",
         "CompactTwoActionLayout",
+        "HeroTitleContentActionLayout",
         "TwoSupportLayout",
         "WideSingleFocusLayout",
         "WideFullOnlyLayout",
@@ -99,20 +102,26 @@ _REFERENCE_CALLS = frozenset(
         "_CardTplInterpolation",
         "_CardTplTheme",
         "_CardTplConditional",
+        "_CardTplRuntimeExpr",
     }
 )
 _FORBIDDEN_KEYS = frozenset({"__proto__", "prototype", "constructor"})
 _TEMPLATE_ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9-]{0,63}$")
 _REFERENCE_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
+_ASSET_SEMANTIC_TAG_RE = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
+_EVENT_TYPE_ID_RE = re.compile(r"event\.[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)*")
 _PROVIDER_ID_RE = re.compile(r"^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9-]*)+$")
 _PROVIDER_VERSION_RE = re.compile(r"^[1-9][0-9]*\.[0-9]+\.[0-9]+(?:-[a-z0-9.-]+)?$")
 _MAX_BUNDLE_FILE_BYTES = 1_048_576
 _MAX_TEMPLATE_SOURCE_CHARS = 262_144
 _MAX_INDEXED_TEMPLATE_CHILDREN = 256
+_MAX_PRESENCE_MATCH_ITEMS = 4
 _PROVIDER_TEMPLATE_LAYOUT_KINDS = (
     "WideHero",
     "WideFull",
     "WideHalf",
+    "HeroTitle",
+    "HeroContent",
     "Support",
     "Compact",
     "Hero",
@@ -173,11 +182,27 @@ class ProviderTemplateEntry(StrictModel):
         pattern=r"^[A-Z][A-Za-z0-9]{0,63}$",
     )
     capability_id: str | None = Field(default=None, alias="capabilityId", min_length=1)
+    binding_count: int = Field(default=1, alias="bindingCount", ge=1, le=2)
     description: str = Field(min_length=1)
     primary_data: tuple[str, ...] = Field(default=(), alias="primaryData")
     secondary_data: tuple[str, ...] = Field(default=(), alias="secondaryData")
     optional_data: tuple[str, ...] = Field(default=(), alias="optionalData")
+    asset_parameter_semantic_tags: dict[str, tuple[str, ...]] = Field(
+        default_factory=dict, alias="assetParameterSemanticTags"
+    )
+    supported_event_ids: tuple[str, ...] = Field(default=(), alias="supportedEventIds")
     entry: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def supported_events_are_valid(self) -> ProviderTemplateEntry:
+        if len(self.supported_event_ids) != len(set(self.supported_event_ids)):
+            raise ValueError("Provider supportedEventIds must be unique")
+        for event_id in self.supported_event_ids:
+            if _EVENT_TYPE_ID_RE.fullmatch(event_id) is None:
+                raise ValueError("Provider supportedEventIds must contain event type IDs")
+        if self.supported_event_ids and self.business_id is None:
+            raise ValueError("Provider supportedEventIds requires a business Template")
+        return self
 
     @model_validator(mode="after")
     def data_paths_are_disjoint(self) -> ProviderTemplateEntry:
@@ -205,6 +230,17 @@ class ProviderTemplateEntry(StrictModel):
             raise ValueError("Provider data Template must declare businessId")
         if self.capability_id is not None:
             _provider_template_layout_kind(self.template_id)
+        if self.binding_count > 1 and (self.capability_id is None or not has_data):
+            raise ValueError("Provider multi-binding Template must declare capability data")
+        for name, tags in self.asset_parameter_semantic_tags.items():
+            if _REFERENCE_NAME_RE.fullmatch(name) is None:
+                raise ValueError(f"Provider asset parameter name is invalid: {name}")
+            if not tags or len(tags) != len(set(tags)):
+                raise ValueError(
+                    f"Provider asset semantic tags must be nonempty and unique: {name}"
+                )
+            if any(_ASSET_SEMANTIC_TAG_RE.fullmatch(tag) is None for tag in tags):
+                raise ValueError(f"Provider asset semantic tag is invalid: {name}")
         return self
 
     @property
@@ -288,6 +324,27 @@ class _UiTemplateData:
     bindings: dict[str, TemplateBinding]
     required_bindings: dict[str, TemplateBinding]
     optional_bindings: dict[str, TemplateBinding]
+    body: str
+
+
+@dataclass
+class _TemplateDirectiveFrame:
+    missing: str
+    start_line: int
+    has_else: bool = False
+    fallback_depth: int = 0
+
+
+@dataclass(frozen=True)
+class _PresenceMatchItem:
+    namespace: Literal["data", "props"]
+    name: str
+    value_source: str
+
+
+@dataclass(frozen=True)
+class _PresenceMatchBranch:
+    size: int | None
     body: str
 
 
@@ -376,6 +433,7 @@ def load_provider_bundle(bundle_root: Path) -> LoadedProviderBundle:
         template_bytes = _bounded_file_bytes(template_path)
         definition = compile_card_template(
             template_bytes.decode("utf-8"),
+            template_language=manifest.compatibility.template_language,
             provider_id=manifest.provider_id,
             business_id=entry.business_id,
             expected_wire_id=wire_id,
@@ -386,11 +444,27 @@ def load_provider_bundle(bundle_root: Path) -> LoadedProviderBundle:
             primary_data=entry.primary_data,
             secondary_data=entry.secondary_data,
             optional_data=entry.optional_data,
+            binding_count=entry.binding_count,
             output_schema=output_schema,
         )
-        definition = definition.model_copy(
-            update={"requires_layout_action": entry.requires_layout_action}
-        )
+        asset_tags = dict(definition.asset_parameter_semantic_tags)
+        for name, tags in entry.asset_parameter_semantic_tags.items():
+            if name not in asset_tags:
+                raise ValueError(
+                    f"Provider semantic tags reference a non-asset Prop: {wire_id}.{name}"
+                )
+            asset_tags[name] = tags
+        definition = definition.model_copy(update={
+            "requires_layout_action": entry.requires_layout_action,
+            "asset_parameter_semantic_tags": asset_tags,
+            "supported_event_ids": entry.supported_event_ids,
+        })
+        if entry.supported_event_ids:
+            for variant in definition.variants:
+                properties = variant.parameters_schema.get("properties", {})
+                required = variant.parameters_schema.get("required", ())
+                if "actionId" not in properties or "actionId" in required:
+                    raise ValueError("Provider supportedEventIds requires optional actionId")
         _validate_provider_template_data_contract(definition, entry)
         definitions.append(definition)
 
@@ -415,6 +489,7 @@ def load_provider_bundle(bundle_root: Path) -> LoadedProviderBundle:
 def compile_card_template(
     source: str,
     *,
+    template_language: Literal["cardtpl/1", "cardtpl/2"] = "cardtpl/1",
     provider_id: str,
     business_id: str | None,
     expected_wire_id: str,
@@ -426,14 +501,20 @@ def compile_card_template(
     secondary_data: tuple[str, ...],
     optional_data: tuple[str, ...],
     output_schema: dict[str, Any],
+    binding_count: int = 1,
 ) -> TemplateDefinition:
-    """Compile one non-executable ``cardtpl/1`` source into the trusted Template IR."""
+    """Compile one non-executable CardTemplate source into the trusted Template IR."""
     if len(source) > _MAX_TEMPLATE_SOURCE_CHARS:
         raise ValueError("Provider Template source exceeds the size limit")
+    if template_language not in CARDTPL_SOURCE_FORMATS:
+        raise ValueError("unsupported Provider Template language")
     if re.search(r"(?m)^\s*#Template\s+[A-Za-z]", source) is None:
-        raise ValueError("Provider Template must use the cardtpl/1 UI syntax")
+        raise ValueError(
+            f"Provider Template must use the {template_language} UI syntax"
+        )
     return _compile_ui_card_template(
         source,
+        template_language=template_language,
         provider_id=provider_id,
         business_id=business_id,
         expected_wire_id=expected_wire_id,
@@ -444,6 +525,7 @@ def compile_card_template(
         primary_data=primary_data,
         secondary_data=secondary_data,
         optional_data=optional_data,
+        binding_count=binding_count,
         output_schema=output_schema,
     )
 
@@ -451,6 +533,7 @@ def compile_card_template(
 def _compile_ui_card_template(
     source: str,
     *,
+    template_language: Literal["cardtpl/1", "cardtpl/2"],
     provider_id: str,
     business_id: str | None,
     expected_wire_id: str,
@@ -461,6 +544,7 @@ def _compile_ui_card_template(
     primary_data: tuple[str, ...],
     secondary_data: tuple[str, ...],
     optional_data: tuple[str, ...],
+    binding_count: int,
     output_schema: dict[str, Any],
 ) -> TemplateDefinition:
     """Compile the UI-oriented ``#Template Id(props, ...children)`` syntax."""
@@ -470,7 +554,7 @@ def _compile_ui_card_template(
     required_params = signature_contract.required_params
     asset_tags = signature_contract.asset_tags
     accepts_children = signature_contract.accepts_children
-    template_data = _ui_template_data(block, output_schema)
+    template_data = _ui_template_data(block, output_schema, binding_count)
     bindings = template_data.bindings
     required_bindings = template_data.required_bindings
     optional_bindings = template_data.optional_bindings
@@ -488,8 +572,14 @@ def _compile_ui_card_template(
         )
     if bindings and (expected_capability_id is None or data_domain is None):
         raise ValueError("Provider data Template requires capabilityId and dataDomain")
-    transformed = _translate_ui_template_body(body)
-    root = _parse_component_body(transformed)
+    used_root_indexes = {binding.root_index for binding in bindings.values()}
+    if bindings and used_root_indexes != set(range(binding_count)):
+        raise ValueError("Provider Template must bind every declared data root")
+    transformed = _translate_optional_parameter_access(body)
+    root = _parse_component_body(
+        transformed,
+        template_language=template_language,
+    )
     if root.component in _CONDITIONAL_COMPONENTS:
         raise ValueError("Provider Template conditional cannot be the Template root")
     spreads_children = any(node.spread_children for node in _walk_template_nodes(root))
@@ -502,8 +592,8 @@ def _compile_ui_card_template(
     if spreads_children and indexed_children:
         raise ValueError("Provider Template cannot mix children and children[index] slots")
     _validate_template_child_slot_indexes(indexed_children)
-    _validate_interpolation_bindings(root, bindings)
     _validate_event_action_placement(root)
+    _validate_image_color_declarations(root)
     binding_references, parameter_references = _template_references(root)
     if not binding_references <= set(bindings):
         unknown_data = sorted(binding_references - set(bindings))
@@ -513,6 +603,7 @@ def _compile_ui_card_template(
             "unknown Provider Template props reference: "
             f"{sorted(parameter_references - set(properties))}"
         )
+    _validate_interpolation_bindings(root, bindings)
     guarded_params, guarded_bindings = _validate_conditional_guards(
         root,
         properties,
@@ -575,6 +666,7 @@ def _compile_ui_card_template(
             "businessId": business_id,
             "capabilityId": expected_capability_id,
             "dataDomain": data_domain,
+            "bindingCount": binding_count,
             "primaryData": primary_data,
             "primaryDataFields": _data_fields(primary_data, output_schema),
             "secondaryData": secondary_data,
@@ -585,7 +677,7 @@ def _compile_ui_card_template(
             "bindings": {
                 name: binding.model_dump(by_alias=True) for name, binding in bindings.items()
             },
-            "sourceFormat": "cardtpl/1",
+            "sourceFormat": template_language,
             "variants": [variant.model_dump(by_alias=True)],
         }
     )
@@ -678,6 +770,7 @@ def _ui_template_signature(
 def _ui_template_data(
     block: str,
     output_schema: dict[str, Any],
+    binding_count: int,
 ) -> _UiTemplateData:
     match = re.match(r"\s*data\s*=\s*\{", block)
     if match is None:
@@ -691,6 +784,7 @@ def _ui_template_data(
     optional: dict[str, TemplateBinding] = {}
     entry_re = re.compile(
         r"([A-Za-z_][A-Za-z0-9_]*)\s*:\s*\$(path|optionalPath)\(\s*"
+        r"(?:(\d+)\s*,\s*)?"
         r"(\"(?:\\.|[^\"])*\"|'(?:\\.|[^'])*')\s*\)\s*(?:,|$)",
         re.S,
     )
@@ -698,10 +792,13 @@ def _ui_template_data(
     for item in entry_re.finditer(source):
         if source[slice(cursor, item.start())].strip():
             raise ValueError("invalid Provider Template data declaration")
-        name, function_name, raw_path = item.groups()
+        name, function_name, raw_root_index, raw_path = item.groups()
         path = ast.literal_eval(raw_path)
+        root_index = int(raw_root_index) if raw_root_index is not None else 0
         if name in bindings or not isinstance(path, str) or not _provider_relative_data_path(path):
             raise ValueError(f"invalid Provider Template data binding: {name}")
+        if root_index >= binding_count:
+            raise ValueError(f"Provider Template data binding root is out of range: {name}")
         leaf = _schema_leaf(output_schema, path)
         if not isinstance(leaf, dict) or leaf.get("type") not in {
             "string",
@@ -711,7 +808,7 @@ def _ui_template_data(
             "null",
         }:
             raise ValueError(f"Provider Template data path does not match outputSchema: {path}")
-        binding = TemplateBinding(path=path, type=leaf["type"])
+        binding = TemplateBinding(path=path, type=leaf["type"], rootIndex=root_index)
         bindings[name] = binding
         (required if function_name == "path" else optional)[name] = binding
         cursor = item.end()
@@ -757,40 +854,535 @@ def _matching_delimiter(
     raise ValueError("Provider Template data object is not closed")
 
 
-def _translate_ui_template_body(body: str) -> str:
-    body = re.sub(
-        r"\b(IfPresent|IfAbsent)\(\s*"
-        r"data\.([A-Za-z_][A-Za-z0-9_]*)\s*&\s*"
-        r"data\.([A-Za-z_][A-Za-z0-9_]*)\s*,",
-        _translate_grouped_binding_guard,
-        body,
-    )
-    body = re.sub(
-        r"\b(IfPresent|IfAbsent)\(\s*data\.([A-Za-z_][A-Za-z0-9_]*)\s*,",
-        lambda match: ("IfBind" if match.group(1) == "IfPresent" else "IfMissingBind")
-        + f'("{match.group(2)}",',
-        body,
-    )
-    body = re.sub(
-        r"\b(IfPresent|IfAbsent)\(\s*props\.([A-Za-z_][A-Za-z0-9_]*)\s*,",
-        lambda match: (
-            "IfParam" if match.group(1) == "IfPresent" else "IfMissingParam"
+def _translate_optional_parameter_access(body: str) -> str:
+    # 只改写引用，不能把 Expr 或普通 Text 中的同名静态字符串改写成调用。
+    pattern = re.compile(r"\bprops\?\.\s*([A-Za-z_][A-Za-z0-9_]*)")
+    translated: list[str] = []
+    index = 0
+    while index < len(body):
+        if body[index] in {"'", '"', "`"}:
+            end = _quoted_source_end(body, index)
+            translated.append(body[slice(index, end)])
+        elif body[index] == "#" and not body.startswith("#Expr(", index):
+            newline = body.find("\n", index)
+            end = len(body) if newline < 0 else newline + 1
+            translated.append(body[slice(index, end)])
+        else:
+            match = pattern.match(body, index)
+            if match is None:
+                end = index + 1
+                translated.append(body[index])
+            else:
+                end = match.end()
+                translated.append(f'_CardTplOptionalParam("{match.group(1)}")')
+        index = end
+    return "".join(translated)
+
+
+def _translate_presence_match_directives(body: str, *, enabled: bool) -> str:
+    lines = body.splitlines(keepends=True)
+    translated: list[str] = []
+    quote: str | None = None
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        stripped = line.strip()
+        is_match = quote is None and re.match(r"#match\b", stripped) is not None
+        if is_match:
+            if not enabled:
+                raise ValueError("Provider Template #match requires cardtpl/2")
+            items, alias, header_end = _read_presence_match_header(lines, index)
+            branches, block_end = _read_presence_match_branches(
+                lines,
+                header_end + 1,
+                len(items),
+            )
+            lowered = _lower_presence_match(items, alias, branches)
+            if lowered:
+                translated.extend((lowered, ",\n"))
+            index = block_end + 1
+            continue
+        is_orphan = (
+            quote is None
+            and re.match(r"#(?:case|default)\b", stripped) is not None
         )
-        + f'("{match.group(2)}",',
-        body,
-    )
-    return re.sub(
-        r"\bprops\?\.\s*([A-Za-z_][A-Za-z0-9_]*)",
-        lambda match: f'_CardTplOptionalParam("{match.group(1)}")',
-        body,
-    )
+        if is_orphan:
+            raise ValueError("Provider Template #case/#default requires #match")
+        translated.append(line)
+        quote = _template_line_quote(line, quote)
+        index += 1
+    return "".join(translated)
 
 
-def _translate_grouped_binding_guard(match: re.Match[str]) -> str:
-    component = "IfAllBind" if match.group(1) == "IfPresent" else "IfAnyMissingBind"
-    binding_names = [match.group(2), match.group(3)]
-    serialized_names = json.dumps(binding_names, separators=(",", ":"))
-    return f"{component}({serialized_names},"
+def _read_presence_match_header(
+    lines: list[str],
+    start: int,
+) -> tuple[tuple[_PresenceMatchItem, ...], str, int]:
+    header_parts: list[str] = []
+    for index in range(start, len(lines)):
+        header_parts.append(lines[index])
+        source = "".join(header_parts).strip()
+        prefix = re.match(r"#match\s+present\s*\(", source)
+        if prefix is None:
+            raise ValueError("Provider Template #match must call present(...)")
+        open_index = prefix.end() - 1
+        try:
+            close_index = _matching_delimiter(source, open_index, "(", ")")
+        except ValueError:
+            continue
+        tail = source[slice(close_index + 1, None)].strip()
+        alias_match = re.fullmatch(r"as\s+([A-Za-z_][A-Za-z0-9_]*)", tail)
+        if alias_match is None:
+            raise ValueError("Provider Template #match must end with 'as <name>'")
+        alias = alias_match.group(1)
+        if alias in {"data", "props", "children"}:
+            raise ValueError(f"Provider Template #match alias is reserved: {alias}")
+        items_source = source[slice(open_index + 1, close_index)]
+        return _parse_presence_match_items(items_source), alias, index
+    raise ValueError("Provider Template #match present(...) is not closed")
+
+
+def _parse_presence_match_items(source: str) -> tuple[_PresenceMatchItem, ...]:
+    raw_items = _split_top_level_sources(source)
+    if not raw_items:
+        raise ValueError("Provider Template present(...) requires at least one item")
+    if len(raw_items) > _MAX_PRESENCE_MATCH_ITEMS:
+        raise ValueError(
+            "Provider Template present(...) exceeds the four-item limit"
+        )
+    items = tuple(_parse_presence_match_item(item) for item in raw_items)
+    guards = tuple((item.namespace, item.name) for item in items)
+    if len(guards) != len(set(guards)):
+        raise ValueError("Provider Template present(...) guards must be unique")
+    return items
+
+
+def _parse_presence_match_item(source: str) -> _PresenceMatchItem:
+    value = source.strip()
+    direct = _presence_reference(value)
+    if direct is not None:
+        namespace, name = direct
+        return _PresenceMatchItem(namespace, name, value)
+    if not value.startswith("("):
+        raise ValueError(
+            "Provider Template transformed present item must use '(guard => value)'"
+        )
+    close_index = _matching_delimiter(value, 0, "(", ")")
+    if close_index != len(value) - 1:
+        raise ValueError("Provider Template transformed present item is invalid")
+    inner = value[slice(1, -1)].strip()
+    arrow_index = _top_level_arrow_index(inner)
+    if arrow_index is None:
+        raise ValueError(
+            "Provider Template present(...) items must be data/props references"
+        )
+    guard_source = inner[:arrow_index].strip()
+    transformed_source = inner[slice(arrow_index + 2, None)].strip()
+    guard = _presence_reference(guard_source)
+    if guard is None or not transformed_source:
+        raise ValueError("Provider Template transformed present item is invalid")
+    namespace, name = guard
+    return _PresenceMatchItem(namespace, name, transformed_source)
+
+
+def _presence_reference(source: str) -> tuple[Literal["data", "props"], str] | None:
+    reference: tuple[Literal["data", "props"], str] | None = None
+    match = re.fullmatch(
+        r"(data|props)\.([A-Za-z_][A-Za-z0-9_]*)",
+        source,
+    )
+    if match is not None:
+        namespace, name = match.groups()
+        if namespace == "data":
+            reference = ("data", name)
+        else:
+            reference = ("props", name)
+    return reference
+
+
+def _split_top_level_sources(source: str) -> tuple[str, ...]:
+    parts: list[str] = []
+    stack: list[str] = []
+    pairs = {"(": ")", "[": "]", "{": "}"}
+    quote: str | None = None
+    escaped = False
+    start = 0
+    for index, char in enumerate(source):
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            continue
+        if char in {'"', "'", "`"}:
+            quote = char
+            continue
+        closer = pairs.get(char)
+        if closer is not None:
+            stack.append(closer)
+            continue
+        if char in pairs.values():
+            if not stack or stack.pop() != char:
+                raise ValueError("Provider Template present(...) delimiters are invalid")
+            continue
+        if char == "," and not stack:
+            item = source[slice(start, index)].strip()
+            if not item:
+                raise ValueError("Provider Template present(...) contains an empty item")
+            parts.append(item)
+            start = index + 1
+    if quote is not None or stack:
+        raise ValueError("Provider Template present(...) item is not closed")
+    final = source[slice(start, None)].strip()
+    if final:
+        parts.append(final)
+    elif parts:
+        raise ValueError("Provider Template present(...) contains an empty item")
+    return tuple(parts)
+
+
+def _top_level_arrow_index(source: str) -> int | None:
+    stack: list[str] = []
+    pairs = {"(": ")", "[": "]", "{": "}"}
+    quote: str | None = None
+    escaped = False
+    arrow_index: int | None = None
+    index = 0
+    while index < len(source):
+        char = source[index]
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in {'"', "'", "`"}:
+            quote = char
+            index += 1
+            continue
+        closer = pairs.get(char)
+        if closer is not None:
+            stack.append(closer)
+            index += 1
+            continue
+        if char in pairs.values():
+            if not stack or stack.pop() != char:
+                raise ValueError("Provider Template transformed item delimiters are invalid")
+            index += 1
+            continue
+        if source.startswith("=>", index) and not stack:
+            if arrow_index is not None:
+                raise ValueError("Provider Template transformed item has multiple arrows")
+            arrow_index = index
+            index += 2
+            continue
+        index += 1
+    if quote is not None or stack:
+        raise ValueError("Provider Template transformed item is not closed")
+    return arrow_index
+
+
+def _read_presence_match_branches(
+    lines: list[str],
+    start: int,
+    item_count: int,
+) -> tuple[tuple[_PresenceMatchBranch, ...], int]:
+    branches: list[_PresenceMatchBranch] = []
+    case_sizes: set[int] = set()
+    current_size: int | None = None
+    current_body: list[str] = []
+    branch_started = False
+    default_seen = False
+    conditional_depth = 0
+    quote: str | None = None
+    for index in range(start, len(lines)):
+        line = lines[index]
+        stripped = line.strip()
+        directive = None
+        if quote is None:
+            directive = re.fullmatch(
+                r"#(match|case|default|if|elseif|else|endif|end)\b(.*)",
+                stripped,
+            )
+        if directive is None:
+            if not branch_started and stripped:
+                raise ValueError("Provider Template #match content must start with #case")
+            current_body.append(line)
+            quote = _template_line_quote(line, quote)
+            continue
+        keyword, suffix = directive.groups()
+        suffix = suffix.strip()
+        if keyword == "match":
+            raise ValueError("Provider Template #match cannot be nested")
+        if keyword == "if":
+            conditional_depth += 1
+            current_body.append(line)
+            continue
+        if keyword in {"elseif", "else"}:
+            current_body.append(line)
+            continue
+        if keyword == "endif":
+            if conditional_depth == 0:
+                raise ValueError("Provider Template #match must end with #end")
+            conditional_depth -= 1
+            current_body.append(line)
+            continue
+        if keyword == "end" and conditional_depth > 0:
+            conditional_depth -= 1
+            current_body.append(line)
+            continue
+        if keyword == "end":
+            if suffix:
+                raise ValueError("Provider Template #end is invalid")
+            if branch_started:
+                _append_presence_match_branch(
+                    branches,
+                    current_size,
+                    current_body,
+                )
+            if not branches:
+                raise ValueError("Provider Template #match requires at least one branch")
+            return tuple(branches), index
+        if conditional_depth > 0:
+            raise ValueError("Provider Template #case cannot be nested in #if")
+        if branch_started:
+            _append_presence_match_branch(branches, current_size, current_body)
+        current_body = []
+        branch_started = True
+        if keyword == "default":
+            if suffix or default_seen:
+                raise ValueError("Provider Template #match has an invalid #default")
+            current_size = None
+            default_seen = True
+            continue
+        if default_seen:
+            raise ValueError("Provider Template #case cannot follow #default")
+        case_match = re.fullmatch(r"[0-9]+", suffix)
+        if case_match is None:
+            raise ValueError("Provider Template #case requires a non-negative integer")
+        case_size = int(suffix)
+        if case_size > item_count:
+            raise ValueError("Provider Template #case exceeds present(...) size")
+        if case_size in case_sizes:
+            raise ValueError(f"Provider Template #case is duplicated: {case_size}")
+        case_sizes.add(case_size)
+        current_size = case_size
+    raise ValueError("Provider Template #match is missing #end")
+
+
+def _append_presence_match_branch(
+    branches: list[_PresenceMatchBranch],
+    size: int | None,
+    body_lines: list[str],
+) -> None:
+    body = "".join(body_lines).strip()
+    if not body:
+        name = "#default" if size is None else f"#case {size}"
+        raise ValueError(f"Provider Template {name} branch cannot be empty")
+    branches.append(_PresenceMatchBranch(size, body))
+
+
+def _lower_presence_match(
+    items: tuple[_PresenceMatchItem, ...],
+    alias: str,
+    branches: tuple[_PresenceMatchBranch, ...],
+) -> str:
+    by_size = {branch.size: branch for branch in branches if branch.size is not None}
+    default = next((branch for branch in branches if branch.size is None), None)
+
+    def lower(level: int, present_indexes: tuple[int, ...]) -> str:
+        if level == len(items):
+            branch = by_size.get(len(present_indexes), default)
+            if branch is None:
+                return ""
+            selected = tuple(items[item_index] for item_index in present_indexes)
+            return _replace_presence_match_items(branch.body, alias, selected)
+        item = items[level]
+        present_source = lower(level + 1, (*present_indexes, level))
+        missing_source = lower(level + 1, present_indexes)
+        present_component = "IfBind" if item.namespace == "data" else "IfParam"
+        missing_component = (
+            "IfMissingBind" if item.namespace == "data" else "IfMissingParam"
+        )
+        alternatives: list[str] = []
+        if present_source:
+            alternatives.append(
+                f'{present_component}("{item.name}",\n{present_source}\n)'
+            )
+        if missing_source:
+            alternatives.append(
+                f'{missing_component}("{item.name}",\n{missing_source}\n)'
+            )
+        return ",\n".join(alternatives)
+
+    return lower(0, ())
+
+
+def _replace_presence_match_items(
+    source: str,
+    alias: str,
+    items: tuple[_PresenceMatchItem, ...],
+) -> str:
+    reference = re.compile(
+        rf"(?<![A-Za-z0-9_.]){re.escape(alias)}\s*\[\s*([0-9]+)\s*\]"
+    )
+    alias_name = re.compile(
+        rf"(?<![A-Za-z0-9_.]){re.escape(alias)}\b"
+    )
+    translated: list[str] = []
+    index = 0
+    while index < len(source):
+        char = source[index]
+        if char in {'"', "'", "`"}:
+            end = _quoted_source_end(source, index)
+            translated.append(source[slice(index, end)])
+            index = end
+            continue
+        if char == "#":
+            end = source.find("\n", index)
+            if end < 0:
+                translated.append(source[index:])
+                break
+            translated.append(source[slice(index, end + 1)])
+            index = end + 1
+            continue
+        item_match = reference.match(source, index)
+        if item_match is not None:
+            item_index = int(item_match.group(1))
+            if item_index >= len(items):
+                raise ValueError(
+                    f"Provider Template {alias}[{item_index}] is out of range"
+                )
+            translated.append(f"({items[item_index].value_source})")
+            index = item_match.end()
+            continue
+        if alias_name.match(source, index) is not None:
+            raise ValueError(
+                f"Provider Template {alias} only supports literal indexes"
+            )
+        translated.append(char)
+        index += 1
+    return "".join(translated)
+
+
+def _translate_template_directives(body: str) -> str:
+    translated: list[str] = []
+    stack: list[_TemplateDirectiveFrame] = []
+    quote: str | None = None
+    for line_number, line in enumerate(body.splitlines(keepends=True), start=1):
+        directive = None
+        if quote is None:
+            directive = re.match(r"^[ \t]*#(if|elseif|else|endif|end)\b", line)
+        if directive is None:
+            translated.append(line)
+            quote = _template_line_quote(line, quote)
+            continue
+        keyword = directive.group(1)
+        newline = "\n" if line.endswith("\n") else ""
+        indent = line[: len(line) - len(line.lstrip(" \t"))]
+        content = line.strip()
+        if keyword == "if":
+            present, missing = _template_directive_components(content, line_number)
+            stack.append(_TemplateDirectiveFrame(missing=missing, start_line=line_number))
+            translated.append(f"{indent}{present}{newline}")
+            continue
+        if keyword in {"else", "endif", "end"} and content != f"#{keyword}":
+            raise ValueError(f"Provider Template #{keyword} is invalid at line {line_number}")
+        if not stack:
+            raise ValueError(
+                f"Provider Template #{keyword} has no matching #if at line {line_number}"
+            )
+        frame = stack[-1]
+        if keyword == "elseif":
+            if frame.has_else:
+                raise ValueError(
+                    f"Provider Template #elseif follows #else at line {line_number}"
+                )
+            present, missing = _template_directive_components(content, line_number)
+            # 新分支只能在此前条件均缺失时展开，复用已有否定条件节点保持引用作用域。
+            translated.append(f"{indent}), {frame.missing}{newline}{indent}{present}{newline}")
+            frame.missing = missing
+            frame.fallback_depth += 1
+            continue
+        if keyword == "else":
+            if frame.has_else:
+                raise ValueError(
+                    f"Provider Template #if at line {frame.start_line} has multiple #else blocks"
+                )
+            frame.has_else = True
+            translated.append(f"{indent}), {frame.missing}{newline}")
+            continue
+        stack.pop()
+        closings = ")," * (frame.fallback_depth + 1)
+        translated.append(f"{indent}{closings}{newline}")
+    if stack:
+        raise ValueError(
+            f"Provider Template #if at line {stack[-1].start_line} is missing #endif or #end"
+        )
+    return "".join(translated)
+
+
+def _template_line_quote(line: str, quote: str | None) -> str | None:
+    """跨行保留字符串状态，避免把插值文本或注释中的指令当成结构指令。"""
+    escaped = False
+    for char in line:
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char == "#":
+            break
+        elif char in {"'", '"', "`"}:
+            quote = char
+    return quote
+
+
+def _template_directive_components(content: str, line_number: int) -> tuple[str, str]:
+    single = re.fullmatch(
+        r"#(?:if|elseif)[ \t]+(props|data)\.([A-Za-z_][A-Za-z0-9_]*)",
+        content,
+    )
+    if single is not None:
+        namespace, name = single.groups()
+        if namespace == "props":
+            return f'IfParam("{name}",', f'IfMissingParam("{name}",'
+        return f'IfBind("{name}",', f'IfMissingBind("{name}",'
+    grouped = re.fullmatch(
+        r"#(?:if|elseif)[ \t]+data\.([A-Za-z_][A-Za-z0-9_]*)[ \t]*&&[ \t]*"
+        r"data\.([A-Za-z_][A-Za-z0-9_]*)",
+        content,
+    )
+    if grouped is None or grouped.group(1) == grouped.group(2):
+        keyword = content.split(maxsplit=1)[0]
+        raise ValueError(
+            f"Provider Template {keyword} target is invalid at line {line_number}"
+        )
+    binding_names = json.dumps(list(grouped.groups()), separators=(",", ":"))
+    return f"IfAllBind({binding_names},", f"IfAnyMissingBind({binding_names},"
+
+
+def _remove_empty_template_conditionals(body: str) -> str:
+    single = (
+        r'(?:IfParam|IfMissingParam|IfBind|IfMissingBind)\('
+        r'"[A-Za-z_][A-Za-z0-9_]*",\s*\),\s*'
+    )
+    grouped = (
+        r'(?:IfAllBind|IfAnyMissingBind)\(\["[A-Za-z_][A-Za-z0-9_]*",'
+        r'"[A-Za-z_][A-Za-z0-9_]*"\],\s*\),\s*'
+    )
+    result = body
+    while True:
+        result, count = re.subn(rf"\b(?:{single}|{grouped})", "", result)
+        if count == 0:
+            return result
 
 
 def _validate_provider_template_data_contract(
@@ -866,24 +1458,35 @@ def provider_template_layout_kind(wire_id: str) -> str | None:
     return None
 
 
-def _parse_component_body(body: str) -> TemplateNode:
+def _parse_component_body(
+    body: str,
+    *,
+    template_language: Literal["cardtpl/1", "cardtpl/2"] = "cardtpl/1",
+) -> TemplateNode:
     if not body:
         raise ValueError("Provider Template body is empty")
     if re.search(
-        r"\b(?:_CardTplConditional|_CardTplInterpolation|_CardTplTheme)\s*\(",
+        r"\b(?:_CardTplConditional|_CardTplInterpolation|_CardTplTheme|_CardTplRuntimeExpr)\s*\(",
         body,
     ):
         raise ValueError("Provider Template uses a reserved internal name")
     try:
-        with_template_strings = _translate_template_strings(body)
+        with_matches = _translate_presence_match_directives(
+            body,
+            enabled=template_language == "cardtpl/2",
+        )
+        with_directives = _translate_template_directives(with_matches)
+        with_directives = _remove_empty_template_conditionals(with_directives)
+        with_runtime_expressions = translate_runtime_expressions(with_directives)
+        with_compile_expressions = _translate_compile_expressions(with_runtime_expressions)
+        with_template_strings = _translate_template_strings(with_compile_expressions)
         with_theme_calls = translate_theme_reference_calls(
             with_template_strings,
             "_CardTplTheme",
         )
-        with_conditionals = _translate_compile_time_conditionals(with_theme_calls)
     except ThemeReferenceSyntaxError as exc:
         raise ValueError(str(exc)) from exc
-    translated = _python_compatible_source(with_conditionals)
+    translated = _python_compatible_source(with_theme_calls)
     try:
         module = ast.parse(translated, mode="exec")
     except SyntaxError as exc:
@@ -932,18 +1535,18 @@ def _component_node(node: ast.AST) -> TemplateNode:
     if spread_children and component not in _CONTAINERS:
         raise ValueError(f"Provider Template leaf cannot spread children: {component}")
     if component in _GROUPED_CONDITIONAL_BINDING_COMPONENTS:
-        if len(values) != 1 or len(children) != 1:
+        if len(values) != 1 or not children:
             raise ValueError(
-                f"Provider Template {component} requires two binding names and one child"
+                f"Provider Template {component} requires two binding names and children"
             )
         _grouped_conditional_binding_names(values[0])
     elif component in _CONDITIONAL_COMPONENTS:
         has_single_value = len(values) == 1
         has_literal_name = has_single_value and values[0].kind == "literal"
         has_string_name = has_literal_name and isinstance(values[0].value, str)
-        if not has_string_name or len(children) != 1:
+        if not has_string_name or not children:
             raise ValueError(
-                f"Provider Template {component} requires one parameter name and one child"
+                f"Provider Template {component} requires one parameter name and children"
             )
     return TemplateNode(
         component=component,
@@ -1038,6 +1641,11 @@ def _template_value(node: ast.AST) -> TemplateValue:
             )
         if node.func.id == "_CardTplInterpolation":
             return _interpolation_value(node)
+        if node.func.id == "_CardTplRuntimeExpr":
+            args = _call_literal_args(node, "Expr")
+            if len(args) != 1 or not isinstance(args[0], str):
+                raise ValueError("Expr requires one expression body")
+            return parse_runtime_expression(args[0])
         if node.func.id == "Expr":
             if node.keywords or len(node.args) != 1:
                 raise ValueError("Expr requires one template string")
@@ -1195,7 +1803,7 @@ def _schema_leaf(schema: dict[str, Any], pointer: str) -> dict[str, Any] | None:
         if not isinstance(current, dict):
             return None
         if current.get("type") == "array":
-            if part != "0":
+            if not part.isdigit():
                 return None
             current = current.get("items")
             continue
@@ -1299,6 +1907,60 @@ def _read_template_string(source: str, start: int) -> tuple[str, int]:
         value.append(char)
         index += 1
     raise ValueError("CardTemplate interpolation is not closed")
+
+
+def _translate_compile_expressions(source: str) -> str:
+    translated: list[str] = []
+    quote: str | None = None
+    escaped = False
+    comment = False
+    unwrapped_question = False
+    index = 0
+    marker = "#Expr("
+    while index < len(source):
+        char = source[index]
+        if comment:
+            translated.append(char)
+            comment = char != "\n"
+            index += 1
+            continue
+        if quote is not None:
+            translated.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in {'"', "'", "`"}:
+            quote = char
+            translated.append(char)
+            index += 1
+            continue
+        if source.startswith(marker, index):
+            open_index = index + len(marker) - 1
+            close_index = _matching_delimiter(source, open_index, "(", ")")
+            expression = source[slice(open_index + 1, close_index)]
+            lowered = _translate_compile_time_conditionals(f"({expression})")
+            if not lowered.startswith("_CardTplConditional("):
+                raise ValueError("Provider Template #Expr requires one ternary expression")
+            translated.append(lowered)
+            index = close_index + 1
+            continue
+        if char == "#":
+            comment = True
+        elif char == "?":
+            unwrapped_question = True
+        translated.append(char)
+        index += 1
+    result = "".join(translated)
+    if unwrapped_question:
+        raise ValueError(
+            "Provider Template compile-time value selection must use #Expr(...)"
+        )
+    return result
 
 
 def _translate_compile_time_conditionals(source: str) -> str:
@@ -1476,7 +2138,10 @@ def _template_shape(root: TemplateNode) -> tuple[int, int]:
     if root.component == TEMPLATE_CHILD_SLOT_COMPONENT:
         return 0, 0
     if root.component in _CONDITIONAL_COMPONENTS:
-        return _template_shape(root.children[0])
+        child_shapes = [_template_shape(child) for child in root.children]
+        count = sum(shape[0] for shape in child_shapes)
+        depth = max((shape[1] for shape in child_shapes), default=0)
+        return count, depth
     if root.component == "Text" and root.values and root.values[0].kind == "interpolation":
         return 1 + len(root.values[0].items), 2
     child_shapes = [_template_shape(child) for child in root.children]
@@ -1548,13 +2213,13 @@ def _validate_conditional_guards(
             if value.name not in required_params and value.name not in active_param_guards:
                 raise ValueError(
                     "Provider Template optional Param/Asset must be nested under "
-                    f"IfPresent(props.{value.name}, ...) or tested by a compile-time conditional"
+                    f"#if props.{value.name} or #Expr"
                 )
         elif value.kind == "binding" and value.name:
             if value.name not in required_bindings and value.name not in active_binding_guards:
                 raise ValueError(
                     "Provider Template optional Bind must be nested under "
-                    f"IfPresent(data.{value.name}, ...) or tested by a compile-time conditional"
+                    f"#if data.{value.name} or #Expr"
                 )
         for item in value.items:
             visit_value(item, active_param_guards, active_binding_guards)
@@ -1578,7 +2243,8 @@ def _validate_conditional_guards(
             child_param_guards = set(active_param_guards)
             if node.component == "IfParam":
                 child_param_guards.add(parameter_name)
-            visit(node.children[0], child_param_guards, active_binding_guards)
+            for child in node.children:
+                visit(child, child_param_guards, active_binding_guards)
             return
         if node.component in _SINGLE_CONDITIONAL_BINDING_COMPONENTS:
             binding_name = node.values[0].value
@@ -1590,7 +2256,8 @@ def _validate_conditional_guards(
             child_binding_guards = set(active_binding_guards)
             if node.component == "IfBind":
                 child_binding_guards.add(binding_name)
-            visit(node.children[0], active_param_guards, child_binding_guards)
+            for child in node.children:
+                visit(child, active_param_guards, child_binding_guards)
             return
         if node.component in _GROUPED_CONDITIONAL_BINDING_COMPONENTS:
             binding_names = _grouped_conditional_binding_names(node.values[0])
@@ -1604,7 +2271,8 @@ def _validate_conditional_guards(
             child_binding_guards = set(active_binding_guards)
             if node.component == "IfAllBind":
                 child_binding_guards.update(binding_names)
-            visit(node.children[0], active_param_guards, child_binding_guards)
+            for child in node.children:
+                visit(child, active_param_guards, child_binding_guards)
             return
         for value in node.values:
             visit_value(value, active_param_guards, active_binding_guards)
@@ -1624,6 +2292,26 @@ def _validate_interpolation_bindings(
             if value.kind == "interpolation" and (node.component != "Text" or index != 0):
                 raise ValueError("CardTemplate interpolation must be the first Text value")
             _validate_dynamic_template_value(value, bindings, direct=True)
+
+
+def _validate_image_color_declarations(
+    node: TemplateNode, preserve_original: bool = False,
+) -> None:
+    options: dict[str, TemplateValue] = {}
+    for value in node.values:
+        if value.kind == "object":
+            options.update(value.properties)
+    preserve_value = options.get("_preserveOriginalColor")
+    declared_preserve = (
+        preserve_value is not None
+        and preserve_value.kind == "literal"
+        and preserve_value.value is True
+    )
+    preserve_here = preserve_original or declared_preserve
+    if node.component == "Image" and preserve_here and "fillColor" in options:
+        raise ValueError("Image _preserveOriginalColor cannot be combined with fillColor")
+    for child in node.children:
+        _validate_image_color_declarations(child, preserve_here)
 
 
 def _validate_event_action_placement(root: TemplateNode) -> None:
@@ -1748,7 +2436,7 @@ def _reject_forbidden_keys(value: Any) -> None:
 
 
 def _validate_compatibility(compatibility: ProviderCompatibility) -> None:
-    if compatibility.template_language != "cardtpl/1":
+    if compatibility.template_language not in CARDTPL_SOURCE_FORMATS:
         raise ValueError("unsupported Provider Template language")
     if compatibility.catalog_id != "ohos.a2ui.extended.catalog.form":
         raise ValueError("Provider Bundle Catalog mismatch")
@@ -1896,25 +2584,26 @@ def provider_template_admission(
     context_admission = provider_template_context_admission(definition, task_spec)
     if not context_admission.admitted:
         return context_admission
-    if definition.source_format != "cardtpl/1":
+    if definition.source_format not in CARDTPL_SOURCE_FORMATS:
         return ProviderTemplateAdmission(True)
     if not definition.bindings:
         return ProviderTemplateAdmission(True)
     capability_id = definition.capability_id
     if not capability_id:
         return ProviderTemplateAdmission(False, "missing-capability-id")
-    root = _provider_data_root(card_spec, capability_id)
-    if isinstance(root, ProviderTemplateAdmission):
-        return root
-    if definition.data_domain is not None and root != definition.data_domain:
-        return ProviderTemplateAdmission(False, "data-domain-mismatch", path=root)
+    roots = _provider_data_roots(card_spec, capability_id, definition.binding_count)
+    if isinstance(roots, ProviderTemplateAdmission):
+        return roots
+    if definition.binding_count == 1 and definition.data_domain is not None:
+        if roots[0] != definition.data_domain:
+            return ProviderTemplateAdmission(False, "data-domain-mismatch", path=roots[0])
     failures: list[ProviderTemplateAdmission] = []
     for variant in definition.variants:
         admission = _provider_variant_binding_admission(
             definition,
             variant,
             task_spec,
-            root,
+            roots,
         )
         if admission.admitted:
             return admission
@@ -1931,19 +2620,20 @@ def provider_template_variant_admission(
     context_admission = provider_template_context_admission(definition, task_spec)
     if not context_admission.admitted:
         return context_admission
-    if definition.source_format != "cardtpl/1":
+    if definition.source_format not in CARDTPL_SOURCE_FORMATS:
         return ProviderTemplateAdmission(True)
     if not definition.bindings:
         return ProviderTemplateAdmission(True)
     capability_id = definition.capability_id
     if not capability_id:
         return ProviderTemplateAdmission(False, "missing-capability-id")
-    root = _provider_data_root(card_spec, capability_id)
-    if isinstance(root, ProviderTemplateAdmission):
-        return root
-    if definition.data_domain is not None and root != definition.data_domain:
-        return ProviderTemplateAdmission(False, "data-domain-mismatch", path=root)
-    return _provider_variant_binding_admission(definition, variant, task_spec, root)
+    roots = _provider_data_roots(card_spec, capability_id, definition.binding_count)
+    if isinstance(roots, ProviderTemplateAdmission):
+        return roots
+    if definition.binding_count == 1 and definition.data_domain is not None:
+        if roots[0] != definition.data_domain:
+            return ProviderTemplateAdmission(False, "data-domain-mismatch", path=roots[0])
+    return _provider_variant_binding_admission(definition, variant, task_spec, roots)
 
 
 def provider_template_context_admission(
@@ -1960,18 +2650,20 @@ def _provider_variant_binding_admission(
     definition: TemplateDefinition,
     variant: TemplateVariant,
     task_spec: TaskSpec,
-    root: str,
+    roots: tuple[str, ...],
 ) -> ProviderTemplateAdmission:
-    for relative_path in definition.required_data:
-        path = f"{root.rstrip('/')}{relative_path}"
-        if _task_spec_schema_leaf(task_spec.dataModelSchema, path) is None:
-            return ProviderTemplateAdmission(
-                False,
-                "required-data-unavailable",
-                path=path,
-            )
+    for root in roots:
+        for relative_path in definition.required_data:
+            path = f"{root.rstrip('/')}{relative_path}"
+            if _task_spec_schema_leaf(task_spec.dataModelSchema, path) is None:
+                return ProviderTemplateAdmission(
+                    False,
+                    "required-data-unavailable",
+                    path=path,
+                )
     for name in variant.required_bindings:
         binding = definition.bindings[name]
+        root = roots[binding.root_index]
         path = f"{root.rstrip('/')}{binding.path}"
         leaf = _task_spec_schema_leaf(task_spec.dataModelSchema, path)
         if leaf is None:
@@ -2050,27 +2742,28 @@ def _parameter_value_matches_type(value: object, expected: object) -> bool:
     return False
 
 
-def _provider_data_root(
+def _provider_data_roots(
     card_spec: dict[str, Any] | None,
     capability_id: str,
-) -> str | ProviderTemplateAdmission:
+    binding_count: int,
+) -> tuple[str, ...] | ProviderTemplateAdmission:
     if card_spec is None:
         return ProviderTemplateAdmission(False, "card-spec-unavailable")
     raw_bindings = card_spec.get("dataBindings")
     if not isinstance(raw_bindings, list):
         return ProviderTemplateAdmission(False, "data-bindings-unavailable")
-    roots = {
+    roots = tuple(
         item.get("writeResultTo")
         for item in raw_bindings
         if isinstance(item, dict)
         and item.get("capabilityId") == capability_id
         and _valid_runtime_data_root(item.get("writeResultTo"))
-    }
+    )
     if not roots:
         return ProviderTemplateAdmission(False, "capability-binding-unavailable")
-    if len(roots) > 1:
+    if len(roots) != binding_count or len(set(roots)) != len(roots):
         return ProviderTemplateAdmission(False, "capability-binding-ambiguous")
-    return next(iter(roots))
+    return roots
 
 
 def _valid_runtime_data_root(value: Any) -> bool:
@@ -2087,8 +2780,11 @@ def _task_spec_schema_leaf(
         if isinstance(current, dict):
             current = current.get(part)
             continue
-        if isinstance(current, list) and part == "0" and current:
-            current = current[0]
+        if isinstance(current, list) and part.isdigit():
+            index = int(part)
+            if index >= len(current):
+                return None
+            current = current[index]
             continue
         return None
     if not isinstance(current, dict) or not isinstance(current.get("type"), str):

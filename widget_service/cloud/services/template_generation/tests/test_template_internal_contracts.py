@@ -7,8 +7,17 @@ from types import SimpleNamespace
 
 import pytest
 
-from models.generation import TaskSpec
+from models.generation import EventAction, TaskSpec
+from services.template_generation.engine.advanced.models import (
+    AdvancedScopeBrief,
+    TemplateComponentCandidate,
+)
 from services.template_generation.engine.advanced.ux_mixed_prompt import (
+    _candidate_groups_for_prompt,
+    _filter_positional_second_layer_template_candidates,
+    _filter_second_layer_template_candidates,
+    _layout_output_option,
+    _second_layer_layout_selection,
     _weather_builtin_assets_for_components,
 )
 from services.template_generation.engine.cardplan.compiler import (
@@ -307,6 +316,7 @@ def test_checked_in_layout_templates_use_concrete_container_blueprints() -> None
         "HeroActionLayout@1": 2,
         "FullIconActionLayout@1": 2,
         "CompactTwoActionLayout@1": 3,
+        "HeroTitleContentActionLayout@1": 3,
         "TwoSupportLayout@1": 2,
         "WideSingleFocusLayout@1": 2,
         "WideFullOnlyLayout@1": 1,
@@ -348,6 +358,26 @@ def test_checked_in_layout_templates_use_concrete_container_blueprints() -> None
         else:
             assert slot_indexes == []
             assert root.spread_children
+
+
+def test_hero_title_content_layout_keeps_flexible_business_heights() -> None:
+    root = get_cardplan_registry().require_template(
+        "HeroTitleContentActionLayout@1"
+    ).variants[0].root
+    content_region, action_region = root.children
+    content_options = content_region.values[0].properties
+
+    assert content_options["itemMargin"].value == 8
+    assert content_options["layoutWeight"].value == 1
+    assert len(content_region.children) == 2
+    for business_region in content_region.children:
+        options = business_region.values[0].properties
+        assert options["width"].value == "matchParent"
+        assert options["justifyContent"].value == "start"
+        assert options["alignItems"].value == "start"
+        assert "height" not in options
+        assert "layoutWeight" not in options
+    assert action_region.values[0].properties["height"].value == 36
 
 
 def test_fusion_theme_rules_cover_compact_eligible_businesses() -> None:
@@ -571,6 +601,25 @@ def test_provider_template_layout_suffix_combinations_are_enforced() -> None:
         (),
         "2x2",
     )
+    _validate_provider_template_layout_action_requirements(
+        "HeroTitleContentActionLayout",
+        (
+            template("WeatherOverviewHeroTitle@1"),
+            template("ScheduleOverviewHeroContent@1"),
+        ),
+        (pill_one,),
+        "2x2",
+    )
+    with pytest.raises(TerselConversionError, match="order is invalid"):
+        _validate_provider_template_layout_action_requirements(
+            "HeroTitleContentActionLayout",
+            (
+                template("ScheduleOverviewHeroContent@1"),
+                template("WeatherOverviewHeroTitle@1"),
+            ),
+            (pill_one,),
+            "2x2",
+        )
     with pytest.raises(TerselConversionError, match="layout combination is invalid"):
         _validate_provider_template_layout_action_requirements(
             "TwoSupportLayout",
@@ -761,6 +810,68 @@ def test_provider_template_layout_suffix_combinations_are_enforced() -> None:
         )
 
 
+def test_second_layer_projects_ordered_dual_business_layout_contract() -> None:
+    registry = get_cardplan_registry()
+    task_spec = TaskSpec(
+        userQuery="显示天气和日程，并提供查看入口",
+        size="2x2",
+        eventCandidates=[
+            EventAction(
+                id="event.open.details",
+                description="查看详情",
+                call="clickToDeeplink",
+                args={"uri": "example://details"},
+            )
+        ],
+        dataModelSchema={"data": {}},
+    )
+    scope = AdvancedScopeBrief(
+        themeId="family-weather-care-blue",
+        advancedComponentIds=("WeatherOverview", "CalendarOverview"),
+    )
+
+    selection = _second_layer_layout_selection(scope, task_spec, registry)
+    filtered, groups = _filter_positional_second_layer_template_candidates(
+        {
+            "WeatherOverview": (
+                "WeatherOverviewHeroTitle@1",
+                "WeatherOverviewHero@1",
+            ),
+            "CalendarOverview": (
+                "ScheduleOverviewHeroContent@1",
+                "ScheduleOverviewNextEventHero@1",
+            ),
+        },
+        (
+            ("WeatherOverviewHeroTitle@1", "WeatherOverviewHero@1"),
+            (
+                "ScheduleOverviewHeroContent@1",
+                "ScheduleOverviewNextEventHero@1",
+            ),
+        ),
+        selection.business_layout_kinds_by_position,
+    )
+    option = _layout_output_option(
+        "HeroTitleContentActionLayout@1",
+        groups,
+        ({"actionId": "action-0", "label": "查看详情"},),
+        ("PillAction@1",),
+    )
+
+    assert selection.layout_ids == ("HeroTitleContentActionLayout",)
+    assert selection.business_layout_kinds_by_position == (
+        "HeroTitle",
+        "HeroContent",
+    )
+    assert filtered == {
+        "WeatherOverview": ("WeatherOverviewHeroTitle@1",),
+        "CalendarOverview": ("ScheduleOverviewHeroContent@1",),
+    }
+    assert option["businessTemplateIdsByPosition"] == groups
+    assert option["actionChildren"][0]["position"] == 2
+    assert option["actionChildren"][0]["templateId"] == "PillAction@1"
+
+
 def test_parser_rejects_deprecated_three_argument_template_call() -> None:
     source = (
         'Template("card@1",{},Column("section",'
@@ -800,3 +911,45 @@ def test_model_response_json_extraction_uses_complete_outer_object() -> None:
     assert _parse_json_object('说明：{"decision":"use {trusted}"}。') == {
         "decision": "use {trusted}"
     }
+
+
+def test_wide_repeated_generic_slots_keep_distinct_ordered_groups() -> None:
+    candidates = {
+        "SleepOverview": ("SleepOverviewFull@1", "SleepOverviewHero@1"),
+        "GenericMetricOverview": ("GenericMetricOverviewCompact@1",),
+    }
+    required_groups = (
+        ("SleepOverviewFull@1",),
+        ("GenericMetricOverviewCompact@1",),
+        ("GenericMetricOverviewCompact@1",),
+    )
+    task_spec = TaskSpec(userQuery="睡眠、步数和心率", size="2x4", dataModelSchema={"data": {}})
+    scope = AdvancedScopeBrief(
+        themeId="fusion-sleep-violet",
+        advancedComponentIds=tuple(candidates),
+    )
+    selection = _second_layer_layout_selection(
+        scope,
+        task_spec,
+        get_cardplan_registry(enable_fusion_ball=True),
+        required_template_groups=required_groups,
+    )
+    filtered, groups, _ = _filter_second_layer_template_candidates(
+        candidates,
+        required_groups,
+        selection.business_layout_kinds_by_position,
+        exact_slots=True,
+    )
+    component_candidates = tuple(
+        TemplateComponentCandidate(componentId=component_id, availableTemplateIds=template_ids)
+        for component_id, template_ids in filtered.items()
+    )
+    prompt_groups = _candidate_groups_for_prompt(component_candidates, groups)
+    assert selection.layout_ids == ("WideFullTwoCompactLayout",)
+    assert groups == required_groups
+    assert [group.get("slotIndex") for group in prompt_groups] == [0, 1, 2]
+    assert [group.get("componentId") for group in prompt_groups] == [
+        "SleepOverview", "GenericMetricOverview", "GenericMetricOverview",
+    ]
+    option = _layout_output_option("WideFullTwoCompactLayout@1", groups, (), ())
+    assert option.get("businessTemplateIdsByPosition") == required_groups

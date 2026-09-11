@@ -6,18 +6,22 @@ Owns the static list of built-in validators and the stage/short-circuit logic.
 ``validators`` are grouped by responsibility so it is obvious at a glance which
 subsystem a given validator belongs to.
 
-The online variant of this pipeline ships only ``hard`` and ``semantic`` stages.
-The ``quality`` stage exists in the stage enum for CLI symmetry with the offline
-version but has no validators attached — colour / aesthetic checks are the
-responsibility of the ``generateWidgetCard`` microservice for online output.
+The online variant keeps the protocol and semantic stages as its core pipeline.
+The quality stage currently hosts deterministic contrast checks; broader design
+contract checks remain the responsibility of the ``generateWidgetCard`` service.
 """
 
 from __future__ import annotations
 
+import logging
+
+from .aesthetic_baseline_validator import AestheticBaselineValidator
 from .asset_validator import AssetValidator
 from .binding_validator import BindingValidator
 from .cardspec_validator import CardSpecValidator
 from .component_validator import ComponentValidator
+from .context import ValidationContext
+from .contrast_validator import ContrastValidator
 from .cross_validator import CrossValidator
 from .diagnostics import Reporter
 from .display_unit_validator import DisplayUnitValidator
@@ -25,15 +29,22 @@ from .effective_capability_validator import EffectiveCapabilityValidator
 from .expression_validator import ExpressionValidator
 from .protocol_validator import ProtocolValidator
 
+_LOGGER = logging.getLogger(__name__)
+
 STATIC_VALIDATORS = [
     ProtocolValidator(),
     ComponentValidator(),
+    AestheticBaselineValidator(),
     CardSpecValidator(),
     ExpressionValidator(),
     AssetValidator(),
     BindingValidator(),
     DisplayUnitValidator(),
     CrossValidator(),
+]
+
+QUALITY_VALIDATORS = [
+    ContrastValidator(),
 ]
 
 EFFECTIVE_VALIDATORS = [
@@ -51,26 +62,26 @@ def selected_stages(stage: str) -> list[str]:
         return ["hard"]
     if stage == "semantic":
         return ["hard", "semantic"]
-    # "quality" and "all" both run every declared stage. The online variant has
-    # no quality-stage validators, so passing "quality" or "all" is functionally
-    # identical to passing "semantic".
     return ["hard", "semantic", "quality"]
 
 
 def run_pipeline(
-    context,
+    context: ValidationContext,
     rules,
     reporter: Reporter,
     stage: str,
     *,
     stop_on_stage_error: bool = False,
 ) -> None:
-    validators = list(STATIC_VALIDATORS) + list(EFFECTIVE_VALIDATORS)
+    validators = list(STATIC_VALIDATORS) + list(EFFECTIVE_VALIDATORS) + list(QUALITY_VALIDATORS)
     for current_stage in selected_stages(stage):
         if stop_on_stage_error and current_stage == "semantic" and reporter.has_error("hard"):
             return
         if stop_on_stage_error and current_stage == "quality" and reporter.error_count:
             return
+        if current_stage == "quality" and context.has_fusion_template_root():
+            _LOGGER.info("quality_validation_skipped reason=fusion_template_root")
+            continue
         for validator in validators:
             if validator.stage == current_stage:
                 validator.validate(context, rules, reporter)

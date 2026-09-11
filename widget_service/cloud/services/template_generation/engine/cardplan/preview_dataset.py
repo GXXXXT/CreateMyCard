@@ -16,6 +16,7 @@ from services.template_generation.engine.tersel_converter import (
 )
 
 from .compiler import (
+    _expand_health_metric_generic_template,
     _instantiate_blueprint,
     _serialize_effective_document,
     _strip_advanced_component_markers,
@@ -25,6 +26,8 @@ from .provider_bundle import provider_template_layout_kind
 from .registry import CardPlanRegistry
 
 TemplateLayoutKind = Literal[
+    "HeroTitle",
+    "HeroContent",
     "Support",
     "Compact",
     "Hero",
@@ -35,15 +38,19 @@ TemplateLayoutKind = Literal[
 ]
 
 _LAYOUT_ORDER = {
-    "Support": 0,
-    "Compact": 1,
-    "Hero": 2,
-    "Full": 3,
-    "WideHero": 4,
-    "WideFull": 5,
-    "WideHalf": 6,
+    "HeroTitle": 0,
+    "HeroContent": 1,
+    "Support": 2,
+    "Compact": 3,
+    "Hero": 4,
+    "Full": 5,
+    "WideHero": 6,
+    "WideFull": 7,
+    "WideHalf": 8,
 }
 _SIZE_BY_LAYOUT: dict[TemplateLayoutKind, Literal["2x2", "2x4"]] = {
+    "HeroTitle": "2x2",
+    "HeroContent": "2x2",
     "Support": "2x2",
     "Compact": "2x2",
     "Hero": "2x2",
@@ -53,6 +60,8 @@ _SIZE_BY_LAYOUT: dict[TemplateLayoutKind, Literal["2x2", "2x4"]] = {
     "WideHalf": "2x4",
 }
 _CONTENT_HEIGHT_BY_LAYOUT: dict[TemplateLayoutKind, int] = {
+    "HeroTitle": 24,
+    "HeroContent": 54,
     "Support": 68,
     "Compact": 68,
     "Hero": 124,
@@ -64,30 +73,54 @@ _CONTENT_HEIGHT_BY_LAYOUT: dict[TemplateLayoutKind, int] = {
 _ASSET_BY_PARAMETER = {
     "appIcon": "resources/base/media/icon_tiktok.png",
     "batteryIcon": "resources/base/media/battery_leaf_fill.svg",
+    "calendarIcon": "resources/base/media/calendar_fill.svg",
+    "heartIcon": "resources/base/media/heart_fill.svg",
     "deviceIcon": "resources/base/media/earphone_case_16644.svg",
     "caloriesIcon": "resources/base/media/flame_fill.svg",
-    "conditionIcon": "resources/base/media/icon_weather1.svg",
     "distanceIcon": "resources/base/media/location_north_up_right_fill.svg",
     "icon": "resources/base/media/externaldrive_fill.svg",
     "leftEarIcon": "resources/base/media/l_circle_fill.svg",
     "locationIcon": "resources/base/media/location_north_up_right_fill.svg",
     "rightEarIcon": "resources/base/media/r_circle_fill.svg",
     "stepsIcon": "resources/base/media/figure_run.svg",
+    "temperatureIcon": "resources/base/media/heat_generation.svg",
     "timeIcon": "resources/base/media/clock_fill.svg",
 }
 _SOURCE_ICON_BY_BUSINESS = {
     "AppUsageOverview": "resources/base/media/icon_tiktok.png",
     "BluetoothDeviceOverview": "resources/base/media/icon_earphone.svg",
     "HeartRateOverview": "resources/base/media/heart_fill.svg",
+    "GenericMetricOverview": "resources/base/media/figure_run.svg",
     "CalendarOverview": "resources/base/media/calendar_fill.svg",
     "SleepOverview": "resources/base/media/moon_z_fill_1.svg",
     "WorkoutOverview": "resources/base/media/figure_run.svg",
 }
+_GENERIC_PREVIEW_VALUES = {
+    "/dailySteps": {"type": "integer", "description": "步数", "sampleValue": 6200},
+    "/exerciseHeartRateAvg": {"type": "integer", "description": "平均心率", "sampleValue": 88},
+}
 _TEXT_BY_TEMPLATE_PARAMETER = {
+    ("GenericMetricOverviewCompact@1", "title"): "步数",
+    ("GenericMetricOverviewCompact@1", "valuePath"): "/dailySteps",
+    ("GenericMetricOverviewDualCompact@1", "firstTitle"): "步数",
+    ("GenericMetricOverviewDualCompact@1", "firstValuePath"): "/dailySteps",
+    ("GenericMetricOverviewDualCompact@1", "secondTitle"): "平均心率",
+    ("GenericMetricOverviewDualCompact@1", "secondValuePath"): "/exerciseHeartRateAvg",
     ("BluetoothDeviceOverviewHero@1", "title"): "耳机听歌入口",
     ("WeatherOverviewAirQualityHero@1", "location"): "青浦区",
     ("WeatherOverviewHumidityFull@1", "location"): "青浦区",
     ("WeatherOverviewUvFull@1", "location"): "青浦区",
+}
+# 单业务多云样例没有匹配状态素材，省略图标；Support 可使用表达气温的温度计。
+_SUPPORT_PREVIEW_ASSET_OVERRIDES: dict[tuple[str, str], str | None] = {
+    ("BluetoothDeviceOverviewEarbudsSupport@1", "deviceIcon"):
+        "resources/base/media/icon_earphone.svg",
+    ("BluetoothDeviceOverviewConnectionSupport@1", "deviceIcon"):
+        "resources/base/media/icon_earphone.svg",
+    ("BatteryOverviewSupport@1", "batteryIcon"):
+        "resources/base/media/icon_phone.svg",
+    ("WeatherOverviewTemperatureSupport@1", "conditionIcon"):
+        "resources/base/media/icon_weather_thermometer.svg",
 }
 _SAMPLE_BY_BUSINESS_BINDING: dict[tuple[str, str], Any] = {
     ("ActivityOverview", "calories"): "420 千卡",
@@ -97,6 +130,7 @@ _SAMPLE_BY_BUSINESS_BINDING: dict[tuple[str, str], Any] = {
     ("AppUsageOverview", "duration"): "1小时26分",
     ("AppUsageOverview", "updatedAt"): "今天 09:00",
     ("BluetoothDeviceOverview", "battery"): 80,
+    ("BluetoothDeviceOverview", "percent"): 80,
     ("BluetoothDeviceOverview", "chargingStatus"): "充电中",
     ("BluetoothDeviceOverview", "left"): 76,
     ("BluetoothDeviceOverview", "leftChargingStatus"): "未充电",
@@ -106,6 +140,7 @@ _SAMPLE_BY_BUSINESS_BINDING: dict[tuple[str, str], Any] = {
     ("CountdownOverview", "days"): 28,
     ("CalendarOverview", "description"): "评审本周 UI 交付方案",
     ("CalendarOverview", "end"): "15:30",
+    ("CalendarOverview", "date"): "8月19日",
     ("CalendarOverview", "eventCount"): 1,
     ("CalendarOverview", "location"): "深圳市龙岗区五和大道",
     ("CalendarOverview", "start"): "14:00",
@@ -113,6 +148,8 @@ _SAMPLE_BY_BUSINESS_BINDING: dict[tuple[str, str], Any] = {
     ("CalendarOverview", "title"): "UI需求评审会",
     ("CalendarOverview", "updatedAt"): "今天 09:00",
     ("HeartRateOverview", "average"): 135,
+    ("HeartRateOverview", "max"): 168,
+    ("HeartRateOverview", "min"): 112,
     ("HeartRateOverview", "updatedAt"): "今天 09:00",
     ("ResourceUsageOverview", "available"): "5.2 GB",
     ("ResourceUsageOverview", "total"): "12 GB",
@@ -247,12 +284,22 @@ def _build_case(
         for name, binding in definition.bindings.items()
     }
     theme = _preview_theme(definition, registry)
-    content = _instantiate_blueprint(
-        variant.root,
-        _template_parameters(definition),
-        bindings,
-        theme.reference_values,
-    )
+    parameters = _template_parameters(definition)
+    if definition.business_id == "GenericMetricOverview":
+        content = _expand_health_metric_generic_template(
+            definition.wire_id,
+            parameters,
+            task_spec=task_spec,
+            provider_binding_roots={"GetHealthAndSportSummary": definition.data_domain},
+            theme_values=theme.reference_values,
+        )
+    else:
+        content = _instantiate_blueprint(
+            variant.root,
+            parameters,
+            bindings,
+            theme.reference_values,
+        )
     content = _strip_advanced_component_markers(content)
     root = _preview_root(content, content_height, theme.root_style)
     effective = _serialize_effective_document(root, task_spec, True)
@@ -327,6 +374,12 @@ def _template_parameters(definition: TemplateDefinition) -> dict[str, str]:
     properties = definition.variants[0].parameters_schema.get("properties", {})
     parameters: dict[str, str] = {}
     for name in properties:
+        key = (definition.wire_id, name)
+        if key in _SUPPORT_PREVIEW_ASSET_OVERRIDES:
+            asset = _SUPPORT_PREVIEW_ASSET_OVERRIDES.get(key)
+            if asset is not None:
+                parameters[name] = asset
+            continue
         text = _TEXT_BY_TEMPLATE_PARAMETER.get((definition.wire_id, name))
         if text is not None:
             parameters[name] = text
@@ -346,6 +399,14 @@ def _template_parameters(definition: TemplateDefinition) -> dict[str, str]:
 
 def _build_data_schema(definition: TemplateDefinition) -> dict[str, Any]:
     schema: dict[str, Any] = {"data": {}}
+    if definition.business_id == "GenericMetricOverview":
+        for parameter, path in _template_parameters(definition).items():
+            if not parameter.endswith("Path"):
+                continue
+            sample = _GENERIC_PREVIEW_VALUES.get(path)
+            if sample is None:
+                raise ValueError(f"Generic preview sample is missing: {path}")
+            _set_path(schema, definition.data_domain.rstrip("/") + path, dict(sample))
     for name, binding in definition.bindings.items():
         full_path = f"{definition.data_domain.rstrip('/')}{binding.path}"
         leaf = {
@@ -388,6 +449,7 @@ def _battery_sample(template_id: str, name: str, data_type: str) -> Any:
             "percent": 68,
             "percentText": "68%",
             "charging": "未充电",
+            "temperature": "29.0 ℃",
             "level": "正常电量",
         }
     return values.get(name, _fallback_sample(data_type))
@@ -457,6 +519,7 @@ def _preview_root(
         "justifyContent": "start",
         "alignItems": "start",
     }
+    slot_options["_id"] = "template_root"
     slot = Nested2Node("Column", ("section", slot_options), (content,))
     return Nested2Node("Column", ("card", root_options), (slot,))
 

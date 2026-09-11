@@ -60,6 +60,7 @@ from services.source_artifact_repository import (
 )
 from services.template_generation import TemplateSourceGenerator
 from services.validator import ArtifactValidator
+from utils.trigger_mq import trigger_mq
 
 _MODULE = "[Generation Service]"
 
@@ -104,6 +105,7 @@ class WidgetGenerationService:
         if request.operation == "getDataCapabilitySchemas":
             # schema 是按需加载能力详情，必须明确传入主 Agent 已筛选出的数据能力 ID。
             if not request.dataCapabilityIds:
+                trigger_mq(body={"getDataCapabilitySchemasInterfaceParamError": 1})
                 raise ValueError("dataCapabilityIds is required for getDataCapabilitySchemas.")
             return self.get_data_capability_schemas(
                 DataCapabilitySchemasRequest(**request.model_dump(exclude={"operation"}))
@@ -285,6 +287,7 @@ class WidgetGenerationService:
         replaced_categories: tuple[str, ...] = ()
 
         if generation_mode == "edit":
+            trigger_mq(body={"secondaryEdit": 1})
             source_url_hash = hashlib.sha256(
                 (request.sourceArtifactUrl or "").encode("utf-8")
             ).hexdigest()
@@ -416,6 +419,7 @@ class WidgetGenerationService:
                 f"issue_count={len(preflight.blocking_issues)} "
                 f"issues={json_for_log(issue_payloads)}"
             )
+            trigger_mq(body={"generateWidgetCardCompactDslInterfaceParamError": 1})
             raise GenerationPreflightError(preflight)
         effective_bindings = list(preflight.effective_bindings)
         effective_data_capabilities = list(preflight.effective_data_capabilities)
@@ -573,6 +577,9 @@ class WidgetGenerationService:
             repair_prompt_type = "create"
 
         processor = get_dsl_processor(policy.processor_kind)
+        trigger_mq(body={
+            "cardSizeCode": 1 if card_spec.suggestSize == "2x4" else 0
+        })
         processing_context = DslProcessingContext(
             size=card_spec.suggestSize,
             card_spec=card_spec.model_dump(mode="json", exclude_none=True),
@@ -601,16 +608,17 @@ class WidgetGenerationService:
                         processing_context.card_spec,
                         tuple(effective_bindings),
                     )
+                    trigger_mq(body={"templateProposal": 1})
                     return require_generated_dsl(result)
                 except Exception as exc:
-                    fallback = "original_protocol_flow" if need_fallback else "none"
+                    fallback = "jsx" if try_jsx else ("original_protocol_flow" if need_fallback else "none")
                     logger.info(
                         f"{_MODULE} template_source_generation_failed "
                         f"operation={policy.operation} fallback={fallback} "
                         f"reason={type(exc).__name__} "
                         f"detail={json_for_log(str(exc))}"
                     )
-                    if not need_fallback:
+                    if not try_jsx and not need_fallback:
                         raise A2UIModelGenerationError(
                             "Template source generation failed without fallback"
                         ) from exc
@@ -641,6 +649,7 @@ class WidgetGenerationService:
                         f"reason={type(exc).__name__} "
                         f"detail={json_for_log(str(exc))}"
                     )
+                    trigger_mq(body={"templateProposal": 0})
                     if not need_fallback:
                         raise A2UIModelGenerationError(
                             "JSX generation failed without fallback"
@@ -719,6 +728,7 @@ class WidgetGenerationService:
                 )
             conversion_errors = [item.repair_message() for item in processing_result.errors]
             if conversion_errors:
+                trigger_mq(body={"validationScenarioFailure": 1})
                 logger.error(
                     f"{_MODULE} dsl_conversion_failed operation={policy.operation} "
                     f"errors={json_for_log(conversion_errors)}"
@@ -766,7 +776,13 @@ class WidgetGenerationService:
             )
             artifact_validator = ArtifactValidator()
             validation_errors = artifact_validator.validate(artifact, protocol_profile)
+            validation_prompt_contexts = getattr(
+                artifact_validator,
+                "error_prompt_contexts",
+                [],
+            )
             if source_load_result:
+                trigger_mq(body={"validationScenarioFailure": 1})
                 source_write_roots = {
                     item.writeResultTo
                     for item in source_load_result.artifact.generationPlan.candidateDataBindings
@@ -777,14 +793,20 @@ class WidgetGenerationService:
                         validation_errors.append(
                             f"removed data path remains in edited genui: {removed_root}"
                         )
-            validation_issues = tuple(
-                QualityIssue(
-                    stage="validation",
-                    code="ARTIFACT_VALIDATION_FAILED",
-                    message=message,
+            validation_issues_list: list[QualityIssue] = []
+            for index, message in enumerate(validation_errors):
+                prompt_context: dict = {}
+                if index < len(validation_prompt_contexts):
+                    prompt_context = validation_prompt_contexts[index]
+                validation_issues_list.append(
+                    QualityIssue(
+                        stage="validation",
+                        code="ARTIFACT_VALIDATION_FAILED",
+                        message=message,
+                        prompt_context=prompt_context,
+                    )
                 )
-                for message in validation_errors
-            )
+            validation_issues = tuple(validation_issues_list)
             latest_processing_result = DslProcessingResult(
                 source_dsl=processing_result.source_dsl,
                 standard_dsl=processing_result.standard_dsl,
@@ -891,6 +913,7 @@ class WidgetGenerationService:
                 f"failure_category={failure_category} "
                 f"errors={json_for_log(errors)}"
             )
+            trigger_mq(body={"taskFailValidation": 1})
             response = GenerateWidgetCardResponse(
                 status=GenerationStatus.FAILED,
                 suggestSize=request.size,
@@ -912,6 +935,7 @@ class WidgetGenerationService:
             )
             return response
         if errors:
+            trigger_mq(body={"validationScenarioFailure": 1})
             logger.error(
                 f"{_MODULE} a2ui_generation_validation_failed_non_blocking "
                 f"protocol_profile_id={protocol_profile['id']} "
@@ -973,6 +997,7 @@ class WidgetGenerationService:
             f"artifact_url={artifact_save_result.artifactUrl} "
             f"removed_count={len(removed)} error_code={response_plan.errorCode}"
         )
+        trigger_mq(body={"taskSuccess": 1})
         response = GenerateWidgetCardResponse(
             status=response_plan.status,
             artifactUrl=artifact_save_result.artifactUrl,
@@ -1106,11 +1131,9 @@ class WidgetGenerationService:
             model_profile_id=A2UI_FORM_PROTOCOL_PROFILE_ID,
             model_format="a2ui-form",
         )
-        # 优先级：enable_card_template > enable_jsx_generation > 默认模型
-        # 模板方案开了走模板；否则 JSX 方案开了走 JSX（失败不 fallback）；否则走默认模型
+        # JSX 开关独立于模板开关
         try_template = self._enable_card_template()
-        try_jsx = (not try_template) and self._enable_jsx_generation()
-        # JSX 路径失败不 fallback 到默认模型
+        try_jsx = self._enable_jsx_generation()
         need_fallback = not try_jsx
         template_source_generator = (
             TemplateSourceGenerator()
@@ -1170,12 +1193,13 @@ class WidgetGenerationService:
             request,
             policy,
             before_model_call=before_model_call,
+            try_jsx=self._enable_jsx_generation(),
             template_source_generator=(
                 TemplateSourceGenerator()
                 if self._enable_card_template()
                 else None
             ),
-            need_fallback=True,
+            need_fallback=not self._enable_jsx_generation(),
         )
 
     async def generate_widget_card_terse_dsl_nested2(

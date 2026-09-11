@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2026-2026. All rights reserved.
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
 
 from custom.model_transport import ModelBackend
 from services.card_validation import (
@@ -16,6 +16,7 @@ from services.compact_dsl_a2ui_converter import (
     repair_compact_dsl_binding_paths,
 )
 from services.protocol_registry import A2UIProtocolRegistry
+from utils.trigger_mq import trigger_mq
 
 IssueStage = Literal["conversion", "validation"]
 IssueSeverity = Literal["error", "warning"]
@@ -36,17 +37,20 @@ class QualityIssue:
     code: str
     message: str
     severity: IssueSeverity = "error"
+    prompt_context: dict[str, Any] = field(default_factory=dict)
 
     def repair_message(self) -> str:
         return f"[stage={self.stage} code={self.code}] {self.message}"
 
-    def to_prompt_payload(self) -> dict[str, str]:
+    def to_prompt_payload(self) -> dict[str, Any]:
         """把质量问题转换为 repair user 消息中的稳定结构。"""
-        return {
+        payload: dict[str, Any] = {
             "stage": self.stage,
             "code": self.code,
             "message": self.message,
         }
+        payload.update(self.prompt_context)
+        return payload
 
 
 @dataclass(frozen=True)
@@ -130,6 +134,7 @@ class DesignCompactProcessor:
                 card_spec=context.card_spec,
             )
         except CompactDslConversionError as exc:
+            trigger_mq(body={"taskFailValidation": 1})
             return self._validation_failure(source_dsl, (str(exc),))
 
         try:

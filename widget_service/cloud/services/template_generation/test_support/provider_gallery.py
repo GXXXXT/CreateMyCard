@@ -27,12 +27,11 @@ from models.artifact import WidgetArtifact
 from models.generation import ModelRequestContext
 from models.service import ArtifactSaveResult
 from services.artifact_store import ArtifactStore
-from services.template_generation.controls import load_template_controls
+from services.template_generation.controls import TemplateControls, load_template_controls
 from services.widget_generation_service import WidgetGenerationService
 
 INPUT_SCHEMA_VERSION = "provider-template-gallery-input/4"
 OUTPUT_SCHEMA_VERSION = "provider-template-gallery-output/2"
-DEFAULT_PRD_VERSION = "11.7.5.205"
 FUSION_PRD_VERSION = "11.7.5.206"
 DEFAULT_ROM_VERSION = "6.0"
 DEFAULT_BUNDLE_NAME = "com.huawei.genui.evaluation"
@@ -142,7 +141,6 @@ _ACTION_QUERIES_BY_BUSINESS = {
 
 _ASSET_IDS_BY_TEMPLATE_PREFIX = {
     "BatteryOverview": ("asset.battery_leaf_fill",),
-    "BluetoothDeviceOverviewCaseStatus": ("asset.earphone_case_16644",),
     "HeartRateOverviewIcon": ("asset.heart_fill",),
     "HeartRateOverviewUpdatedIcon": ("asset.heart_fill",),
     "ScheduleOverviewNextEventHero": ("asset.calendar_fill",),
@@ -165,9 +163,6 @@ _ASSET_IDS_BY_TEMPLATE_PREFIX = {
         "asset.location_north_up_right_fill",
         "asset.icon_meeting",
     ),
-    "BluetoothDeviceOverviewCaseStatusCompact": (
-        "asset.earphone_case_16644",
-    ),
     "BluetoothDeviceOverviewEarbudsSupport": (
         "asset.icon_earphone",
     ),
@@ -179,8 +174,29 @@ _ASSET_IDS_BY_TEMPLATE_PREFIX = {
 }
 
 _ASSET_SEARCH_TERMS_BY_TEMPLATE_PREFIX = {
-    "WeatherOverview": ("weather", "天气"),
+    # 当前单业务样例为多云；指定素材版本没有对应状态资源，不能下发晴雨等不匹配图标。
+    "WeatherOverview": (),
 }
+
+# 双业务画廊使用独立测试素材，不把另一业务的候选当作通用图标。
+_SUPPORT_ASSET_IDS_BY_TEMPLATE = {
+    "BatteryOverviewSupport@1": ("asset.icon_phone",),
+    "BatteryOverviewStatusSupport@1": ("asset.bolt_fill",),
+    "WeatherOverviewTemperatureSupport@1": ("asset.icon_weather_thermometer",),
+    "ActivityOverviewSupport@1": ("asset.figure_run",),
+    "WorkoutOverviewSupport@1": ("asset.figure_run",),
+    "SleepOverviewSupport@1": ("asset.moon_z_fill_1",),
+    "HeartRateOverviewSupport@1": ("asset.heart_fill",),
+    "BluetoothDeviceOverviewEarbudsSupport@1": ("asset.icon_earphone",),
+    "BluetoothDeviceOverviewChargeSupport@1": ("asset.earphone_case_16644",),
+    "BluetoothDeviceOverviewConnectionSupport@1": ("asset.icon_earphone",),
+    "ScheduleOverviewTimeSupport@1": ("asset.calendar_fill",),
+    "ScheduleOverviewLocationSupport@1": ("asset.calendar_fill",),
+    "ScheduleOverviewStartTimeSupport@1": ("asset.calendar_fill",),
+    "ScheduleOverviewDateSupport@1": ("asset.calendar_fill",),
+}
+# 指定版本没有多云状态图标；样例保持多云，允许使用独立表达气温的温度计。
+_SUPPORT_WEATHER_CONDITION = "多云"
 
 _CALENDAR_NEXT_EVENT_RUNTIME_FIELDS = ("/events/0/dtStart",)
 _WORKOUT_RUNTIME_FIELDS = ("/exerciseEndTimeText",)
@@ -211,6 +227,7 @@ class GalleryInputCase(BaseModel):
     expectedTemplateSuffix: str
     targetTemplateId: str = ""
     targetTemplateDescription: str = ""
+    partnerTemplateId: str = ""
     requestFile: str
     missingReason: str = ""
 
@@ -245,6 +262,7 @@ class ProviderTemplateDefinition:
     description: str
     suffix: str
     fields: tuple[str, ...]
+    supported_event_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -264,6 +282,28 @@ class BusinessDefinition:
     def fallback_fields(self) -> tuple[str, ...]:
         values = [field for template in self.templates for field in template.fields]
         return _ordered_unique(values)
+
+
+@dataclass(frozen=True)
+class GalleryTemplateSelection:
+    """一个业务及其用于画廊布局位置的正式模板。"""
+
+    business: BusinessDefinition
+    template: ProviderTemplateDefinition
+
+
+@dataclass(frozen=True)
+class GalleryTemplatePair:
+    """固定顺序的双业务组合，不使用同一数据能力重复占位。"""
+
+    title: GalleryTemplateSelection
+    content: GalleryTemplateSelection
+
+    @property
+    def slug(self) -> str:
+        title_id = self.title.template.template_id
+        content_id = self.content.template.template_id
+        return f"{_kebab_case(title_id)}--{_kebab_case(content_id)}"
 
 
 @dataclass(frozen=True)
@@ -289,12 +329,6 @@ class GalleryAppearance:
 
 
 _GALLERY_APPEARANCES = (
-    GalleryAppearance(
-        appearance_id="standard",
-        appearance_name="非融球",
-        prd_ver=DEFAULT_PRD_VERSION,
-        fusion_enabled=False,
-    ),
     GalleryAppearance(
         appearance_id="fusion",
         appearance_name="融球",
@@ -365,6 +399,8 @@ def _template_suffix(template_id: str) -> str:
     for suffix in (
         "WideHero",
         "WideFull",
+        "HeroTitle",
+        "HeroContent",
         "Support",
         "Compact",
         "Hero",
@@ -426,6 +462,7 @@ def _template_definition(template: dict[str, Any]) -> ProviderTemplateDefinition
         description=str(template.get("description") or "").strip(),
         suffix=_template_suffix(template_id),
         fields=_ordered_unique([str(item) for item in fields]),
+        supported_event_ids=tuple(template.get("supportedEventIds", ())),
     )
 
 
@@ -522,6 +559,8 @@ def _data_binding(
         )
     if template is not None and template.template_id.startswith("ScheduleOverviewNextEvent"):
         fields = _ordered_unique([*configured_fields, *_CALENDAR_NEXT_EVENT_RUNTIME_FIELDS])
+    if template_id == "ScheduleOverviewTimeSupport@1":
+        fields = _ordered_unique([*fields, "/events/0/dtEnd"])
     if definition.business_id == "WorkoutOverview":
         fields = _ordered_unique([*fields, *_WORKOUT_RUNTIME_FIELDS])
     if definition.business_id == "BluetoothDeviceOverview":
@@ -538,6 +577,9 @@ def _candidate_asset_ids(
     target_template: ProviderTemplateDefinition | None,
     asset_capabilities: dict[str, dict[str, Any]],
 ) -> list[str]:
+    if target_template is not None and target_template.suffix == "Support":
+        asset_ids = _SUPPORT_ASSET_IDS_BY_TEMPLATE.get(target_template.template_id, ())
+        return [asset_id for asset_id in asset_ids if asset_id in asset_capabilities]
     template_ids = [
         template.template_id
         for template in (target_template,)
@@ -615,6 +657,8 @@ def _gallery_sample_overrides(
     )
     if weather_displays_temperature:
         sample_overrides["/data/weather/current/temperatureText"] = "29°"
+    if weather_template is not None and weather_template.suffix == "Support":
+        sample_overrides["/data/weather/current/condition"] = _SUPPORT_WEATHER_CONDITION
     battery_template = next(
         (
             template
@@ -752,6 +796,14 @@ def _scenario_metadata(scenario_id: str) -> tuple[str, str, str]:
             "Hero",
         ),
         "single-content": ("单内容", "Full", "Full"),
+        "dual-one-action": (
+            "双业务 + 1 个 Action",
+            "HeroTitle + HeroContent + PillAction",
+            "HeroTitle + HeroContent",
+        ),
+        "dual-support-content": ("双段落 · 无操作", "TwoSupportLayout", "Support + Support"),
+        "dual-support-one-action": ("双段落 · 1 个操作", "TwoSupportLayout", "Support + Support"),
+        "dual-support-two-actions": ("双段落 · 2 个操作", "TwoSupportLayout", "Support + Support"),
     }
     scenario_metadata = metadata.get(scenario_id)
     if scenario_metadata is None:
@@ -923,6 +975,23 @@ def write_gallery_input_dataset(
                 cases=cases,
             )
         )
+    paired_provider = _paired_gallery_provider(
+        output_root,
+        definitions,
+        controls,
+        data_capability_ids,
+        event_capabilities,
+        asset_capabilities,
+        fusion_business_ids,
+    )
+    if paired_provider.cases:
+        providers.append(paired_provider)
+    support_provider = _support_gallery_provider(
+        output_root, definitions, controls, data_capability_ids,
+        event_capabilities, asset_capabilities,
+    )
+    if support_provider.cases:
+        providers.append(support_provider)
     manifest = GalleryInputManifest(providers=providers)
     output_root.mkdir(parents=True, exist_ok=True)
     manifest_path = output_root / "manifest.json"
@@ -931,6 +1000,320 @@ def write_gallery_input_dataset(
         encoding="utf-8",
     )
     return manifest
+
+
+def _gallery_template_pairs(
+    definitions: list[BusinessDefinition],
+) -> list[GalleryTemplatePair]:
+    titles: list[GalleryTemplateSelection] = []
+    contents: list[GalleryTemplateSelection] = []
+    for definition in definitions:
+        for template in definition.templates:
+            selection = GalleryTemplateSelection(definition, template)
+            if template.suffix == "HeroTitle":
+                titles.append(selection)
+            elif template.suffix == "HeroContent":
+                contents.append(selection)
+    pairs: list[GalleryTemplatePair] = []
+    for title in titles:
+        for content in contents:
+            if title.business.capability_id == content.business.capability_id:
+                continue
+            title_root = title.business.data_domain.rstrip("/")
+            content_root = content.business.data_domain.rstrip("/")
+            if title_root == content_root:
+                continue
+            overlaps = title_root.startswith(content_root + "/")
+            overlaps = overlaps or content_root.startswith(title_root + "/")
+            if overlaps:
+                continue
+            pairs.append(GalleryTemplatePair(title, content))
+    return pairs
+
+
+def _support_template_pairs(
+    definitions: list[BusinessDefinition],
+    controls: TemplateControls,
+    data_capability_ids: set[str],
+) -> list[GalleryTemplatePair]:
+    """每种 Support 至少作为首段一次；天气优先作搭档，不枚举全部排列。"""
+    selections: list[GalleryTemplateSelection] = []
+    for definition in definitions:
+        for template in definition.templates:
+            if template.suffix == "Support":
+                selections.append(GalleryTemplateSelection(definition, template))
+    partners = sorted(
+        selections,
+        key=lambda item: (item.business.capability_id != "ViewWeather", item.template.template_id),
+    )
+    pairs: list[GalleryTemplatePair] = []
+    for selection in selections:
+        for partner in partners:
+            if selection.business.capability_id == partner.business.capability_id:
+                continue
+            first_root = selection.business.data_domain.rstrip("/")
+            second_root = partner.business.data_domain.rstrip("/")
+            overlaps = first_root == second_root or first_root.startswith(second_root + "/")
+            if overlaps or second_root.startswith(first_root + "/"):
+                continue
+            partner_pair = GalleryTemplatePair(partner, partner)
+            if _paired_missing_reason(partner_pair, controls, data_capability_ids):
+                continue
+            pairs.append(GalleryTemplatePair(selection, partner))
+            break
+    return pairs
+
+
+def _paired_missing_reason(
+    pair: GalleryTemplatePair,
+    controls: TemplateControls,
+    data_capability_ids: set[str],
+) -> str:
+    for selection in (pair.title, pair.content):
+        reason = _missing_reason(
+            selection.template,
+            "dual-one-action",
+            capability_available=selection.business.capability_id in data_capability_ids,
+            provider_disabled=selection.business.provider_id in controls.disabled_provider_ids,
+            template_disabled=selection.template.template_id in controls.disabled_template_ids,
+        )
+        if reason:
+            return f"{selection.template.template_id}：{reason}"
+    return ""
+
+
+def _paired_request_envelope(
+    pair: GalleryTemplatePair,
+    appearance: GalleryAppearance,
+    event_capabilities: dict[str, dict[str, Any]],
+    asset_capabilities: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    # 按内容业务选择唯一动作，复用正式注册表映射和请求包络。
+    payload = _request_envelope(
+        pair.content.business,
+        pair.content.template,
+        "single-one-action",
+        appearance,
+        event_capabilities,
+        asset_capabilities,
+    )
+    content = payload.get("content")
+    if not isinstance(content, dict):
+        raise ValueError("gallery request content must be an object")
+    action_queries = _ACTION_QUERIES_BY_BUSINESS.get(pair.content.business.business_id)
+    if not action_queries:
+        raise ValueError("paired gallery content business requires a registered action")
+    user_query = (
+        f"生成一个2×2卡片，顶部用标题区域展示“{pair.title.template.description}”，"
+        f"中间内容区域展示“{pair.content.template.description}”，"
+        f"底部只放一个用于“{action_queries[0]}”的按钮。两个业务都必须保留。"
+    )
+    bindings: list[dict[str, Any]] = []
+    asset_ids: list[str] = []
+    sample_overrides: dict[str, Any] = {}
+    for selection in (pair.title, pair.content):
+        bindings.append(_data_binding(selection.business, selection.template))
+        for asset_id in _candidate_asset_ids(selection.template, asset_capabilities):
+            if asset_id not in asset_ids:
+                asset_ids.append(asset_id)
+        sample_overrides.update(_gallery_sample_overrides(selection.template))
+    business_name = f"{pair.title.business.business_name} + {pair.content.business.business_name}"
+    content.update(
+        candidateDataBindings=bindings,
+        candidateAssetIds=asset_ids,
+        title=f"{business_name}组合画廊",
+        description=f"{business_name}双业务模板画廊端到端验证",
+        userQuery=user_query,
+    )
+    payload["galleryTest"] = {"sampleOverrides": sample_overrides}
+    payload["utterance"] = {"original": user_query, "type": "text"}
+    payload["session"] = {
+        "interactionId": "1",
+        "isNew": True,
+        "sessionId": f"gallery-cross-business-{pair.slug}-{appearance.appearance_id}",
+    }
+    return payload
+
+
+def _paired_gallery_provider(
+    output_root: Path,
+    definitions: list[BusinessDefinition],
+    controls: TemplateControls,
+    data_capability_ids: set[str],
+    event_capabilities: dict[str, dict[str, Any]],
+    asset_capabilities: dict[str, dict[str, Any]],
+    fusion_business_ids: set[str],
+) -> GalleryInputProvider:
+    # 仅用于画廊分组，不注册或伪造生产 Provider / 数据能力。
+    provider = GalleryInputProvider(
+        providerId="gallery.cross-business",
+        providerName="跨业务组合",
+        providerSlug="cross-business",
+    )
+    scenario_id = "dual-one-action"
+    scenario_name, expected_layout, suffix = _scenario_metadata(scenario_id)
+    for pair in _gallery_template_pairs(definitions):
+        missing_reason = _paired_missing_reason(pair, controls, data_capability_ids)
+        business_id = f"{pair.title.business.business_id}--{pair.content.business.business_id}"
+        business_name = (
+            f"{pair.title.business.business_name} + {pair.content.business.business_name}"
+        )
+        for appearance in _GALLERY_APPEARANCES:
+            request_path = (
+                Path("providers")
+                / provider.providerSlug
+                / _kebab_case(business_id)
+                / pair.slug
+                / appearance.appearance_id
+                / f"{scenario_id}.json"
+            )
+            payload = _paired_request_envelope(
+                pair, appearance, event_capabilities, asset_capabilities
+            )
+            absolute_path = output_root / request_path
+            absolute_path.parent.mkdir(parents=True, exist_ok=True)
+            absolute_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            )
+            appearance_name = "高版本"
+            main_supports_fusion = pair.content.business.business_id in fusion_business_ids
+            expects_fusion = appearance.fusion_enabled and main_supports_fusion
+            effect_name = "融球" if expects_fusion else "非融球"
+            provider.cases.append(
+                GalleryInputCase(
+                    caseId=f"cross-business__{pair.slug}__{scenario_id}__{appearance.appearance_id}",
+                    providerId=provider.providerId,
+                    providerName=provider.providerName,
+                    providerSlug=provider.providerSlug,
+                    businessId=business_id,
+                    businessName=business_name,
+                    scenarioId=scenario_id,
+                    scenarioName=f"{appearance_name} · {scenario_name}",
+                    appearanceId=appearance.appearance_id,
+                    appearanceName=f"{appearance_name}（{effect_name}）",
+                    prdVer=appearance.prd_ver,
+                    expectsFusionBall=expects_fusion,
+                    expectedLayout=expected_layout,
+                    expectedTemplateSuffix=suffix,
+                    targetTemplateId=pair.title.template.template_id,
+                    targetTemplateDescription=pair.title.template.description,
+                    partnerTemplateId=pair.content.template.template_id,
+                    requestFile=request_path.as_posix(),
+                    missingReason=missing_reason,
+                )
+            )
+    return provider
+
+
+def _support_action_options(
+    pair: GalleryTemplatePair,
+    event_capabilities: dict[str, dict[str, Any]],
+) -> list[str]:
+    event_ids: list[str] = []
+    for selection in (pair.title, pair.content):
+        for event_id in selection.template.supported_event_ids:
+            if event_id in event_capabilities:
+                event_ids.append(event_id)
+                break
+    return event_ids
+
+
+def _support_request_envelope(
+    pair: GalleryTemplatePair,
+    scenario_id: str,
+    appearance: GalleryAppearance,
+    event_capabilities: dict[str, dict[str, Any]],
+    asset_capabilities: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    payload = _paired_request_envelope(pair, appearance, event_capabilities, asset_capabilities)
+    content = payload.get("content")
+    if not isinstance(content, dict):
+        raise ValueError("gallery request content must be an object")
+    action_count = _expected_action_count(scenario_id)
+    events: list[dict[str, Any]] = []
+    action_queries: list[str] = []
+    action_options = _support_action_options(pair, event_capabilities)
+    if action_count > len(action_options):
+        raise ValueError("support gallery has no feasible business Action assignment")
+    for event_id in action_options[:action_count]:
+        event = event_capabilities.get(event_id)
+        if event is None:
+            raise ValueError("support gallery event is not registered")
+        description = event.get("description")
+        if not isinstance(description, str) or not description:
+            raise ValueError("support gallery event description is missing")
+        events.append(_event_candidate(event_capabilities, event_id))
+        action_queries.append(description)
+    action_query = "不显示按钮，内容不绑定点击事件。"
+    if action_queries:
+        action_query = f"点击对应业务段落可执行操作：{'、'.join(action_queries)}，不另加按钮。"
+    query = (
+        f"生成一个2×2双业务卡片，上段展示“{pair.title.template.description}”，"
+        f"下段展示“{pair.content.template.description}”。"
+        "两个业务都必须保留，各用两行文字：一行主信息、一行辅助信息。"
+        + action_query
+    )
+    content.update(candidateEventCandidates=events, userQuery=query)
+    payload["utterance"] = {"original": query, "type": "text"}
+    payload["session"] = {
+        "interactionId": "1", "isNew": True,
+        "sessionId": f"gallery-two-support-{pair.slug}-{scenario_id}-{appearance.appearance_id}",
+    }
+    return payload
+
+
+def _support_gallery_provider(
+    output_root: Path,
+    definitions: list[BusinessDefinition],
+    controls: TemplateControls,
+    data_capability_ids: set[str],
+    event_capabilities: dict[str, dict[str, Any]],
+    asset_capabilities: dict[str, dict[str, Any]],
+) -> GalleryInputProvider:
+    provider = GalleryInputProvider(
+        providerId="gallery.two-support", providerName="双业务段落", providerSlug="two-support",
+    )
+    scenarios = ("dual-support-content", "dual-support-one-action", "dual-support-two-actions")
+    for pair in _support_template_pairs(definitions, controls, data_capability_ids):
+        missing_reason = _paired_missing_reason(pair, controls, data_capability_ids)
+        for scenario_id in scenarios:
+            if _expected_action_count(scenario_id) > len(
+                _support_action_options(pair, event_capabilities)
+            ):
+                continue
+            scenario_name, layout, suffix = _scenario_metadata(scenario_id)
+            for appearance in _GALLERY_APPEARANCES:
+                request_path = (
+                    Path("providers") / provider.providerSlug / pair.slug
+                    / appearance.appearance_id / f"{scenario_id}.json"
+                )
+                payload = _support_request_envelope(
+                    pair, scenario_id, appearance, event_capabilities, asset_capabilities,
+                )
+                absolute_path = output_root / request_path
+                absolute_path.parent.mkdir(parents=True, exist_ok=True)
+                absolute_path.write_text(
+                    json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+                )
+                provider.cases.append(GalleryInputCase(
+                    caseId=f"two-support__{pair.slug}__{scenario_id}__{appearance.appearance_id}",
+                    providerId=provider.providerId, providerName=provider.providerName,
+                    providerSlug=provider.providerSlug,
+                    businessId=f"{pair.title.business.business_id}--{pair.content.business.business_id}",
+                    businessName=(
+                        f"{pair.title.business.business_name} + "
+                        f"{pair.content.business.business_name}"
+                    ),
+                    scenarioId=scenario_id, scenarioName=f"高版本 · {scenario_name}",
+                    appearanceId=appearance.appearance_id, appearanceName="高版本（非融球）",
+                    prdVer=appearance.prd_ver, expectsFusionBall=False,
+                    expectedLayout=layout, expectedTemplateSuffix=suffix,
+                    targetTemplateId=pair.title.template.template_id,
+                    targetTemplateDescription=pair.title.template.description,
+                    partnerTemplateId=pair.content.template.template_id,
+                    requestFile=request_path.as_posix(), missingReason=missing_reason,
+                ))
+    return provider
 
 
 def load_gallery_input_manifest(input_root: Path) -> GalleryInputManifest:
@@ -969,7 +1352,7 @@ def _request_from_envelope(payload: dict[str, Any]) -> GenerateWidgetCardRequest
         interaction_id=interaction_id,
         device_id=device_info.deviceId or "template-gallery-device",
         country_code=device_info.countryCode or "CN",
-        app_version=device_info.prdVer or DEFAULT_PRD_VERSION,
+        app_version=device_info.prdVer or FUSION_PRD_VERSION,
         app_name=envelope.bundleName or DEFAULT_BUNDLE_NAME,
     )
     return request
@@ -1048,6 +1431,10 @@ def _expected_action_count(scenario_id: str) -> int:
         "single-two-actions": 2,
         "single-one-action": 1,
         "single-content": 0,
+        "dual-one-action": 1,
+        "dual-support-content": 0,
+        "dual-support-one-action": 1,
+        "dual-support-two-actions": 2,
     }[scenario_id]
 
 
@@ -1146,8 +1533,10 @@ class ProviderGalleryBatchRunner:
         request_path = _safe_request_path(input_root, case.requestFile)
         payload = json.loads(request_path.read_text(encoding="utf-8"))
         request = _request_from_envelope(payload)
-        trusted_template_candidate_ids = (
-            (case.targetTemplateId,) if case.targetTemplateId else ()
+        trusted_template_candidate_ids = tuple(
+            template_id
+            for template_id in (case.targetTemplateId, case.partnerTemplateId)
+            if template_id
         )
         trusted_template_action_ids = tuple(
             candidate.capabilityId for candidate in request.candidateEventCandidates or []
@@ -1212,6 +1601,10 @@ class ProviderGalleryBatchRunner:
         target_slug = _kebab_case(
             case.targetTemplateId.split("@", maxsplit=1)[0] or "missing-template"
         )
+        if case.partnerTemplateId:
+            target_slug = (
+                f"{_kebab_case(case.targetTemplateId)}--{_kebab_case(case.partnerTemplateId)}"
+            )
         relative_path = (
             Path("providers")
             / case.providerSlug
@@ -1265,7 +1658,7 @@ class ProviderGalleryBatchRunner:
             "expectedTemplateSuffix": case.expectedTemplateSuffix,
             "targetTemplateId": case.targetTemplateId,
             "targetTemplateDescription": case.targetTemplateDescription,
-            "partnerTemplateId": "",
+            "partnerTemplateId": case.partnerTemplateId,
             "requestFile": case.requestFile,
             "status": status,
             "generationStatus": generation_status,
