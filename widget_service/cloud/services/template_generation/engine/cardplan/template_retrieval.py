@@ -27,6 +27,7 @@ from .registry import CardPlanRegistry
 from .retrieval_index import FieldToken, TemplateVariantSearchRecord
 
 _MAX_COMPONENT_TEMPLATE_CANDIDATES = 24
+_GENERIC_SCALAR_TYPES = frozenset({"string", "integer", "number", "boolean"})
 
 
 class TemplateRetrievalMiss(ValueError):
@@ -182,12 +183,138 @@ def retrieve_template_variants(
         for component_id, template_paths in component_templates.items():
             by_component.setdefault(component_id, set()).update(template_paths)
 
+    # Specialized health components can all match the same summary capability.
+    # Prefer the specialized component whose single Template covers the most
+    # requested fields, then use GenericMetricOverview only for the residual
+    # fields.  Generic is a bounded fallback slot, never the primary business.
+    repeated_generic_compact_slots = False
+    primary_health: str | None = None
+    primary_template_ids: set[str] = set()
+    if task_spec.size == "2x4":
+        health_ids = {
+            "ActivityOverview", "WorkoutOverview", "HeartRateOverview",
+            "SleepOverview", "GenericMetricOverview",
+        }
+        selected_health = health_ids.intersection(by_component)
+        if len(selected_health) >= 2 and "GenericMetricOverview" in by_component:
+            specialized_health = sorted(selected_health - {"GenericMetricOverview"})
+            primary_coverage = 0
+            for component_id in specialized_health:
+                component_ids = by_component[component_id]
+                coverage_by_template = {
+                    template_id: sum(template_id in group for group in required_groups)
+                    for template_id in component_ids
+                }
+                component_coverage = max(coverage_by_template.values(), default=0)
+                best_ids = {
+                    template_id
+                    for template_id, coverage in coverage_by_template.items()
+                    if coverage == component_coverage
+                }
+                # Stable tie-breaking keeps the richer domain view ahead of a
+                # single-purpose metric view.
+                priority = {
+                    "SleepOverview": 0,
+                    "ActivityOverview": 1,
+                    "WorkoutOverview": 2,
+                    "HeartRateOverview": 3,
+                }.get(component_id, 9)
+                current_priority = {
+                    "SleepOverview": 0,
+                    "ActivityOverview": 1,
+                    "WorkoutOverview": 2,
+                    "HeartRateOverview": 3,
+                }.get(primary_health or "", 9)
+                if component_coverage > primary_coverage or (
+                    component_coverage == primary_coverage and priority < current_priority
+                ):
+                    primary_health = component_id
+                    primary_template_ids = best_ids
+                    primary_coverage = component_coverage
+
+            for component_id in selected_health:
+                if component_id not in {"GenericMetricOverview", primary_health}:
+                    by_component.pop(component_id, None)
+
+            if primary_health is not None:
+                by_component[primary_health].intersection_update(primary_template_ids)
+
+            generic_ids = by_component["GenericMetricOverview"]
+            residual_groups: list[tuple[str, ...]] = []
+            generic_field_count = 0
+            for group in required_groups:
+                group_ids = set(group)
+                if primary_template_ids.intersection(group_ids):
+                    # The specialized primary owns this field; do not also
+                    # advertise it as a Generic parameter candidate.
+                    residual_groups.append(
+                        tuple(item for item in group if item not in generic_ids)
+                    )
+                    continue
+                residual_groups.append(group)
+                if generic_ids.intersection(group_ids):
+                    generic_field_count += 1
+            required_groups = residual_groups
+            if generic_field_count > 2:
+                logger.info(
+                    "[Template Retrieval] generic_capacity_exceeded "
+                    f"primary_component={primary_health} "
+                    f"primary_coverage={primary_coverage} "
+                    f"residual_field_count={generic_field_count} capacity=2"
+                )
+                raise TemplateRetrievalMiss(
+                    "generic compact capacity cannot cover all residual requested fields"
+                )
+            if generic_field_count == 0:
+                by_component.pop("GenericMetricOverview", None)
+                generic_ids = set()
+            preferred_generic_name = "GenericMetricOverviewCompact@1"
+            if generic_ids and preferred_generic_name in generic_ids:
+                # Generic Compact is repeatable. For two residual metrics, keep
+                # two separate Compact slots so 2x4 can use the existing
+                # WideFullTwoCompactLayout instead of a dedicated Full+Compact
+                # layout. The repeated slot marker is materialized below in
+                # required_groups; componentCandidates remains de-duplicated.
+                by_component["GenericMetricOverview"] = {preferred_generic_name}
+                repeated_generic_compact_slots = generic_field_count >= 2
+            logger.info(
+                "[Template Retrieval] specialized_primary_selected "
+                f"component_id={primary_health} coverage={primary_coverage} "
+                f"template_ids={sorted(primary_template_ids)} "
+                f"generic_residual_count={generic_field_count}"
+            )
+
+            # Current 2x4 layouts provide three visible slots in total.  With
+            # an explicit Action, only two slots remain for business content.
+            # Do not silently discard the specialized primary or pretend that
+            # a bounded Generic Compact covers an arbitrary number of fields.
+            required_slot_count = len(by_component) + action_count
+            if action_count and len(by_component) > 2:
+                requested_fields = {
+                    capability_id: list(paths)
+                    for capability_id, paths in query.required_output_fields_by_capability.items()
+                }
+                logger.info(
+                    "[Template Retrieval] layout_capacity_exceeded "
+                    f"card_size=2x4 available_slot_count=3 "
+                    f"required_slot_count={required_slot_count} "
+                    f"business_components={sorted(by_component)} "
+                    f"action_count={action_count} "
+                    f"requested_fields={json_for_log(requested_fields)}"
+                )
+                raise TemplateRetrievalMiss(
+                    "2x4 layout capacity is insufficient for the specialized primary, "
+                    "generic residual metrics, and selected Action"
+                )
+
     candidates = tuple(
         TemplateComponentCandidate(
             componentId=component_id,
             availableTemplateIds=tuple(sorted(template_ids)),
         )
-        for component_id, template_ids in sorted(by_component.items())
+        for component_id, template_ids in sorted(
+            by_component.items(), key=_component_candidate_order_key
+        )
     )
     resolved_theme_id = query.theme_id
     if task_spec.size == "2x2":
@@ -202,6 +329,31 @@ def retrieve_template_variants(
             for candidate in candidates
         )
         required_groups = [candidate.available_template_ids for candidate in candidates]
+        if repeated_generic_compact_slots and primary_health is not None:
+            primary_group = next(
+                (
+                    candidate.available_template_ids
+                    for candidate in candidates
+                    if candidate.component_id == primary_health
+                ),
+                (),
+            )
+            generic_group = next(
+                (
+                    candidate.available_template_ids
+                    for candidate in candidates
+                    if candidate.component_id == "GenericMetricOverview"
+                ),
+                (),
+            )
+            if primary_group and generic_group:
+                required_groups = [primary_group, generic_group, generic_group]
+    logger.info(
+        "[Template Retrieval] candidate_groups_resolved "
+        f"group_count={len(required_groups)} "
+        f"groups={json_for_log([list(group) for group in required_groups])} "
+        f"repeated_generic_compact_slots={repeated_generic_compact_slots}"
+    )
     scope = AdvancedScopeBrief(
         themeId=resolved_theme_id,
         advancedComponentIds=tuple(candidate.component_id for candidate in candidates),
@@ -211,7 +363,20 @@ def retrieve_template_variants(
         componentCandidates=candidates,
         actionIds=query.action_ids,
         requiredTemplateGroups=tuple(required_groups),
+        requiredOutputFieldsByCapability=query.required_output_fields_by_capability,
     )
+
+
+def _component_candidate_order_key(
+    item: tuple[str, set[str]],
+) -> tuple[int, str]:
+    """Place the visually larger business before Compact-only support slots."""
+    component_id, template_ids = item
+    compact_only = all(
+        provider_template_layout_kind(template_id) == "Compact"
+        for template_id in template_ids
+    )
+    return (1 if compact_only else 0, component_id)
 
 
 def restrict_query_to_preferred_templates(
@@ -463,7 +628,23 @@ def _component_templates_for_capability(
                 continue
             if not _template_required_fields_are_available(record, task_spec, card_spec):
                 continue
-            matches[record.template_id] = _record_available_query_paths(record, query_tokens)
+            if business_id == "GenericMetricOverview" and task_spec.size == "2x4":
+                # Generic Compact templates deliberately have no fixed field
+                # allowlist in the 2x4 residual-composition route. Their path
+                # props are constrained by the current candidate output fields
+                # and the token type check above. Generic is deliberately not
+                # admitted as a second business in 2x2, where the existing
+                # single-business layout contract must remain unchanged.
+                matches[record.template_id] = frozenset(
+                    token.path
+                    for token in query_tokens
+                    if token.path in provided_output_fields
+                    and token.data_type in _GENERIC_SCALAR_TYPES
+                )
+            else:
+                matches[record.template_id] = _record_available_query_paths(
+                    record, query_tokens
+                )
         if query_tokens:
             matches = {template_id: paths for template_id, paths in matches.items() if paths}
         limited_matches: dict[str, frozenset[str]] = {}
@@ -578,7 +759,14 @@ def _template_record_evaluation(
             }
         )
 
-    matched_user_fields = _record_available_query_paths(record, query_tokens)
+    if record.business_id == "GenericMetricOverview" and task_spec.size == "2x4":
+        # GenericMetricOverview has no fixed provider field list on the wide
+        # residual route. Its candidate fields are validated before this
+        # diagnostic is built, so report the requested scalar paths as covered
+        # instead of using the empty metadata allowlist.
+        matched_user_fields = frozenset(token.path for token in query_tokens)
+    else:
+        matched_user_fields = _record_available_query_paths(record, query_tokens)
     unmatched_user_fields = sorted(token.path for token in query_tokens)
     unmatched_user_fields = [
         path for path in unmatched_user_fields if path not in matched_user_fields

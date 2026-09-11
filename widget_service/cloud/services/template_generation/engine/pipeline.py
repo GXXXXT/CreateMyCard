@@ -188,6 +188,9 @@ async def generate_template_a2ui(
             scope=scope,
             component_candidates=selection.component_candidates,
             required_template_groups=selection.required_template_groups,
+            required_output_fields_by_capability=(
+                selection.required_output_fields_by_capability
+            ),
             registry=registry,
             model_client=model_client,
         )
@@ -327,6 +330,7 @@ async def _generate_selected_templates(
     scope: AdvancedScopeBrief,
     component_candidates: tuple[TemplateComponentCandidate, ...],
     required_template_groups: tuple[tuple[str, ...], ...],
+    required_output_fields_by_capability: dict[str, tuple[str, ...]],
     registry: CardPlanRegistry,
     model_client: Any,
 ) -> TemplateEngineOutput:
@@ -334,6 +338,7 @@ async def _generate_selected_templates(
         source_task_spec,
         effective_capability_ids,
         scope.advanced_component_ids,
+        required_output_fields_by_capability=required_output_fields_by_capability,
     )
     projected_task_spec = _with_provider_template_runtime_data(
         source_task_spec,
@@ -477,15 +482,27 @@ def _with_provider_template_runtime_data(
                     if isinstance(validation, dict):
                         validation[component_id] = component_projection
                 changed = True
-            provider_paths = tuple(
-                dict.fromkeys(
-                    (
-                        *definition.required_data,
-                        *definition.optional_data,
-                        *(binding.path for binding in definition.bindings.values()),
+            if component_id == "GenericMetricOverview" and isinstance(
+                component_projection, dict
+            ):
+                # Generic templates are intentionally not tied to a provider
+                # field list. Copy the selected scalar leaves back to their
+                # provider root so the generated path bindings remain valid.
+                provider_paths = tuple(
+                    f"/{field_name}"
+                    for field_name in component_projection
+                    if isinstance(field_name, str) and field_name
+                )
+            else:
+                provider_paths = tuple(
+                    dict.fromkeys(
+                        (
+                            *definition.required_data,
+                            *definition.optional_data,
+                            *(binding.path for binding in definition.bindings.values()),
+                        )
                     )
                 )
-            )
             for relative_path in provider_paths:
                 path = f"{root.rstrip('/')}{relative_path}"
                 value = _pointer_value(source.dataModelSchema, path)

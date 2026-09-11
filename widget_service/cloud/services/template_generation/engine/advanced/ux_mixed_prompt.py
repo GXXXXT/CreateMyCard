@@ -51,6 +51,7 @@ _WEATHER_BUILTIN_ASSETS = (
 )
 _MAX_UX_MIXED_PROMPT_CHARS = 24_000
 _PILL_ACTION_TEMPLATE_ID = "PillAction@1"
+_COMPACT_ACTION_TEMPLATE_ID = "CompactAction@1"
 _ICON_ACTION_TEMPLATE_ID = "IconAction@1"
 _LARGE_ICON_ACTION_TEMPLATE_ID = "LargeIconAction@1"
 
@@ -416,6 +417,10 @@ def build_ux_mixed_prompt(
         )
         for component_id, template_ids in candidate_ids_by_component.items()
     )
+    candidate_groups = _candidate_groups_for_prompt(
+        effective_component_candidates,
+        effective_required_template_groups,
+    )
     action_template_ids = (
         layout_selection.action_template_ids if selected_action_ids else ()
     )
@@ -461,6 +466,13 @@ def build_ux_mixed_prompt(
     )
     selected_actions = _selected_action_candidates(contract)
     asset_candidates = _asset_prompt_candidates(task_spec, contract)
+    candidate_group_guidance = (
+        "candidateGroups 中每一组对应一个独立布局槽位；同一个通用组件可以在多个槽位实例化。"
+        "本用例必须按槽位顺序选择 Full、Compact、Compact，并由布局根承载。"
+        if tuple(item["layoutKind"] for item in candidate_groups)
+        == ("Full", "Compact", "Compact")
+        else "candidateGroups 中每一组对应一个独立布局槽位；严格按槽位顺序选择并组合模板。"
+    )
     user = "\n".join(
         (
             "themeId=" + json.dumps(base.theme_id, ensure_ascii=False),
@@ -475,6 +487,9 @@ def build_ux_mixed_prompt(
                 ],
                 ensure_ascii=False,
             ),
+            "candidateGroups="
+            + json.dumps(candidate_groups, ensure_ascii=False),
+            candidate_group_guidance,
             "templateContracts="
             + json.dumps(business_template_contracts, ensure_ascii=False),
             "allowedUxLayouts=" + json.dumps(allowed_layout_ids, ensure_ascii=False),
@@ -552,6 +567,38 @@ def _layout_prompt_contracts(
             }
         )
     return tuple(result)
+
+
+def _candidate_groups_for_prompt(
+    candidates: tuple[TemplateComponentCandidate, ...],
+    required_groups: tuple[tuple[str, ...], ...],
+) -> tuple[dict[str, Any], ...]:
+    """Expose repeated template slots without duplicating component candidates."""
+    candidate_ids_by_component = {
+        candidate.component_id: set(candidate.available_template_ids)
+        for candidate in candidates
+    }
+    groups: list[dict[str, Any]] = []
+    for slot_index, template_group in enumerate(required_groups):
+        template_ids = tuple(template_group)
+        matching_components = tuple(
+            component_id
+            for component_id, available_ids in candidate_ids_by_component.items()
+            if set(template_ids).intersection(available_ids)
+        )
+        groups.append(
+            {
+                "slotIndex": slot_index,
+                "componentId": matching_components[0] if matching_components else "",
+                "availableTemplateIds": list(template_ids),
+                "layoutKind": (
+                    provider_template_layout_kind(template_ids[0])
+                    if template_ids
+                    else ""
+                ),
+            }
+        )
+    return tuple(groups)
 
 
 def _selected_action_candidates(
@@ -650,8 +697,11 @@ def _layout_output_option(
         "WideSingleFocusLayout": "WideHero" if selected_actions else "WideFull",
         "WideFullOnlyLayout": "WideFull",
         "WideTwoFullLayout": "Full",
+        "WideHeroCompactLayout": "Hero",
         "WideFullHeroActionLayout": "Full",
+        "WideHeroActionFullLayout": "Full",
         "WideFullTwoCompactLayout": "Full",
+        "WideFourCompactLayout": "Compact",
         "WideFullHeroTwoActionLayout": "Full",
         "WideFullFourActionLayout": "Full",
         "WideTwoHalfLayout": "WideHalf",
@@ -659,13 +709,27 @@ def _layout_output_option(
         "WideHalfCompactTwoLargeActionLayout": "WideHalf",
         "WideHalfFourLargeActionLayout": "WideHalf",
     }[layout_id]
-    business_template_ids = tuple(
-        tuple(
-            template_id
-            for template_id in group
-            if provider_template_layout_kind(template_id) == layout_kind
+    slot_layout_kinds = {
+        "WideHeroCompactLayout": ("Hero", "Compact"),
+        "WideFullTwoCompactLayout": ("Full", "Compact"),
+        "WideFourCompactLayout": ("Compact",) * 4,
+    }.get(layout_id)
+    business_template_ids = (
+        required_template_groups
+        if layout_id == "WideFullTwoCompactLayout"
+        else tuple(
+            tuple(
+                template_id
+                for template_id in group
+                if provider_template_layout_kind(template_id)
+                == (
+                    slot_layout_kinds[index]
+                    if slot_layout_kinds is not None and index < len(slot_layout_kinds)
+                    else layout_kind
+                )
+            )
+            for index, group in enumerate(required_template_groups)
         )
-        for group in required_template_groups
     )
     action_template_id = {
         "HeroActionLayout": _PILL_ACTION_TEMPLATE_ID,
@@ -673,6 +737,8 @@ def _layout_output_option(
         "CompactTwoActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideSingleFocusLayout": _PILL_ACTION_TEMPLATE_ID if selected_actions else None,
         "WideFullHeroActionLayout": _PILL_ACTION_TEMPLATE_ID,
+        "WideHeroActionFullLayout": _PILL_ACTION_TEMPLATE_ID,
+        "WideFullTwoCompactLayout": _COMPACT_ACTION_TEMPLATE_ID,
         "WideFullHeroTwoActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideFullFourActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
         "WideHalfCompactTwoLargeActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
@@ -701,10 +767,12 @@ def _action_output_syntax(
     action_template_id: str,
     action: dict[str, str],
 ) -> str:
-    if action_template_id in {
-        _ICON_ACTION_TEMPLATE_ID,
-        _LARGE_ICON_ACTION_TEMPLATE_ID,
-    }:
+    if action_template_id == _COMPACT_ACTION_TEMPLATE_ID:
+        props = {
+            **action,
+            "icon": "<one semantically matching trustedAssetSource>",
+        }
+    elif action_template_id in {_ICON_ACTION_TEMPLATE_ID, _LARGE_ICON_ACTION_TEMPLATE_ID}:
         props = {
             "actionId": action["actionId"],
             "icon": "<one semantically matching trustedAssetSource>",
@@ -777,15 +845,69 @@ def _second_layer_layout_selection(
                 "WideSingleFocusLayout", ("WideHero",), (_PILL_ACTION_TEMPLATE_ID,)
             )
         elif (component_count, action_count) == (2, 0):
+            if (
+                len(group_kinds) >= 3
+                and "Full" in group_kinds[0]
+                and "Compact" in group_kinds[1]
+                and "Compact" in group_kinds[2]
+            ):
+                layout_id, kinds, actions = (
+                    "WideFullTwoCompactLayout", ("Full", "Compact"), ()
+                )
+            elif len(group_kinds) >= 2 and "Compact" in group_kinds[1]:
+                if "Full" in group_kinds[0]:
+                    raise ValueError(
+                        "2x4 Full + Compact composition is not supported; use WideFullTwoCompactLayout with two Compact children"
+                    )
+                elif "Hero" in group_kinds[0]:
+                    layout_id, kinds, actions = (
+                        "WideHeroCompactLayout", ("Hero", "Compact"), ()
+                    )
+                else:
+                    raise ValueError(
+                        "2x4 primary business must provide Full or Hero beside Compact"
+                    )
+            else:
+                layout_id, kinds, actions = (
+                    ("WideTwoHalfLayout", ("WideHalf", "WideHalf"), ())
+                    if has_half(0) and has_half(1)
+                    else ("WideTwoFullLayout", ("Full", "Full"), ())
+                )
+        elif (component_count, action_count) == (4, 0):
+            if not all("Compact" in kinds for kinds in group_kinds):
+                raise ValueError(
+                    "2x4 four-Compact layout requires four Compact business templates"
+                )
             layout_id, kinds, actions = (
-                ("WideTwoHalfLayout", ("WideHalf", "WideHalf"), ())
-                if has_half(0) and has_half(1)
-                else ("WideTwoFullLayout", ("Full", "Full"), ())
+                "WideFourCompactLayout", ("Compact",) * 4, ()
             )
         elif (component_count, action_count) == (2, 1):
-            layout_id, kinds, actions = (
-                "WideFullHeroActionLayout", ("Full", "Hero"), (_PILL_ACTION_TEMPLATE_ID,)
-            )
+            if len(group_kinds) >= 2 and "Compact" in group_kinds[1]:
+                if "Full" in group_kinds[0]:
+                    selection = _SecondLayerLayoutSelection(
+                        layout_ids=("WideFullTwoCompactLayout",),
+                        layout_kinds=("Full",),
+                        action_template_ids=(_COMPACT_ACTION_TEMPLATE_ID,),
+                        business_layout_kinds=("Full", "Compact"),
+                    )
+                elif "Hero" in group_kinds[0]:
+                    selection = _SecondLayerLayoutSelection(
+                        layout_ids=("WideFullTwoCompactLayout",),
+                        layout_kinds=("Hero",),
+                        action_template_ids=(_COMPACT_ACTION_TEMPLATE_ID,),
+                        business_layout_kinds=("Hero", "Compact"),
+                    )
+                else:
+                    raise ValueError(
+                        "2x4 primary business must provide Full or Hero beside Compact"
+                    )
+            else:
+                selection = _SecondLayerLayoutSelection(
+                    layout_ids=("WideFullHeroActionLayout", "WideHeroActionFullLayout"),
+                    layout_kinds=("Full", "Full"),
+                    action_template_ids=(_PILL_ACTION_TEMPLATE_ID,),
+                    business_layout_kinds=("Full", "Hero"),
+                )
         elif (component_count, action_count) == (3, 0):
             layout_id, kinds, actions = (
                 ("WideHalfTwoCompactLayout", ("WideHalf", "Compact", "Compact"), ())
@@ -814,12 +936,13 @@ def _second_layer_layout_selection(
             )
         else:
             raise ValueError("2x4 Template candidates do not fit one supported layout")
-        selection = _SecondLayerLayoutSelection(
-            layout_ids=(layout_id,),
-            layout_kinds=(kinds[0],),
-            action_template_ids=actions,
-            business_layout_kinds=kinds,
-        )
+        if (component_count, action_count) != (2, 1):
+            selection = _SecondLayerLayoutSelection(
+                layout_ids=(layout_id,),
+                layout_kinds=(kinds[0],),
+                action_template_ids=actions,
+                business_layout_kinds=kinds,
+            )
     else:
         raise ValueError("Template candidates do not fit one supported layout")
     allowed_layout_ids = resolve_scope_layout_ids(scope, task_spec, registry)
@@ -992,6 +1115,8 @@ def _prune_layout_selection(
         if template_id == _ICON_ACTION_TEMPLATE_ID and has_icon_layout:
             action_templates.append(template_id)
         if template_id == _LARGE_ICON_ACTION_TEMPLATE_ID and has_large_icon_layout:
+            action_templates.append(template_id)
+        if template_id == _COMPACT_ACTION_TEMPLATE_ID and has_pill_layout:
             action_templates.append(template_id)
     return _SecondLayerLayoutSelection(
         layout_ids=tuple(layout_id for layout_id, _ in pairs),

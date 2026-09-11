@@ -59,8 +59,11 @@ _LAYOUT_COMPONENTS = frozenset(
         "WideSingleFocusLayout",
         "WideFullOnlyLayout",
         "WideTwoFullLayout",
+        "WideHeroCompactLayout",
         "WideFullHeroActionLayout",
+        "WideHeroActionFullLayout",
         "WideFullTwoCompactLayout",
+        "WideFourCompactLayout",
         "WideFullHeroTwoActionLayout",
         "WideFullFourActionLayout",
         "WideTwoHalfLayout",
@@ -127,6 +130,7 @@ _PROVIDER_TEMPLATE_FAMILIES = (
     "BatteryOverview",
     "WorkoutOverview",
     "SleepOverview",
+    "GenericMetricOverview",
     "DateOverview",
 )
 
@@ -641,6 +645,7 @@ def _ui_template_signature(
     type_map = {
         "string": "string",
         "asset": "string",
+        "path": "string",
         "number": "number",
         "integer": "integer",
         "boolean": "boolean",
@@ -649,7 +654,7 @@ def _ui_template_signature(
         if not raw_prop:
             continue
         prop_match = re.fullmatch(
-            r"([A-Za-z_][A-Za-z0-9_]*)(\?)?\s*:\s*(string|asset|number|integer|boolean)",
+            r"([A-Za-z_][A-Za-z0-9_]*)(\?)?\s*:\s*(string|asset|path|number|integer|boolean)",
             raw_prop,
         )
         if prop_match is None:
@@ -1990,6 +1995,8 @@ def _provider_variant_binding_admission(
     values_by_field = _provider_sample_values_by_field(task_spec.dataModelSchema)
     properties = variant.parameters_schema.get("properties", {})
     for name in variant.parameters_schema.get("required", ()):
+        if name.casefold().endswith("path"):
+            continue
         if name in definition.asset_parameter_semantic_tags:
             continue
         candidates = list(dict.fromkeys(values_by_field.get(name, ())))

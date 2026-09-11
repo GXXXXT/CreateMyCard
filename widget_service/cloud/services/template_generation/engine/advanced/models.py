@@ -18,8 +18,11 @@ UX_LAYOUT_COMPONENT_IDS = frozenset(
         "WideSingleFocusLayout",
         "WideFullOnlyLayout",
         "WideTwoFullLayout",
+        "WideHeroCompactLayout",
         "WideFullHeroActionLayout",
+        "WideHeroActionFullLayout",
         "WideFullTwoCompactLayout",
+        "WideFourCompactLayout",
         "WideFullHeroTwoActionLayout",
         "WideFullFourActionLayout",
         "WideTwoHalfLayout",
@@ -36,6 +39,7 @@ UX_DIRECT_BUSINESS_COMPONENT_IDS = frozenset(
         "BluetoothDeviceOverview",
         "DateOverview",
         "HeartRateOverview",
+        "GenericMetricOverview",
         "ResourceUsageOverview",
         "ScheduleOverview",
         "SleepOverview",
@@ -280,6 +284,10 @@ class TemplateRouteSelection(StrictModel):
     required_template_groups: tuple[tuple[str, ...], ...] = Field(
         default=(),
         alias="requiredTemplateGroups",
+    )
+    required_output_fields_by_capability: dict[str, tuple[str, ...]] = Field(
+        default_factory=dict,
+        alias="requiredOutputFieldsByCapability",
     )
 
     @property

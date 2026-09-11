@@ -34,7 +34,12 @@ _PLAIN_DESIGNS = (
     "icon",
 )
 _PLAIN_LAYOUTS = ("card", "section", "compact", "between", "actions", "list", "dense", "overlay")
-_ACTION_TEMPLATE_IDS = ("PillAction@1", "IconAction@1", "LargeIconAction@1")
+_ACTION_TEMPLATE_IDS = (
+    "PillAction@1",
+    "CompactAction@1",
+    "IconAction@1",
+    "LargeIconAction@1",
+)
 _ACTION_PROVIDER_ID = "com.huawei.action.cli"
 _ACTION_LABELS = {
     "event.call.phone": "联系家人",
@@ -581,6 +586,40 @@ def build_template_prompt_contracts(
             for name, schema in properties.items():
                 value_kind = _parameter_value_kind(name, schema)
                 source_contract: dict[str, Any] = {"valueKind": value_kind}
+                if value_kind == "data-path":
+                    source_contract["format"] = (
+                        "copy one value from allowedPaths exactly as written; "
+                        "do not normalize, expand, shorten, or otherwise rewrite it"
+                    )
+                    allowed_paths = tuple(
+                        dict.fromkeys(
+                            (*definition.primary_data, *definition.secondary_data, *definition.optional_data)
+                        )
+                    )
+                    if wire_id.startswith("GenericMetricOverview"):
+                        data = task_spec.dataModelSchema.get("data", {})
+                        selectors = (
+                            data.get("_advancedSelectors", {})
+                            if isinstance(data, dict)
+                            else {}
+                        )
+                        validation = (
+                            selectors.get("templateValidation", {})
+                            if isinstance(selectors, dict)
+                            else {}
+                        )
+                        generic_fields = (
+                            validation.get("GenericMetricOverview", {})
+                            if isinstance(validation, dict)
+                            else {}
+                        )
+                        if isinstance(generic_fields, dict) and generic_fields:
+                            allowed_paths = tuple(
+                                f"/{field_name}"
+                                for field_name in generic_fields
+                                if isinstance(field_name, str) and field_name
+                            )
+                    source_contract["allowedPaths"] = list(allowed_paths)
                 if value_kind == "asset-source":
                     source_contract["allowedSources"] = _parameter_allowed_asset_sources(
                         name,
@@ -843,6 +882,8 @@ def _is_action_or_asset_parameter(name: str) -> bool:
 
 
 def _parameter_value_kind(name: str, schema: dict[str, Any]) -> str:
+    if name.casefold().endswith("path"):
+        return "data-path"
     semantic_text = f"{name} {schema.get('description', '')}".casefold()
     if any(
         token in semantic_text
