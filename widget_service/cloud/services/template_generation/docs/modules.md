@@ -126,7 +126,7 @@ cloud/api/routes.py
 
 模块主编排函数：
 
-1. `2x4` 在 Registry、首层 Prompt 和模型调用前直接返回模板不适用；当前模板 Search 只支持 `2x2`。
+1. `2x2` 与 `2x4` 都进入 Template Search；检索按尺寸后缀隔离，`2x4` 只使用 Wide 系列业务模板及 Wide 布局。
 2. 按 `TemplateSourceGenerator` 使用 `TaskSpec.appVersion` 和配置最低版本确定的 `enable_fusion_ball` 加载
    请求级 Registry 视图；关闭时先移除所有融球 Theme，开启时按本轮候选业务过滤
    Theme，只要存在融球匹配就移除全部非融球 Theme，再从 CardSpec 取得已批准能力 ID。

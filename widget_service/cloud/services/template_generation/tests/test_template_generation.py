@@ -147,6 +147,31 @@ def test_ux_mixed_framer_quotes_unquoted_template_ids_only_in_calls() -> None:
     assert 'Template("CompactTwoActionLayout@1",' in framed
     assert 'Template("HeartRateOverviewUpdatedIconCompact@1",' in framed
     assert '"label":"Template(Fake@1, label)"' in framed
+
+
+def test_ux_mixed_framer_places_business_with_larger_text_on_left() -> None:
+    source = (
+        'Template("WideFullHeroActionLayout@1",{},'
+        'Template("ScheduleOverviewNextEventLocationFull@1",{}),'
+        'Template("WeatherOverviewHero@1",{}),'
+        'Template("PillAction@1",{"actionId":"event.open.weather",'
+        '"label":"天气详情"}));'
+    )
+
+    framed, repaired = frame_ux_layout_root_children(
+        source,
+        size="2x4",
+        registry=get_cardplan_registry(enable_fusion_ball=True),
+        allowed_layout_ids=(
+            "WideFullHeroActionLayout",
+            "WideHeroActionFullLayout",
+        ),
+    )
+
+    assert repaired
+    assert framed.startswith('Template("WideHeroActionFullLayout@1",')
+    assert '"ScheduleOverviewNextEventLocationFull@1"' in framed
+    assert '"WeatherOverviewHero@1"' in framed
 _WEATHER_TEMPLATE_FIELDS = (
     "/location/districtName",
     "/current/temperatureText",
@@ -250,7 +275,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         if path.is_dir()
     }
 
-    assert len(registry.provider_template_ids) == 92
+    assert len(registry.provider_template_ids) == 105
     assert {
         "ActivityOverviewFull@1",
         "AppUsageOverviewFull@1",
@@ -262,6 +287,9 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "BluetoothDeviceOverviewCaseStatusCompact@1",
         "BluetoothDeviceOverviewHero@1",
         "CountdownOverviewFull@1",
+        "CountdownOverviewWideFull@1",
+        "CountdownOverviewWideHero@1",
+        "CountdownOverviewWideHalf@1",
         "HeartRateOverviewFull@1",
         "ResourceUsageOverviewFull@1",
         "ScheduleOverviewDatedMeetingHero@1",
@@ -284,7 +312,9 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "WideFullOnlyLayout@1",
         "WideTwoFullLayout@1",
         "WideFullHeroActionLayout@1",
+        "WideHeroActionFullLayout@1",
         "WideFullTwoCompactLayout@1",
+        "WideFourCompactLayout@1",
         "WideFullHeroTwoActionLayout@1",
         "WideFullFourActionLayout@1",
         "WideTwoHalfLayout@1",
@@ -478,8 +508,11 @@ def test_layout_template_wide_marker_drives_exclusive_card_size() -> None:
         "WideSingleFocusLayout": ("2x4",),
         "WideFullOnlyLayout": ("2x4",),
         "WideTwoFullLayout": ("2x4",),
+        "WideHeroCompactLayout": ("2x4",),
         "WideFullHeroActionLayout": ("2x4",),
+        "WideHeroActionFullLayout": ("2x4",),
         "WideFullTwoCompactLayout": ("2x4",),
+        "WideFourCompactLayout": ("2x4",),
         "WideFullHeroTwoActionLayout": ("2x4",),
         "WideFullFourActionLayout": ("2x4",),
         "WideTwoHalfLayout": ("2x4",),
@@ -537,7 +570,7 @@ def test_business_groups_are_derived_from_provider_templates() -> None:
     assert "layoutComponents" not in theme_base
     assert provider_business_groups == set(registry.ux_business_components)
     assert provider_layout_components == set(registry.ux_layout_components)
-    assert len(registry.ux_business_component_provider_ids) == 11
+    assert len(registry.ux_business_component_provider_ids) == 12
     calendar = registry.require_ux_business_component("CalendarOverview")
     assert len(calendar.local_template_ids) == 8
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
@@ -545,7 +578,7 @@ def test_business_groups_are_derived_from_provider_templates() -> None:
         template_id.startswith("DateOverview")
         for template_id in calendar.local_template_ids
     )
-    assert len(registry.ux_layout_component_provider_ids) == 16
+    assert len(registry.ux_layout_component_provider_ids) == 20
     for bundle in registry.provider_bundles.values():
         payload = json.loads(
             (registry.source_root / "providers" / bundle.manifest.provider_id.removeprefix(
@@ -4950,14 +4983,7 @@ async def test_disabled_fusion_feature_rejects_forged_fusion_theme() -> None:
 
 
 @pytest.mark.asyncio
-async def test_template_pipeline_rejects_2x4_before_any_model_call() -> None:
-    class NoModelCall:
-        async def generate_json(self, *_args: Any, **_kwargs: Any) -> dict[str, Any]:
-            pytest.fail("2x4 template Search must not call the model")
-
-        async def generate(self, *_args: Any, **_kwargs: Any) -> str:
-            pytest.fail("2x4 template Search must not call the model")
-
+async def test_template_pipeline_supports_2x4_wide_template() -> None:
     task_spec = _weather_task_spec().model_copy(update={"size": "2x4"})
     card_spec = _weather_card_spec() | {"suggestSize": "2x4"}
     binding = CandidateDataBinding(
@@ -4965,15 +4991,26 @@ async def test_template_pipeline_rejects_2x4_before_any_model_call() -> None:
         writeResultTo="/data/weather",
         candidateOutputFields=["/current/temperatureText", "/current/condition"],
     )
-
-    with pytest.raises(TemplateRouteNotApplicable, match="does not support 2x4"):
-        await generate_template_a2ui(
-            task_spec,
-            card_spec,
-            (binding,),
-            NoModelCall(),
-            enable_fusion_ball=True,
+    model = WeatherTemplateModel(
+        body=(
+            'Template("WideFullOnlyLayout@1",{},'
+            'Template("WeatherOverviewWideFull@1",{}));'
         )
+    )
+
+    output = await generate_template_a2ui(
+        task_spec,
+        card_spec,
+        (binding,),
+        model,
+        enable_fusion_ball=True,
+    )
+
+    assert model.body_called is True
+    assert output.template_ids == (
+        "WeatherOverviewWideFull@1",
+        "WideFullOnlyLayout@1",
+    )
 
 
 @pytest.mark.asyncio

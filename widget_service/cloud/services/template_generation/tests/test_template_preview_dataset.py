@@ -16,18 +16,19 @@ def test_template_preview_dataset_covers_all_business_templates(tmp_path):
     manifest = write_template_preview_dataset(tmp_path)
     cases = manifest["cases"]
 
-    assert manifest["templateCount"] == 73
+    assert manifest["templateCount"] == 79
     assert manifest["countsByLayout"] == {
         "Support": 12,
         "Compact": 14,
         "Hero": 18,
         "Full": 18,
-        "WideHero": 2,
-        "WideFull": 9,
+        "WideHero": 4,
+        "WideFull": 11,
+        "WideHalf": 2,
     }
-    assert manifest["countsBySize"] == {"2x2": 62, "2x4": 11}
-    assert len(cases) == 73
-    assert len({case["templateId"] for case in cases}) == 73
+    assert manifest["countsBySize"] == {"2x2": 62, "2x4": 17}
+    assert len(cases) == 79
+    assert len({case["templateId"] for case in cases}) == 79
     assert all((tmp_path / case["file"]).is_file() for case in cases)
 
 
@@ -44,6 +45,30 @@ def test_template_preview_a2ui_has_surface_components_and_data():
         assert root["component"] == "Column"
         slot = next(component for component in components if component["id"] == "root_0")
         assert slot["styles"]["height"] == case.content_height_vp
+
+
+def test_weather_wide_previews_use_the_weather_theme_background():
+    weather_wide_ids = {
+        "WeatherOverviewWideHero@1",
+        "WeatherOverviewWideFull@1",
+        "WeatherOverviewWideHalf@1",
+    }
+
+    cases = {
+        case.template_id: case
+        for case in build_template_preview_cases()
+        if case.template_id in weather_wide_ids
+    }
+
+    assert set(cases) == weather_wide_ids
+    for case in cases.values():
+        components = case.messages[1]["updateComponents"]["components"]
+        root = next(component for component in components if component["id"] == "root")
+        assert root["styles"]["backgroundColor"] == "#FF121259"
+        assert root["styles"]["linearGradient"]["colors"] == [
+            ["#FF121259", 0],
+            ["#FF2B65D9", 1],
+        ]
 
 
 def test_template_preview_assets_are_bundled_by_genui_evaluation():

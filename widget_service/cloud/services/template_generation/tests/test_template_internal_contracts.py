@@ -308,10 +308,13 @@ def test_checked_in_layout_templates_use_concrete_container_blueprints() -> None
         "FullIconActionLayout@1": 2,
         "CompactTwoActionLayout@1": 3,
         "TwoSupportLayout@1": 2,
+        "WideSingleFocusLayout@1": 2,
         "WideFullOnlyLayout@1": 1,
         "WideTwoFullLayout@1": 2,
         "WideFullHeroActionLayout@1": 3,
+        "WideHeroActionFullLayout@1": 3,
         "WideFullTwoCompactLayout@1": 3,
+        "WideFourCompactLayout@1": 4,
         "WideFullHeroTwoActionLayout@1": 4,
         "WideFullFourActionLayout@1": 5,
         "WideTwoHalfLayout@1": 2,
@@ -321,7 +324,9 @@ def test_checked_in_layout_templates_use_concrete_container_blueprints() -> None
     }
     variable_children = {
         "SingleFocusLayout@1",
-        "WideSingleFocusLayout@1",
+    }
+    mirrored_slots = {
+        "WideHeroActionFullLayout@1": [1, 2, 0],
     }
 
     for template_id in (*fixed_slots, *variable_children):
@@ -334,7 +339,11 @@ def test_checked_in_layout_templates_use_concrete_container_blueprints() -> None
 
         slot_indexes = _layout_child_slot_indexes(root)
         if template_id in fixed_slots:
-            assert slot_indexes == list(range(fixed_slots[template_id]))
+            expected_slots = mirrored_slots.get(
+                template_id,
+                list(range(fixed_slots[template_id])),
+            )
+            assert slot_indexes == expected_slots
             assert not root.spread_children
         else:
             assert slot_indexes == []
@@ -613,6 +622,12 @@ def test_provider_template_layout_suffix_combinations_are_enforced() -> None:
     )
     _validate_provider_template_layout_action_requirements(
         "WideFullHeroActionLayout",
+        (template("WeatherOverviewFull@1"), template("BatteryOverviewNormalHero@1")),
+        (pill_one,),
+        "2x4",
+    )
+    _validate_provider_template_layout_action_requirements(
+        "WideHeroActionFullLayout",
         (template("WeatherOverviewFull@1"), template("BatteryOverviewNormalHero@1")),
         (pill_one,),
         "2x4",

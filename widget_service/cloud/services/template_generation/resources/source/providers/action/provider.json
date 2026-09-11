@@ -9,6 +9,11 @@
       "entry": "templates/action.cardtpl"
     },
     {
+      "templateId": "CompactAction@1",
+      "description": "单行文本 Compact 动作模板，左侧展示 label，右侧展示 24x24 语义图标，由第二层通过 actionId、label 和 icon Props 填充。",
+      "entry": "templates/action.cardtpl"
+    },
+    {
       "templateId": "IconAction@1",
       "description": "图标动作模板，由第二层通过 actionId 和 icon Props 填充展示内容。",
       "entry": "templates/action.cardtpl"

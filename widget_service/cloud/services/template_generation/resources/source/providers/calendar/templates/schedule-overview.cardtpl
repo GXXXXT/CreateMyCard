@@ -779,13 +779,15 @@ Column(
       Text(
         props.headerLabel,
         {
-          "width": 112,
+          "width": "matchParent",
           "height": 12,
           "fontSize": 12,
           "fontWeight": 700,
           "fontColor": $theme('supportContentColor'),
           "maxLines": 1,
           "textOverflow": "ellipsis",
+          "layoutWeight": 1,
+          "flexShrink": 1,
           "constraintSize": { "minWidth": 0, "minHeight": 0 }
         }
       )
@@ -795,13 +797,15 @@ Column(
       Text(
         "下一个日程",
         {
-          "width": 112,
+          "width": "matchParent",
           "height": 12,
           "fontSize": 12,
           "fontWeight": 700,
           "fontColor": $theme('supportContentColor'),
           "maxLines": 1,
           "textOverflow": "ellipsis",
+          "layoutWeight": 1,
+          "flexShrink": 1,
           "constraintSize": { "minWidth": 0, "minHeight": 0 }
         }
       )

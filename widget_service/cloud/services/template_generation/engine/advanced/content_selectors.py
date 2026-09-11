@@ -1404,6 +1404,8 @@ def project_content_component_facts(
     task_spec: TaskSpec,
     capability_ids: set[str],
     component_ids: tuple[str, ...],
+    *,
+    required_output_fields_by_capability: dict[str, tuple[str, ...]] | None = None,
 ) -> TaskSpec:
     """Narrow the second-layer contract to selected component display facts.
 
@@ -1453,6 +1455,38 @@ def project_content_component_facts(
             sleep_facts = extract_sleep_overview_facts(schema)
             if sleep_facts is not None:
                 selected = sleep_facts.as_selector()
+        elif component_id == "GenericMetricOverview":
+            # Generic compact supplements the primary business component. It
+            # is intentionally data-agnostic: every requested scalar leaf from
+            # the candidate capability is eligible, and the second layer
+            # chooses one or two exact paths. Keep only fields not already
+            # owned by a specialized component in this composition.
+            requested_field_names = tuple(
+                dict.fromkeys(
+                    path.rsplit("/", 1)[-1]
+                    for paths in (required_output_fields_by_capability or {}).values()
+                    for path in paths
+                )
+            )
+            specialized_field_names = {
+                field_name
+                for selected_component_id in component_ids
+                if selected_component_id != "GenericMetricOverview"
+                for field_name in _PROVIDER_COMPONENT_FIELDS.get(
+                    selected_component_id, ()
+                )
+            }
+            field_names = tuple(
+                name
+                for name in requested_field_names
+                if name not in specialized_field_names
+            )
+            source = _best_source_object(schema, field_names)
+            selected = {
+                field_name: deepcopy(field)
+                for field_name in field_names
+                if (field := _first_field(source, field_name)) is not None
+            }
         elif component_id == "BatteryOverview":
             battery_facts = extract_battery_overview_facts(schema)
             if battery_facts is not None:

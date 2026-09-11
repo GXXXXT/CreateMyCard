@@ -293,6 +293,28 @@
       ]
     },
     {
+      "templateId": "GenericMetricOverviewCompact@1",
+      "businessId": "GenericMetricOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "主指标突出、辅助指标弱化的紧凑组件，右侧展示语义图标；适合突出一个核心数据。组件形态：compact。",
+      "optionalData": [
+      ],
+      "entry": "templates/generic-metric-overview.cardtpl",
+      "primaryData": [],
+      "secondaryData": []
+    },
+    {
+      "templateId": "GenericMetricOverviewDualCompact@1",
+      "businessId": "GenericMetricOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "通用双指标紧凑组件；上下两行分别以“数据类型 + 数据值”并列展示两个同等重要的指标。组件形态：compact。",
+      "optionalData": [
+      ],
+      "entry": "templates/generic-metric-overview.cardtpl",
+      "primaryData": [],
+      "secondaryData": []
+    },
+    {
       "templateId": "SleepOverviewFull@1",
       "businessId": "SleepOverview",
       "capabilityId": "GetHealthAndSportSummary",

@@ -20,7 +20,7 @@ from .compiler import (
     _serialize_effective_document,
     _strip_advanced_component_markers,
 )
-from .models import TemplateBinding, TemplateDefinition
+from .models import TemplateBinding, TemplateDefinition, ThemeDefinition
 from .provider_bundle import provider_template_layout_kind
 from .registry import CardPlanRegistry
 
@@ -180,7 +180,11 @@ class TemplatePreviewCase:
 
 def build_template_preview_cases() -> tuple[TemplatePreviewCase, ...]:
     """Expand every business Provider Template into a local A2UI preview case."""
-    registry = CardPlanRegistry(disabled_provider_ids=(), disabled_template_ids=())
+    registry = CardPlanRegistry(
+        disabled_provider_ids=(),
+        disabled_template_ids=(),
+        enable_fusion_ball=True,
+    )
     definitions = [
         registry.require_template(template_id)
         for template_id in registry.provider_template_ids
@@ -242,14 +246,15 @@ def _build_case(
         name: _binding_placeholder(definition, binding)
         for name, binding in definition.bindings.items()
     }
+    theme = _preview_theme(definition, registry)
     content = _instantiate_blueprint(
         variant.root,
         _template_parameters(definition),
         bindings,
-        _preview_theme_values(definition, registry),
+        theme.reference_values,
     )
     content = _strip_advanced_component_markers(content)
-    root = _preview_root(content, content_height)
+    root = _preview_root(content, content_height, theme.root_style)
     effective = _serialize_effective_document(root, task_spec, True)
     a2ui = convert_tersel_to_a2ui(
         effective,
@@ -276,10 +281,13 @@ def _build_case(
     )
 
 
-def _preview_theme_values(
+def _preview_theme(
     definition: TemplateDefinition,
     registry: CardPlanRegistry,
-) -> dict[str, str]:
+) -> ThemeDefinition:
+    if definition.capability_id == "ViewWeather":
+        return registry.require_theme("fusion-weather-blue")
+
     compatible_themes = tuple(
         item
         for item in registry.themes.values()
@@ -289,15 +297,20 @@ def _preview_theme_values(
         (
             item
             for item in compatible_themes
-            if item.fusion_ball_style is None
+            if item.fusion_ball_style is None and not item.supported_layout_ids
         ),
         None,
     )
     if theme is None:
+        theme = next(
+            (item for item in compatible_themes if item.fusion_ball_style is None),
+            None,
+        )
+    if theme is None:
         theme = next(iter(compatible_themes), None)
     if theme is None:
         theme = registry.require_theme("digital-wellbeing-neutral-dark")
-    return registry.theme_reference_values(theme.theme_profile_id)
+    return theme
 
 
 def _definition_sort_key(definition: TemplateDefinition) -> tuple[str, str, int, str]:
@@ -417,7 +430,11 @@ def _binding_placeholder(definition: TemplateDefinition, binding: TemplateBindin
     return "${" + dotted + "}"
 
 
-def _preview_root(content: Nested2Node, content_height: int) -> Nested2Node:
+def _preview_root(
+    content: Nested2Node,
+    content_height: int,
+    theme_root_style: dict[str, Any],
+) -> Nested2Node:
     slot_options = {
         "width": "matchParent",
         "height": content_height,
@@ -426,14 +443,19 @@ def _preview_root(content: Nested2Node, content_height: int) -> Nested2Node:
         "clip": True,
         "constraintSize": {"minWidth": 0, "minHeight": 0},
     }
+    # Theme roots may carry container-specific positioning (for example
+    # Stack.alignContent).  The gallery wrapper is always a Column, so only copy
+    # the visual root properties here and let the wrapper own its layout.
+    visual_root_style = {
+        key: value
+        for key, value in theme_root_style.items()
+        if key != "alignContent"
+    }
     root_options = {
         "_id": "root",
-        "padding": 12,
-        "borderRadius": 20,
-        "backgroundColor": "#FFFFFFFF",
+        **visual_root_style,
         "justifyContent": "start",
         "alignItems": "start",
-        "clip": True,
     }
     slot = Nested2Node("Column", ("section", slot_options), (content,))
     return Nested2Node("Column", ("card", root_options), (slot,))

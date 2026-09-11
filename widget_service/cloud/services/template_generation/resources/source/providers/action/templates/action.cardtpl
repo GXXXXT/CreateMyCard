@@ -34,6 +34,45 @@ Stack({
 )
 #End
 
+#Template CompactAction@1(props: { actionId: string, label: string, icon: asset })
+data = {
+}
+
+Stack({
+  "width": "matchParent",
+  "height": "matchParent",
+  "borderRadius": $theme('supportContentStyle.borderRadius'),
+  "backgroundColor": $theme('supportContentStyle.backgroundColor'),
+  "alignContent": "center",
+  "onClick": EventAction(props.actionId)
+},
+  Row({
+    "width": "matchParent",
+    "height": "matchParent",
+    "padding": {"left": 12, "top": 0, "right": 16, "bottom": 0},
+    "justifyContent": "spaceBetween",
+    "alignItems": "center"
+  },
+    Text(props.label, {
+      "layoutWeight": 1,
+      "height": 19,
+      "fontSize": 14,
+      "fontWeight": 700,
+      "fontColor": $theme('primaryColor'),
+      "maxLines": 1,
+      "textOverflow": "ellipsis",
+      "textAlign": "start"
+    }),
+    Image(props.icon, {
+      "width": 24,
+      "height": 24,
+      "objectFit": "contain",
+      "flexShrink": 0
+    })
+  )
+)
+#End
+
 #Template IconAction@1(props: { actionId: string, icon: asset })
 data = {
 }

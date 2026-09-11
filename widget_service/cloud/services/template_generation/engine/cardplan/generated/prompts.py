@@ -168,7 +168,7 @@ BODY_SYSTEM_PROMPT_KERNEL = (
     '实。'
 )
 
-UX_MIXED_PROMPT_VERSION = 'ux-mixed-prompt/0.12'
+UX_MIXED_PROMPT_VERSION = 'ux-mixed-prompt/0.13'
 UX_MIXED_PROTOCOL_VERSION = 'tersedsl-nested-2-ux-mixed/0.5'
 UX_MIXED_SYSTEM_PROMPT_KERNEL = (
     '你是卡片模板第二层组合模型。上游首层路由已确定业务候选、Theme 和 Ac'
@@ -191,5 +191,9 @@ UX_MIXED_SYSTEM_PROMPT_KERNEL = (
     '义业务匹配的 Support 模板可选 actionId Prop。\n5.'
     ' 只能使用动态契约中的 Template ID、Action 值和素材源。禁'
     '止 `card@1`、基础组件、业务文本、\n   数据路径、绑定、事件执行'
-    '字段、A2UI 或候选外 Template。'
+    '字段、A2UI 或候选外 Template。\n6. 当 `WideFull'
+    'HeroActionLayout@1` 与 `WideHeroActionF'
+    'ullLayout@1` 同时可用时，比较两个业务 Template\n  '
+    ' 的最大文本字号：字号更大的业务必须位于左侧；两者相同时使用 `WideFu'
+    'llHeroActionLayout@1`。'
 )

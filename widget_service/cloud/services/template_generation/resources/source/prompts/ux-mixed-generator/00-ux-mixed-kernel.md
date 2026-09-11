@@ -2,7 +2,7 @@
 promptGroup: ux-mixed-generator
 fragmentId: ux-mixed-kernel
 order: 0
-promptVersion: ux-mixed-prompt/0.12
+promptVersion: ux-mixed-prompt/0.13
 protocolVersion: tersedsl-nested-2-ux-mixed/0.5
 contractVersion: hybrid-body-contract/0.5
 ---
@@ -24,4 +24,6 @@ contractVersion: hybrid-body-contract/0.5
    已选事件必须各一次写入与语义业务匹配的 Support 模板可选 actionId Prop。
 5. 只能使用动态契约中的 Template ID、Action 值和素材源。禁止 `card@1`、基础组件、业务文本、
    数据路径、绑定、事件执行字段、A2UI 或候选外 Template。
+6. 当 `WideFullHeroActionLayout@1` 与 `WideHeroActionFullLayout@1` 同时可用时，比较两个业务 Template
+   的最大文本字号：字号更大的业务必须位于左侧；两者相同时使用 `WideFullHeroActionLayout@1`。
 <!-- prompt:end -->

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any
 
 import pytest
 
@@ -549,21 +549,29 @@ def test_first_layer_prompt_includes_task_fields_rules_and_action_candidates() -
     assert "2x2 模板 Search 当前只接受一个" in messages[0]["content"]
 
 
-def test_search_rejects_2x4_before_prompt_or_retrieval() -> None:
+def test_search_supports_2x4_prompt_and_composition_slot_retrieval() -> None:
     task = _task().model_copy(update={"size": "2x4"})
     card_spec = _card_spec() | {"suggestSize": "2x4"}
-    inaccessible_registry = cast(CardPlanRegistry, object())
+    registry = get_cardplan_registry()
 
-    with pytest.raises(TemplateRetrievalMiss, match="does not support 2x4"):
-        build_template_retrieval_prompt(task, inaccessible_registry, (_binding(),))
-    with pytest.raises(TemplateRetrievalMiss, match="does not support 2x4"):
-        retrieve_template_variants(
-            _query("/current/condition"),
-            task,
-            inaccessible_registry,
-            (_binding(),),
-            card_spec,
-        )
+    messages = build_template_retrieval_prompt(task, registry, (_binding(),))
+    selection = retrieve_template_variants(
+        _query("/current/condition"),
+        task,
+        registry,
+        (_binding(),),
+        card_spec,
+    )
+
+    assert messages[1]["content"]
+    assert selection.component_candidates
+    layout_kinds = {
+        retrieval_module.provider_template_layout_kind(template_id)
+        for candidate in selection.component_candidates
+        for template_id in candidate.available_template_ids
+    }
+    assert {"Full", "Hero", "Compact"}.intersection(layout_kinds)
+    assert {"WideHero", "WideFull", "WideHalf"}.intersection(layout_kinds)
 
 
 def test_search_rejects_two_data_businesses() -> None:
