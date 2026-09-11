@@ -1,0 +1,14 @@
+widget_service/cloud/services/template_generation/resources/source/providers/weather/templates/weather-overview.cardtpl
+  h_22e274a52827b7 171,173,176-179,181-183,188,190-203,215-216
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "3.31.1604",
+  "base_commit_sha": "399a7c342ea13d933ee6b9d76dad2cac570ba8f4",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  }
+}
