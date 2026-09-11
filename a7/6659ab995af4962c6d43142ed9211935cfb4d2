@@ -10,5 +10,16 @@ widget_service/cloud/config/default_config.yaml
     "h_22e274a52827b7": {
       "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
     }
+  },
+  "sessions": {
+    "s_772e1642396b76": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0467e-0bb4-7843-9c0b-c5d30652632f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yan_shuifeng <yanshuifeng@huawei.com>",
+      "total_deletions": 798
+    }
   }
 }
