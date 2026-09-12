@@ -290,6 +290,22 @@
       "optionalData": []
     },
     {
+      "templateId": "ScheduleOverviewEventCountDetailsFull@1",
+      "businessId": "CalendarOverview",
+      "capabilityId": "GetCalendarEvents",
+      "description": "近期日程清点 Full，以数量徽标展示日程总数，并展示最近一项的标题、开始时间和备注；可选日历图标与标题文案。",
+      "entry": "templates/schedule-overview.cardtpl",
+      "primaryData": [
+        "/eventCount",
+        "/events/0/title"
+      ],
+      "secondaryData": [
+        "/events/0/dtStart",
+        "/events/0/description"
+      ],
+      "optionalData": []
+    },
+    {
       "templateId": "ScheduleOverviewTimezoneAllDayFull@1",
       "businessId": "CalendarOverview",
       "capabilityId": "GetCalendarEvents",

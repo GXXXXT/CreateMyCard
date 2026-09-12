@@ -26,6 +26,29 @@ Column(
         Row(
             { "width": "matchParent", "itemMargin": 4, "justifyContent": "spaceBetween", "alignItems": "top" },
             #if data.type
+                #if data.status && data.duration
+                    #if data.deepDuration
+                    Text(
+                        Expr(data.type + ' ' + data.status),
+                        { "fontWeight": 400, "fontColor": $theme('supportContentColor'), "fontSize": 12, "maxLines": 1 }
+                    ),
+                    #elseif data.napDuration
+                    Text(
+                        Expr(data.type + ' ' + data.status),
+                        { "fontWeight": 400, "fontColor": $theme('supportContentColor'), "fontSize": 12, "maxLines": 1 }
+                    ),
+                    #else
+                    Text(
+                        data.type,
+                        {
+                            "fontSize": 12,
+                            "fontWeight": 400,
+                            "fontColor": $theme('supportContentColor'),
+                            "maxLines": 1
+                        }
+                    ),
+                    #endif
+                #else
                 Text(
                     data.type,
                     {
@@ -35,7 +58,31 @@ Column(
                         "maxLines": 1
                     }
                 ),
+                #endif
             #else
+                #if data.status && data.duration
+                    #if data.deepDuration
+                    Text(
+                        Expr('睡眠健康：' + data.status),
+                        { "fontWeight": 400, "fontColor": $theme('supportContentColor'), "fontSize": 12, "maxLines": 1 }
+                    ),
+                    #elseif data.napDuration
+                    Text(
+                        Expr('睡眠健康：' + data.status),
+                        { "fontWeight": 400, "fontColor": $theme('supportContentColor'), "fontSize": 12, "maxLines": 1 }
+                    ),
+                    #else
+                    Text(
+                        "睡眠监测",
+                        {
+                            "fontSize": 12,
+                            "fontWeight": 400,
+                            "fontColor": $theme('supportContentColor'),
+                            "maxLines": 1
+                        }
+                    ),
+                    #endif
+                #else
                 Text(
                     "睡眠监测",
                     {
@@ -45,6 +92,7 @@ Column(
                         "maxLines": 1
                     }
                 ),
+                #endif
             #endif
             #if props.sourceIcon
                 Image(
@@ -108,6 +156,10 @@ Column(
             #endif
         #endif
         #if data.status
+            #if data.deepDuration
+            #else
+                #if data.napDuration
+                #else
             Row(
                 { "width": "matchParent", "itemMargin": 4, "justifyContent": "start", "alignItems": "center" },
                 Text(
@@ -119,6 +171,8 @@ Column(
                     { "fontSize": 12, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1 }
                 )
             ),
+                #endif
+            #endif
         #endif
         #if data.deepDuration
             Row(
