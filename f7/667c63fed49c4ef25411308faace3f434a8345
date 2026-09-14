@@ -1,0 +1,211 @@
+widget_service/cloud/services/template_generation/resources/source/providers/battery/templates/battery-overview.cardtpl
+  s_f89ab8cacfc8ab::t_c99a6df7943b56 688-783,1039-1128,1130-1142,1156-1158,1160-1200,1202-1210,1212-1220
+  h_22e274a52827b7 1148,1201,1211
+  s_f89ab8cacfc8ab::t_200c194433a416 1129,1143-1147,1149-1155,1159
+widget_service/cloud/services/template_generation/resources/source/providers/README.md
+  s_f89ab8cacfc8ab::t_b3686695ab2117 36,41-42
+widget_service/cloud/services/template_generation/tests/test_template_contrast.py
+  s_f89ab8cacfc8ab::t_774dbc2439904a 55
+widget_service/cloud/services/template_generation/resources/source/providers/layout/provider.json
+  s_f89ab8cacfc8ab::t_aa9e4856d8537a 105-119
+  s_f89ab8cacfc8ab::t_95809074f0f71c 521-556
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/second-layer.md
+  s_f89ab8cacfc8ab::t_e7050c10b5606a 77-80
+  s_f89ab8cacfc8ab::t_0d07c318aadcc9 31,34,62-64,68-71,81
+  s_f89ab8cacfc8ab::t_3fbb5f5c646940 72-76
+widget_service/cloud/services/template_generation/tests/test_template_retrieval.py
+  s_f89ab8cacfc8ab::t_2ab5f94813f4eb 2251-2406,2413-2452
+  s_f89ab8cacfc8ab::t_6888ab970e31c3 2649-2650
+  s_f89ab8cacfc8ab::t_bc4334221ab656 2453-2589,2607-2648,2651-2652
+  s_f89ab8cacfc8ab::t_2e9a4c8d405625 2596-2606
+  s_f89ab8cacfc8ab::t_5f062b48bd5c72 2590-2595
+  s_f89ab8cacfc8ab::t_bf136420798dea 40
+  s_f89ab8cacfc8ab::t_8ced9bbeef240e 10,38-39
+  s_f89ab8cacfc8ab::t_b6af508cae924e 2407-2412
+widget_service/cloud/services/template_generation/resources/source/providers/battery/provider.json
+  s_f89ab8cacfc8ab::t_a66cebd0e0e362 282
+  s_f89ab8cacfc8ab::t_4bec687ed321cf 270
+  s_f89ab8cacfc8ab::t_993eb89f7e24cc 265-269,271-281,283-284
+  h_22e274a52827b7 155-175
+  s_f89ab8cacfc8ab::t_61125f6dca6ef5 246-264
+widget_service/cloud/services/template_generation/engine/cardplan/provider_bundle.py
+  s_f89ab8cacfc8ab::t_6864d2835d80bf 2647-2651
+  s_f89ab8cacfc8ab::t_7eede2b557c7fc 76-78
+widget_service/cloud/services/template_generation/tests/test_provider_gallery_batch.py
+  s_f89ab8cacfc8ab::t_774dbc2439904a 206,295,545,548
+widget_service/cloud/services/template_generation/resources/source/providers/earphone/provider.json
+  s_f89ab8cacfc8ab::t_bcae6e13a30039 268-274,276-277,279-284
+  s_f89ab8cacfc8ab::t_e0c8f8b3c9d0c2 275,278
+widget_service/cloud/services/template_generation/tests/test_template_internal_contracts.py
+  s_f89ab8cacfc8ab::t_34d13e02f95558 344
+  s_f89ab8cacfc8ab::t_cbed6c2dcb6bb1 678-724
+  s_f89ab8cacfc8ab::t_3930a76a83bfd2 343
+  s_f89ab8cacfc8ab::t_57c45fe5674f23 334-336
+widget_service/cloud/services/template_generation/docs/provider-template-capability-checklist.md
+  h_22e274a52827b7 65,80
+widget_service/cloud/services/template_generation/engine/cardplan/prompt.py
+  h_22e274a52827b7 1102
+widget_service/cloud/services/template_generation/engine/cardplan/compiler.py
+  s_f89ab8cacfc8ab::t_6ba8afd5b38f79 7552-7554
+  s_f89ab8cacfc8ab::t_eb81603ab2029a 1125
+  s_f89ab8cacfc8ab::t_452ce964e5d0db 1124
+  s_f89ab8cacfc8ab::t_52ca1d6178145a 1162-1167
+  s_f89ab8cacfc8ab::t_849470895e851a 6466-6471
+  s_f89ab8cacfc8ab::t_fb3535441fdfdd 930-932
+  h_22e274a52827b7 1111,6216
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/first-layer.md
+  h_22e274a52827b7 1-25
+  s_f89ab8cacfc8ab::t_2d138c166a9c45 26-28
+  s_f89ab8cacfc8ab::t_e7050c10b5606a 29-31
+widget_service/cloud/services/template_generation/resources/source/providers/layout/templates/layout.cardtpl
+  s_f89ab8cacfc8ab::t_401a63ce5abb50 405-497
+widget_service/cloud/services/template_generation/resources/source/providers/earphone/templates/bluetooth-device-overview.cardtpl
+  s_f89ab8cacfc8ab::t_387f7c45190ac1 1377-1457
+  s_f89ab8cacfc8ab::t_e3eb5cb7e5f5e3 1375-1376,1458-1459
+widget_service/cloud/services/template_generation/engine/cardplan/models.py
+  s_f89ab8cacfc8ab::t_a2e3a5c30e1fee 33-35
+widget_service/cloud/services/template_generation/tests/test_template_preview_dataset.py
+  h_22e274a52827b7 28
+  s_f89ab8cacfc8ab::t_774dbc2439904a 19,25,31-33
+widget_service/cloud/services/template_generation/engine/advanced/scope_planner.py
+  s_f89ab8cacfc8ab::t_1205f4e944ec5f 1355,1361,1367
+widget_service/cloud/services/template_generation/engine/advanced/ux_mixed_prompt.py
+  s_f89ab8cacfc8ab::t_704bdcc3a748ad 193-201
+  s_f89ab8cacfc8ab::t_03dd7a427780c1 875-876
+  s_f89ab8cacfc8ab::t_d49787cb4cb6a8 1287-1288,1293-1300
+  s_f89ab8cacfc8ab::t_f0e670757245e0 835-837
+  s_f89ab8cacfc8ab::t_32f045c60b9495 60-62
+  s_f89ab8cacfc8ab::t_70191c71d16586 1080-1133
+  s_f89ab8cacfc8ab::t_5f20f236803182 1225-1230
+  s_f89ab8cacfc8ab::t_79903f232124a5 1260-1264,1266-1274,1276-1278
+widget_service/cloud/services/template_generation/resources/source/providers/earphone/layer-docs/second-layer.md
+  s_f89ab8cacfc8ab::t_5e94461af60874 28-31,51-52
+widget_service/cloud/services/template_generation/tests/test_template_generation.py
+  s_f89ab8cacfc8ab::t_774dbc2439904a 286,3153
+  s_f89ab8cacfc8ab::t_45df417123ffd9 295,992-994,1054,2925-2926,3146,3152
+  s_f89ab8cacfc8ab::t_07b55869f8a725 2810
+widget_service/cloud/services/template_generation/engine/advanced/models.py
+  s_f89ab8cacfc8ab::t_c8c354849ad5e0 33-35
+widget_service/cloud/services/template_generation/resources/source/providers/earphone/layer-docs/first-layer.md
+  s_f89ab8cacfc8ab::t_626bcaf0505d62 11-12,15-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.1",
+  "base_commit_sha": "f7667c63fed49c4ef25411308faace3f434a8345",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_772e1642396b76": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0467e-0bb4-7843-9c0b-c5d30652632f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yan_shuifeng <yanshuifeng@huawei.com>",
+      "total_additions": 0,
+      "total_deletions": 798,
+      "overridden_lines": 0
+    },
+    "s_f89ab8cacfc8ab": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_9003fdab-51ef-4666-a39f-95373057fbfd",
+        "model": "glm-5.3"
+      },
+      "human_author": null,
+      "total_additions": 612,
+      "total_deletions": 148,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_002264d942fe73": "glm-5.3",
+        "t_03dd7a427780c1": "glm-5.3",
+        "t_07b55869f8a725": "glm-5.3",
+        "t_0d07c318aadcc9": "glm-5.3",
+        "t_11c23efafd38b1": "glm-5.3",
+        "t_1205f4e944ec5f": "glm-5.3",
+        "t_14485eb1cc77b2": "glm-5.3",
+        "t_1e0d0891935c35": "glm-5.3",
+        "t_200c194433a416": "glm-5.3",
+        "t_2ab5f94813f4eb": "glm-5.3",
+        "t_2d138c166a9c45": "glm-5.3",
+        "t_2e9a4c8d405625": "glm-5.3",
+        "t_32f045c60b9495": "glm-5.3",
+        "t_34d13e02f95558": "glm-5.3",
+        "t_387f7c45190ac1": "glm-5.3",
+        "t_3930a76a83bfd2": "glm-5.3",
+        "t_3fbb5f5c646940": "glm-5.3",
+        "t_401a63ce5abb50": "glm-5.3",
+        "t_435b57d4eb9055": "glm-5.3",
+        "t_452ce964e5d0db": "glm-5.3",
+        "t_45df417123ffd9": "glm-5.3",
+        "t_494a8578ab7102": "glm-5.3",
+        "t_4bec687ed321cf": "glm-5.3",
+        "t_52ca1d6178145a": "glm-5.3",
+        "t_57c45fe5674f23": "glm-5.3",
+        "t_5e94461af60874": "glm-5.3",
+        "t_5f062b48bd5c72": "glm-5.3",
+        "t_5f20f236803182": "glm-5.3",
+        "t_61125f6dca6ef5": "glm-5.3",
+        "t_626bcaf0505d62": "glm-5.3",
+        "t_6864d2835d80bf": "glm-5.3",
+        "t_6888ab970e31c3": "glm-5.3",
+        "t_6ba8afd5b38f79": "glm-5.3",
+        "t_6c58fddf035257": "glm-5.3",
+        "t_70191c71d16586": "glm-5.3",
+        "t_704bdcc3a748ad": "glm-5.3",
+        "t_774dbc2439904a": "glm-5.3",
+        "t_79903f232124a5": "glm-5.3",
+        "t_7eede2b557c7fc": "glm-5.3",
+        "t_837f8da9ddb251": "glm-5.3",
+        "t_849470895e851a": "glm-5.3",
+        "t_88faa38d6c40e2": "glm-5.3",
+        "t_8ced9bbeef240e": "glm-5.3",
+        "t_919b6b347c5c89": "glm-5.3",
+        "t_95809074f0f71c": "glm-5.3",
+        "t_993eb89f7e24cc": "glm-5.3",
+        "t_99caae6034ad44": "glm-5.3",
+        "t_9b98fb1ba720e6": "glm-5.3",
+        "t_9d58945232dd3d": "glm-5.3",
+        "t_a2e3a5c30e1fee": "glm-5.3",
+        "t_a53662d683e051": "glm-5.3",
+        "t_a66cebd0e0e362": "glm-5.3",
+        "t_aa9e4856d8537a": "glm-5.3",
+        "t_aea73209cf7b9f": "glm-5.3",
+        "t_aef838b1d47012": "glm-5.3",
+        "t_af43c3b20f9d36": "glm-5.3",
+        "t_b2afa24e30cb47": "glm-5.3",
+        "t_b3686695ab2117": "glm-5.3",
+        "t_b3f59d3f24ddd6": "glm-5.3",
+        "t_b6af508cae924e": "glm-5.3",
+        "t_b8f78f6f3f7c9e": "glm-5.3",
+        "t_bb9e2cb9dd0c1d": "glm-5.3",
+        "t_bc4334221ab656": "glm-5.3",
+        "t_bcae6e13a30039": "glm-5.3",
+        "t_bf136420798dea": "glm-5.3",
+        "t_c8c354849ad5e0": "glm-5.3",
+        "t_c99a6df7943b56": "glm-5.3",
+        "t_cbed6c2dcb6bb1": "glm-5.3",
+        "t_d49787cb4cb6a8": "glm-5.3",
+        "t_d64861e3c79b2d": "glm-5.3",
+        "t_db6142a69a33fd": "glm-5.3",
+        "t_db7ac77ea3440f": "glm-5.3",
+        "t_e0c8f8b3c9d0c2": "glm-5.3",
+        "t_e7050c10b5606a": "glm-5.3",
+        "t_eb81603ab2029a": "glm-5.3",
+        "t_f0e670757245e0": "glm-5.3",
+        "t_fb3535441fdfdd": "glm-5.3"
+      },
+      "model_totals": {
+        "glm-5.3": {
+          "additions": 3880,
+          "deletions": 2792
+        }
+      }
+    }
+  }
+}
