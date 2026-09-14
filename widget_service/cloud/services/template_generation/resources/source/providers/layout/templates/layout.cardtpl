@@ -181,12 +181,28 @@ Row({
 },
   Column({
     "layoutWeight": 1,
-    "height": "matchParent"
-  }, children[0]),
+    "height": "matchParent",
+    "backgroundColor": $theme("supportContentStyle.backgroundColor"),
+    "borderRadius": 16
+  },
+    Column({
+      "width": "matchParent",
+      "height": "matchParent",
+      "padding": 12
+    }, children[0])
+  ),
   Column({
     "layoutWeight": 1,
-    "height": "matchParent"
-  }, children[1])
+    "height": "matchParent",
+    "backgroundColor": $theme("supportContentStyle.backgroundColor"),
+    "borderRadius": 16
+  },
+    Column({
+      "width": "matchParent",
+      "height": "matchParent",
+      "padding": 12
+    }, children[1])
+  )
 )
 #End
 

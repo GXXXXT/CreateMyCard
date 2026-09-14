@@ -283,7 +283,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         if path.is_dir()
     }
 
-    assert len(registry.provider_template_ids) == 164
+    assert len(registry.provider_template_ids) == 168
     assert {
         "ActivityOverviewFull@1",
         "AppUsageOverviewFull@1",
@@ -304,6 +304,10 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "BluetoothDeviceOverviewEarphoneCompact@1",
         "BluetoothDeviceOverviewHero@1",
         "CountdownOverviewFull@1",
+        "CountdownOverviewTargetDetailFull@1",
+        "CountdownOverviewTargetCompact@1",
+        "CountdownOverviewEventHero@1",
+        "CountdownOverviewDepartureHero@1",
         "CountdownOverviewWideFull@1",
         "CountdownOverviewWideHero@1",
         "CountdownOverviewWideHalf@1",
