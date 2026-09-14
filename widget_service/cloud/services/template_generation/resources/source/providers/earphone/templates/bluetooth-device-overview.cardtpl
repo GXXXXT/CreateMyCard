@@ -1249,7 +1249,7 @@ Column(
     },
     Text(
         Expr(`'' + ${data.battery} + '%'`),
-        { "width": "matchParent", "fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor') }
+        { "width": "matchParent", "fontSize": 16, "fontWeight": 700, "fontColor": $theme('primaryColor') }
     ),
     Row(
         {
@@ -1260,17 +1260,17 @@ Column(
         #if props.caseIcon
             Image(
                 props.caseIcon,
-                { "width": 14, "height": 14, "fillColor": $theme('supportContentColor') }
+                { "width": 12, "height": 12, "fillColor": $theme('supportContentColor') }
             ),
         #else
             Text(
                 "耳机仓",
-                { "fontColor": $theme('supportContentColor'), "fontSize": 12, "fontWeight": 400 }
+                { "fontColor": $theme('supportContentColor'), "fontSize": 10, "fontWeight": 400 }
             ),
         #endif
         Text(
             data.charging,
-            { "fontColor": $theme('supportContentColor'), "fontSize": 12, "fontWeight": 400 }
+            { "fontColor": $theme('supportContentColor'), "fontSize": 10, "fontWeight": 400 }
         )
     )
 )
@@ -1346,7 +1346,7 @@ Column(
     },
     Text(
         Expr(`'' + ${data.battery} + '%'`),
-        { "width": "matchParent", "fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor') }
+        { "width": "matchParent", "fontSize": 16, "fontWeight": 700, "fontColor": $theme('primaryColor') }
     ),
     Row(
         {
@@ -1357,17 +1357,17 @@ Column(
         #if props.earphoneIcon
             Image(
                 props.earphoneIcon,
-                { "width": 14, "height": 14, "fillColor": $theme('supportContentColor') }
+                { "width": 12, "height": 12, "fillColor": $theme('supportContentColor') }
             ),
         #else
             Text(
                 "耳机",
-                { "fontColor": $theme('supportContentColor'), "fontSize": 12, "fontWeight": 400 }
+                { "fontColor": $theme('supportContentColor'), "fontSize": 10, "fontWeight": 400 }
             ),
         #endif
         Text(
             data.name,
-            { "fontColor": $theme('supportContentColor'), "fontSize": 12, "fontWeight": 400 }
+            { "fontColor": $theme('supportContentColor'), "fontSize": 10, "fontWeight": 400 }
         )
     )
 )
