@@ -1,0 +1,33 @@
+widget_service/cloud/services/template_generation/resources/source/providers/battery/templates/battery-overview.cardtpl
+  h_22e274a52827b7 688-695,701,707-711,716,720-756,759-767,770-778,781-783
+  h_22e274a52827b7 696-700,702-706,712-715,717-719,757-758,768-769,779-780
+widget_service/cloud/services/template_generation/docs/provider-template-capability-checklist.md
+  h_22e274a52827b7 65,80
+widget_service/cloud/services/template_generation/engine/cardplan/compiler.py
+  h_22e274a52827b7 1108,6205
+widget_service/cloud/services/template_generation/engine/cardplan/prompt.py
+  h_22e274a52827b7 1102
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/first-layer.md
+  h_22e274a52827b7 1-25
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/second-layer.md
+  h_22e274a52827b7 31,61-63
+widget_service/cloud/services/template_generation/resources/source/providers/battery/provider.json
+  h_22e274a52827b7 155-175
+widget_service/cloud/services/template_generation/tests/test_template_contrast.py
+  h_22e274a52827b7 55
+widget_service/cloud/services/template_generation/tests/test_template_generation.py
+  h_22e274a52827b7 286,295,2921-2922,3142
+widget_service/cloud/services/template_generation/tests/test_template_preview_dataset.py
+  h_22e274a52827b7 19,28,31-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.1",
+  "base_commit_sha": "2f63296aef375d8b62b752f1cbc3e455765cb335",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  }
+}
