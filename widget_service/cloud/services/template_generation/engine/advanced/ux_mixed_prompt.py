@@ -57,6 +57,9 @@ _PILL_ACTION_TEMPLATE_ID = "PillAction@1"
 _COMPACT_ACTION_TEMPLATE_ID = "CompactAction@1"
 _ICON_ACTION_TEMPLATE_ID = "IconAction@1"
 _LARGE_ICON_ACTION_TEMPLATE_ID = "LargeIconAction@1"
+_TWO_FOCUS_LAYOUT_IDS = frozenset(
+    {"WideTwoFocusLayout", "WideTwoFocusActionLayout", "WideTwoFocusTwoActionLayout"}
+)
 
 
 @dataclass(frozen=True)
@@ -187,6 +190,15 @@ def build_ux_mixed_prompt(
             registry,
             required_template_groups=required_template_groups,
         )
+        if _TWO_FOCUS_LAYOUT_IDS.intersection(layout_selection.layout_ids):
+            candidate_ids_by_component, required_template_groups = (
+                _order_two_focus_component_slots(
+                    candidate_ids_by_component,
+                    required_template_groups,
+                    card_spec,
+                    registry,
+                )
+            )
         if task_spec.size == "2x4" and layout_selection.business_layout_kinds_by_position:
             (
                 candidate_ids_by_component,
@@ -820,6 +832,9 @@ def _layout_output_option(
         "WideHalfTwoCompactLayout": ("WideHalf", "Compact", "Compact"),
         "WideHalfCompactTwoLargeActionLayout": ("WideHalf", "Compact"),
         "WideHalfFourLargeActionLayout": "WideHalf",
+        "WideTwoFocusLayout": ("Hero", "Hero"),
+        "WideTwoFocusActionLayout": ("Hero", "Hero"),
+        "WideTwoFocusTwoActionLayout": ("Hero", "Hero"),
     }[layout_id]
     if layout_id == "WideFullTwoCompactLayout":
         business_template_ids = required_template_groups
@@ -857,6 +872,8 @@ def _layout_output_option(
         "WideFullFourActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
         "WideHalfCompactTwoLargeActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
         "WideHalfFourLargeActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
+        "WideTwoFocusActionLayout": _PILL_ACTION_TEMPLATE_ID,
+        "WideTwoFocusTwoActionLayout": _PILL_ACTION_TEMPLATE_ID,
     }.get(layout_id)
     if action_template_id not in action_template_ids:
         action_template_id = None
@@ -1060,6 +1077,60 @@ def _planned_output_grammar(
     }
 
 
+def _order_two_focus_component_slots(
+    candidates_by_component: dict[str, tuple[str, ...]],
+    required_template_groups: tuple[tuple[str, ...], ...],
+    card_spec: dict[str, Any],
+    registry: CardPlanRegistry,
+) -> tuple[dict[str, tuple[str, ...]], tuple[tuple[str, ...], ...]]:
+    """Order symmetric two-focus slots by the request data-binding order.
+
+    The two-focus layouts place the first slot on the left panel. The retrieval
+    pipeline orders candidates alphabetically, so without this projection a
+    "weather + battery" request would render battery first. Reorder both the
+    component candidates and the per-component template groups by the request
+    ``dataBindings`` order, which follows the user's mention order.
+    """
+    bindings = card_spec.get("dataBindings")
+    capability_order: dict[str, int] = {}
+    if isinstance(bindings, list):
+        for index, binding in enumerate(bindings):
+            if not isinstance(binding, dict):
+                continue
+            capability_id = binding.get("capabilityId")
+            if isinstance(capability_id, str) and capability_id not in capability_order:
+                capability_order[capability_id] = index
+
+    def slot_order(component_id: str) -> tuple[int, str]:
+        capability_ids = registry.require_ux_business_component(
+            component_id
+        ).data_capability_ids
+        indexes = [
+            capability_order[capability_id]
+            for capability_id in capability_ids
+            if capability_id in capability_order
+        ]
+        return (min(indexes) if indexes else len(capability_order), component_id)
+
+    ordered_components = dict(
+        sorted(candidates_by_component.items(), key=lambda item: slot_order(item[0]))
+    )
+    groups_by_component: dict[str, tuple[str, ...]] = {}
+    for group in required_template_groups:
+        for component_id, template_ids in ordered_components.items():
+            if component_id in groups_by_component:
+                continue
+            if set(group).intersection(template_ids):
+                groups_by_component[component_id] = group
+                break
+    if len(groups_by_component) != len(ordered_components):
+        return candidates_by_component, required_template_groups
+    ordered_groups = tuple(
+        groups_by_component[component_id] for component_id in ordered_components
+    )
+    return ordered_components, ordered_groups
+
+
 def _second_layer_layout_selection(
     scope: AdvancedScopeBrief,
     task_spec: TaskSpec,
@@ -1151,11 +1222,12 @@ def _second_layer_layout_selection(
                         "2x4 primary business must provide Full or Hero beside Compact"
                     )
             else:
-                layout_id, kinds, actions = (
-                    ("WideTwoHalfLayout", ("WideHalf", "WideHalf"), ())
-                    if has_half(0) and has_half(1)
-                    else ("WideTwoFullLayout", ("Full", "Full"), ())
-                )
+                if has_half(0) and has_half(1):
+                    layout_id, kinds, actions = "WideTwoHalfLayout", ("WideHalf", "WideHalf"), ()
+                elif "Hero" in group_kinds[0] and "Hero" in group_kinds[1]:
+                    layout_id, kinds, actions = "WideTwoFocusLayout", ("Hero", "Hero"), ()
+                else:
+                    layout_id, kinds, actions = "WideTwoFullLayout", ("Full", "Full"), ()
         elif (component_count, action_count) == (4, 0):
             if not all("Compact" in kinds for kinds in group_kinds):
                 raise ValueError(
@@ -1185,11 +1257,25 @@ def _second_layer_layout_selection(
                         "2x4 primary business must provide Full or Hero beside Compact"
                     )
             else:
+                hero_pair = (
+                    len(group_kinds) >= 2
+                    and "Hero" in group_kinds[0]
+                    and "Hero" in group_kinds[1]
+                )
                 selection = _SecondLayerLayoutSelection(
-                    layout_ids=("WideFullHeroActionLayout", "WideHeroActionFullLayout"),
-                    layout_kinds=("Full", "Full"),
+                    layout_ids=(
+                        ("WideTwoFocusActionLayout",)
+                        if hero_pair
+                        else (
+                            "WideFullHeroActionLayout",
+                            "WideHeroActionFullLayout",
+                        )
+                    ),
+                    layout_kinds=("Full", "Full") if not hero_pair else ("Hero",),
                     action_template_ids=(_PILL_ACTION_TEMPLATE_ID,),
-                    business_layout_kinds_by_position=("Full", "Hero"),
+                    business_layout_kinds_by_position=("Full", "Hero")
+                    if not hero_pair
+                    else ("Hero", "Hero"),
                 )
         elif (component_count, action_count) == (3, 0):
             layout_id, kinds, actions = (
@@ -1198,19 +1284,24 @@ def _second_layer_layout_selection(
                 else ("WideFullTwoCompactLayout", ("Full", "Compact", "Compact"), ())
             )
         elif (component_count, action_count) == (2, 2):
-            layout_id, kinds, actions = (
-                (
+            if has_half(0):
+                layout_id, kinds, actions = (
                     "WideHalfCompactTwoLargeActionLayout",
                     ("WideHalf", "Compact"),
                     (_LARGE_ICON_ACTION_TEMPLATE_ID,),
                 )
-                if has_half(0)
-                else (
+            elif "Hero" in group_kinds[0] and "Hero" in group_kinds[1]:
+                layout_id, kinds, actions = (
+                    "WideTwoFocusTwoActionLayout",
+                    ("Hero", "Hero"),
+                    (_PILL_ACTION_TEMPLATE_ID,),
+                )
+            else:
+                layout_id, kinds, actions = (
                     "WideFullHeroTwoActionLayout",
                     ("Full", "Hero"),
                     (_PILL_ACTION_TEMPLATE_ID,),
                 )
-            )
         elif (component_count, action_count) == (1, 4):
             layout_id, kinds, actions = (
                 ("WideHalfFourLargeActionLayout", ("WideHalf",), (_LARGE_ICON_ACTION_TEMPLATE_ID,))

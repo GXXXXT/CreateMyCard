@@ -927,6 +927,9 @@ def _expand_call(
             "WideHalfTwoCompactLayout",
             "WideHalfCompactTwoLargeActionLayout",
             "WideHalfFourLargeActionLayout",
+            "WideTwoFocusLayout",
+            "WideTwoFocusActionLayout",
+            "WideTwoFocusTwoActionLayout",
         }
         and task_spec.size == "2x4"
         and provider_template_layout_kind(wire_id) in {"Full", "Hero", "Compact"}
@@ -1105,6 +1108,7 @@ def _validate_provider_template_state(
         state_independent_variants = {
             "compact",
             "chargingDiagnosticsHero",
+            "chargingDiagnosticsWideFull",
             "chargingProgressFull",
             "chargingProgressHero",
             "chargingRingHero",
@@ -1117,6 +1121,8 @@ def _validate_provider_template_state(
             "statusIconCompact",
             "statusIconSupport",
             "statusSupport",
+            "statusHero",
+            "chargeStatusHero",
             "support",
             "temperatureIconCompact",
             "temperatureIconSupport",
@@ -1148,6 +1154,12 @@ def _validate_provider_template_state(
             )
         if variant_name == "chargeSupport":
             # /batteryLevel 已改为可选数据：仅要求可信充电状态，电量缺失时按条件分支省略。
+            if facts.case_charging_status is None:
+                raise TerselConversionError(
+                    "Bluetooth Provider Template variant does not match the trusted case status."
+                )
+            return
+        if variant_name == "statusHero":
             if facts.case_charging_status is None:
                 raise TerselConversionError(
                     "Bluetooth Provider Template variant does not match the trusted case status."
@@ -6203,6 +6215,7 @@ _PROVIDER_TEMPLATE_DIRECT_VARIANTS = {
         "chargingWeatherCompact": "charging",
         "lowWeatherCompact": "low",
         "chargingDiagnosticsHero": "chargingDiagnostics",
+        "chargingDiagnosticsWideFull": "chargingDiagnostics",
         "chargingProgressHero": "chargingProgress",
         "healthLevelHero": "healthLevel",
         "percentRingHero": "percentRing",
@@ -6451,6 +6464,12 @@ def _validate_provider_template_layout_action_requirements(
         "WideHalfFourLargeActionLayout": (
             ("WideHalf",),
             ("LargeIconAction",) * 4,
+        ),
+        "WideTwoFocusLayout": (("Hero", "Hero"), ()),
+        "WideTwoFocusActionLayout": (("Hero", "Hero"), ("PillAction",)),
+        "WideTwoFocusTwoActionLayout": (
+            ("Hero", "Hero"),
+            ("PillAction", "PillAction"),
         ),
     }
     wide_composition = wide_composition_contracts.get(layout_id)
@@ -7531,6 +7550,9 @@ def _inject_phone_earphone_title(
         return node
     if "TwoSupportLayout@1" in template_ids:
         # 双业务 Support 行各自占满半卡片高度，不再挤入一行“设备电量”标题。
+        return node
+    if any(template_id.startswith("WideTwoFocus") for template_id in template_ids):
+        # 双焦点拼接布局的左右面板自带业务标签行，不再注入整卡“设备电量”标题。
         return node
     title = _bluetooth_text("设备电量", "subtitle", 12, 400, align="start")
     body = _with_flex_weight(node, 1, axis="vertical")
