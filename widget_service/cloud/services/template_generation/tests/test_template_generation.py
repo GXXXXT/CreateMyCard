@@ -5182,6 +5182,79 @@ def test_bluetooth_identity_without_battery_is_a_complete_provider_fact():
     assert facts.battery_part_count == 0
 
 
+def test_bluetooth_ear_battery_pair_does_not_require_device_identity():
+    facts = extract_bluetooth_device_overview_facts(
+        {
+            "data": {
+                "earphone": {
+                    "earphoneName": _provider_field("FreeBuds Pro 3", "string"),
+                    "leftBatteryLevel": _provider_field(76, "integer"),
+                    "rightBatteryLevel": _provider_field(78, "integer"),
+                }
+            }
+        }
+    )
+
+    assert facts is not None
+    assert facts.is_connected is None
+    assert facts.earphone_name == "FreeBuds Pro 3"
+    assert facts.left_battery_level == 76
+    assert facts.right_battery_level == 78
+    assert facts.battery_part_count == 2
+
+
+def test_bluetooth_half_identity_without_ear_battery_pair_is_rejected():
+    name_only = extract_bluetooth_device_overview_facts(
+        {
+            "data": {
+                "earphone": {
+                    "earphoneName": _provider_field("FreeBuds Pro", "string"),
+                }
+            }
+        }
+    )
+    connection_only = extract_bluetooth_device_overview_facts(
+        {
+            "data": {
+                "earphone": {
+                    "isConnected": _provider_field(True, "boolean"),
+                }
+            }
+        }
+    )
+
+    assert name_only is None
+    assert connection_only is None
+
+
+def test_q039_earbud_pair_compact_facts_are_projectable():
+    task_spec = TaskSpec(
+        userQuery="准备戴耳机听歌，帮我做个卡片，看看耳机名称和左右耳电量。",
+        size="2x2",
+        dataModelSchema={
+            "data": {
+                "earphone": {
+                    "earphoneName": _provider_field("示例耳机", "string"),
+                    "leftBatteryLevel": _provider_field(76, "integer"),
+                    "rightBatteryLevel": _provider_field(78, "integer"),
+                }
+            }
+        },
+    )
+
+    projected = project_content_component_facts(
+        task_spec,
+        {"GetEarphoneInfo"},
+        ("BluetoothDeviceOverview",),
+    )
+
+    earphone = projected.dataModelSchema["data"]["BluetoothDeviceOverview"]
+    assert earphone["earphoneName"]["sampleValue"] == "示例耳机"
+    assert earphone["leftBatteryLevel"]["sampleValue"] == 76
+    assert earphone["rightBatteryLevel"]["sampleValue"] == 78
+    assert "isConnected" not in earphone
+
+
 @pytest.mark.asyncio
 async def test_bluetooth_music_action_uses_hero_pair_data():
     binding = CandidateDataBinding(
@@ -6058,6 +6131,89 @@ async def test_generic_countdown_query_uses_countdown_overview_without_workout_s
                 ]
             },
         }
+    )
+    assert not reporter.has_code("DISPLAY_UNIT_MISSING", "DISPLAY_UNIT_DUPLICATED")
+
+
+def _display_unit_artifact(components: list[dict[str, Any]]) -> Any:
+    genui = "\n".join(
+        json.dumps(message, ensure_ascii=False)
+        for message in [
+            {"createSurface": {"cardType": "WidgetCard"}},
+            {"updateComponents": {"root": "root", "components": components}},
+            {"updateDataModel": {"path": "/", "value": {}}},
+        ]
+    )
+    return validate_card(
+        artifact={
+            "genui": genui,
+            "cardSpec": {
+                "title": "耳机收藏",
+                "description": "耳机电量",
+                "suggestSize": "2x2",
+                "dataBindings": [
+                    {
+                        "capabilityId": "GetEarphoneInfo",
+                        "arguments": {},
+                        "writeResultTo": "/data/earphone",
+                    }
+                ],
+            },
+            "effectiveCapabilities": {
+                "data": [
+                    {
+                        "id": "GetEarphoneInfo",
+                        "type": "data",
+                        "outputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "batteryLevel": {
+                                    "type": "integer",
+                                    "displayUnits": ["%"],
+                                    "unitIncluded": False,
+                                }
+                            },
+                        },
+                    }
+                ]
+            },
+        }
+    )
+
+
+def test_display_unit_scan_stops_at_non_text_sibling() -> None:
+    """单位 Text 后跟随无 content 的兄弟组件（Row/Image 等）时扫描应停止而非崩溃。"""
+    reporter = _display_unit_artifact(
+        [
+            {"id": "root", "component": "Column", "children": ["batteryText", "infoRow"]},
+            {
+                "id": "batteryText",
+                "component": "Text",
+                "content": "{{ '' + ${/data/earphone/batteryLevel} + '%' }}",
+            },
+            {"id": "infoRow", "component": "Row", "children": ["nameText"]},
+            {
+                "id": "nameText",
+                "component": "Text",
+                "content": "${/data/earphone/earphoneName}",
+            },
+        ]
+    )
+    assert not reporter.has_code("DISPLAY_UNIT_MISSING", "DISPLAY_UNIT_DUPLICATED")
+
+
+def test_display_unit_scan_counts_trailing_static_unit_text() -> None:
+    """锚点 Text 后的静态单位 Text 仍应被计入，避免扫描过度截断。"""
+    reporter = _display_unit_artifact(
+        [
+            {"id": "root", "component": "Column", "children": ["batteryText", "unitText"]},
+            {
+                "id": "batteryText",
+                "component": "Text",
+                "content": "${/data/earphone/batteryLevel}",
+            },
+            {"id": "unitText", "component": "Text", "content": "%"},
+        ]
     )
     assert not reporter.has_code("DISPLAY_UNIT_MISSING", "DISPLAY_UNIT_DUPLICATED")
 
