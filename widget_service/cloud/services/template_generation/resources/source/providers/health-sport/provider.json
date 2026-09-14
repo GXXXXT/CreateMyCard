@@ -343,6 +343,18 @@
       "secondaryData": []
     },
     {
+      "templateId": "SleepOverviewScoreCompact@1",
+      "businessId": "SleepOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "睡眠得分紧凑摘要，展示睡眠得分和得分进度环，可使用睡眠图标。 组件形态：compact。",
+      "optionalData": [],
+      "entry": "templates/sleep-overview.cardtpl",
+      "primaryData": [
+        "/sleepScore"
+      ],
+      "secondaryData": []
+    },
+    {
       "templateId": "ActivityOverviewSupport@1",
       "supportedEventIds": ["event.open.health.sport"],
       "assetParameterSemanticTags": {

@@ -283,7 +283,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         if path.is_dir()
     }
 
-    assert len(registry.provider_template_ids) == 139
+    assert len(registry.provider_template_ids) == 141
     assert {
         "ActivityOverviewFull@1",
         "AppUsageOverviewFull@1",
@@ -314,6 +314,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "ScheduleOverviewDatedAllDayHero@1",
         "ScheduleOverviewDateFull@1",
         "ScheduleOverviewEventCountDetailsHero@1",
+        "ScheduleOverviewEventCountDetailsFull@1",
         "ScheduleOverviewLocationDescriptionEndFull@1",
         "ScheduleOverviewLocationHero@1",
         "ScheduleOverviewNextEventHero@1",
@@ -325,6 +326,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "ScheduleOverviewTimezoneFull@1",
         "ScheduleOverviewTwoEventsFull@1",
         "SleepOverviewCompact@1",
+        "SleepOverviewScoreCompact@1",
         "SleepOverviewFull@1",
         "SleepOverviewNapFull@1",
         "SleepOverviewNapHero@1",
@@ -1041,7 +1043,7 @@ def test_business_groups_are_derived_from_provider_templates() -> None:
     assert provider_layout_components == set(registry.ux_layout_components)
     assert len(registry.ux_business_component_provider_ids) == 12
     calendar = registry.require_ux_business_component("CalendarOverview")
-    assert len(calendar.local_template_ids) == 22
+    assert len(calendar.local_template_ids) == 23
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
     assert not any(
         template_id.startswith("DateOverview")
@@ -2678,6 +2680,9 @@ def test_health_sport_templates_follow_latest_display_contract() -> None:
         "SleepOverviewCompact@1": (
             "睡眠情况紧凑摘要，展示睡眠时长，可使用睡眠图标。 组件形态：compact。"
         ),
+        "SleepOverviewScoreCompact@1": (
+            "睡眠得分紧凑摘要，展示睡眠得分和得分进度环，可使用睡眠图标。 组件形态：compact。"
+        ),
         "SleepOverviewNapFull@1": (
             "作息提醒完整摘要，展示小睡累计时长，可选展示入睡-醒来时段，可使用睡眠图标。 "
             "组件形态：full。"
@@ -2718,6 +2723,7 @@ def test_health_sport_templates_follow_latest_display_contract() -> None:
         "SleepOverviewFull@1": {"睡眠监测", "睡眠监测评分"},
         "SleepOverviewHero@1": {"睡眠监测"},
         "SleepOverviewCompact@1": {"睡眠监测时长"},
+        "SleepOverviewScoreCompact@1": {"睡眠得分"},
         "SleepOverviewNapFull@1": {"作息提醒"},
         "SleepOverviewNapHero@1": {"睡眠监测"},
     }
@@ -2730,7 +2736,9 @@ def test_health_sport_templates_follow_latest_display_contract() -> None:
         }
         assert expected_labels <= literal_labels
 
-    for template_id in ("SleepOverviewFull@1", "SleepOverviewHero@1"):
+    for template_id in (
+        "SleepOverviewFull@1", "SleepOverviewHero@1", "SleepOverviewScoreCompact@1"
+    ):
         root = registry.require_variant(template_id, "default").root
         progress_options = _template_nodes(root, "Progress")[0].values[-1]
         background = progress_options.properties["backgroundColor"]
@@ -2810,6 +2818,7 @@ def test_business_artwork_and_monochrome_icons_keep_explicit_color_policies() ->
         ("SleepOverviewFull@1", "sourceIcon"),
         ("SleepOverviewHero@1", "sourceIcon"),
         ("SleepOverviewCompact@1", "sourceIcon"),
+        ("SleepOverviewScoreCompact@1", "sourceIcon"),
         ("SleepOverviewSupport@1", "sourceIcon"),
         ("SleepOverviewNapFull@1", "sourceIcon"),
         ("SleepOverviewNapHero@1", "sourceIcon"),
@@ -3056,7 +3065,7 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
     registry = get_cardplan_registry()
     calendar = registry.require_ux_business_component("CalendarOverview")
 
-    assert len(calendar.local_template_ids) == 22
+    assert len(calendar.local_template_ids) == 23
     assert "ScheduleOverviewHeroContent@1" in calendar.local_template_ids
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
     assert "ScheduleOverviewTimeSupport@1" in calendar.local_template_ids
@@ -3078,6 +3087,10 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
         "ScheduleOverviewTimezoneFull@1": {"headerLabel"},
         "ScheduleOverviewDateFull@1": {"headerLabel"},
         "ScheduleOverviewNextEventLocationFull@1": {
+            "calendarIcon",
+            "headerLabel",
+        },
+        "ScheduleOverviewEventCountDetailsFull@1": {
             "calendarIcon",
             "headerLabel",
         },
@@ -3123,6 +3136,7 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
     assert "ScheduleOverviewDateFull@1" in rule_content
     assert "ScheduleOverviewTwoEventsFull@1" in rule_content
     assert "ScheduleOverviewEventCountDetailsHero@1" in rule_content
+    assert "ScheduleOverviewEventCountDetailsFull@1" in rule_content
     assert "Support" in rule_content
 
 

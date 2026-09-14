@@ -49,6 +49,8 @@
     `calendarIcon` 与 `headerLabel`。
   - `ScheduleOverviewEventCountDetailsHero@1`：近期日程清点 Hero；展示日程总数及首项日程的标题、
     开始时间和备注，不接收展示 Prop。
+  - `ScheduleOverviewEventCountDetailsFull@1`：近期日程清点 Full；展示日程总数及首项日程的标题、
+    开始时间和备注；可选 `calendarIcon` 与 `headerLabel`。
   - `ScheduleOverviewTimezoneAllDayFull@1`：时区全天日程 Full；展示标题、全天状态、时区和地点；可选
     `calendarIcon` 与 `headerLabel`；全天文案由端侧 `Expr(...)` 按运行时布尔值计算。
 - Hero 只用于 `HeroActionLayout@1` 加一个 `PillAction@1`；Full 只用于 `SingleFocusLayout@1`，
