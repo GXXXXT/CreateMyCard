@@ -1,0 +1,101 @@
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/first-layer.md
+  s_4cba56cf54e5de::t_94b68612fd86f6 29,31-32
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/second-layer.md
+  s_4cba56cf54e5de::t_3c935c7bffb75f 75-76,79-82
+widget_service/cloud/services/template_generation/docs/provider-template-capability-checklist.md
+  s_4cba56cf54e5de::t_fb6e94b2315430 65,76,83
+widget_service/cloud/services/template_generation/resources/source/providers/battery/provider.json
+  s_4cba56cf54e5de::t_92d2b98fcfb076 270-274,279
+widget_service/cloud/services/template_generation/tests/test_template_generation.py
+  s_4cba56cf54e5de::t_5cc7f716c3ae11 3176-3180
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.1",
+  "base_commit_sha": "d3d7005719ef9dca448e7c8f12725e128890cdfc",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_4cba56cf54e5de": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_d36803cb-078c-4ea1-a158-524dca025d2e",
+        "model": "glm-5.3"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 54,
+      "total_deletions": 45,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_3c935c7bffb75f": "glm-5.3",
+        "t_465e0fa039b9a2": "glm-5.3",
+        "t_5cc7f716c3ae11": "glm-5.3",
+        "t_88805b85e73f36": "glm-5.3",
+        "t_92d2b98fcfb076": "glm-5.3",
+        "t_94b68612fd86f6": "glm-5.3",
+        "t_c43df0a8179f32": "glm-5.3",
+        "t_c77b0be0e1a072": "glm-5.3",
+        "t_d8f9b078718ac6": "glm-5.3",
+        "t_e3584d4bb9ded0": "glm-5.3",
+        "t_fb6e94b2315430": "glm-5.3"
+      },
+      "model_totals": {
+        "glm-5.3": {
+          "additions": 54,
+          "deletions": 45
+        }
+      }
+    },
+    "s_7941eb7f12811a": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_129a58b0-453c-442e-8692-640f1f68f855",
+        "model": "glm-5.3"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 160,
+      "total_deletions": 56,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_079880e1025b69": "glm-5.3",
+        "t_11f8486f73f2ac": "glm-5.3",
+        "t_15d35eaa830826": "glm-5.3",
+        "t_2c66b18fa92976": "glm-5.3",
+        "t_33876fe1b9570e": "glm-5.3",
+        "t_3a656f6caa8a0a": "glm-5.3",
+        "t_4a9361b9f834e3": "glm-5.3",
+        "t_534a82555aa3ef": "glm-5.3",
+        "t_55472ff9c0887d": "glm-5.3",
+        "t_5ac55ea1abdfac": "glm-5.3",
+        "t_73686894204b50": "glm-5.3",
+        "t_76ef06dda14f74": "glm-5.3",
+        "t_7fdb7f7ca8e3a8": "glm-5.3",
+        "t_841a5de35ce471": "glm-5.3",
+        "t_8af698c9eb3ad1": "glm-5.3",
+        "t_8cf966f09c3c5e": "glm-5.3",
+        "t_8daaa2fe5f490f": "glm-5.3",
+        "t_99d9c78ba5953f": "glm-5.3",
+        "t_a718cd2ad1aa9b": "glm-5.3",
+        "t_b2f539ce5012f9": "glm-5.3",
+        "t_c4e3e750951736": "glm-5.3",
+        "t_cdbac5b5b304bf": "glm-5.3",
+        "t_d7363011965888": "glm-5.3",
+        "t_db490174074a47": "glm-5.3",
+        "t_dcedae4bbf60c7": "glm-5.3",
+        "t_de71f874ee05cf": "glm-5.3",
+        "t_e0c87a1c2e7459": "glm-5.3",
+        "t_ee727fe81cd987": "glm-5.3"
+      },
+      "model_totals": {
+        "glm-5.3": {
+          "additions": 160,
+          "deletions": 56
+        }
+      }
+    }
+  }
+}
