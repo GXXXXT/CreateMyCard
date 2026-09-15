@@ -1,0 +1,14 @@
+widget_service/cloud/config/default_config.yaml
+  h_22e274a52827b7 18,29,51-52,70-73,79,84-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.1",
+  "base_commit_sha": "fe5351d4f42a945f8f4bedd67aa2d16407e07576",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  }
+}
