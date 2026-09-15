@@ -69,6 +69,10 @@ _ACTION_LABELS = {
     "event.startNavigate": "开始导航",
     "event.setPowerSavingMode": "省电模式",
 }
+_ACTION_SUBTITLES = {
+    "event.viewCalendarEvent": "日程详情",
+    "event.open.clock.alarm": "闹钟应用",
+}
 _ASSET_SEMANTIC_TERMS = {
     "calendar": ("calendar", "schedule", "日程", "日历"),
     "schedule": ("schedule", "日程"),
@@ -200,6 +204,7 @@ def build_hybrid_prompt(
             *binding_argument_literals,
             *(str(fact.value) for fact in facts if isinstance(fact.value, str)),
             *(_action_label(event) for event in task_spec.eventCandidates),
+            *(_action_subtitle(event) for event in task_spec.eventCandidates),
         ]
     )
     trusted_numbers = tuple(
@@ -1268,6 +1273,10 @@ def _action_label(event: Any) -> str:
     return _ACTION_LABELS.get(getattr(event, "id", "") or "", "打开详情")
 
 
+def _action_subtitle(event: Any) -> str:
+    return _ACTION_SUBTITLES.get(getattr(event, "id", "") or "", "")
+
+
 def _build_action_bindings(task_spec: TaskSpec) -> tuple[ActionBinding, ...]:
     event_counts: dict[str, int] = {}
     for event in task_spec.eventCandidates:
@@ -1297,6 +1306,7 @@ def _build_action_bindings(task_spec: TaskSpec) -> tuple[ActionBinding, ...]:
                 action_id=action_id,
                 event_id=event_id,
                 display_label=_action_label(event),
+                display_subtitle=_action_subtitle(event),
                 call=event.call,
                 args=event.args,
             )

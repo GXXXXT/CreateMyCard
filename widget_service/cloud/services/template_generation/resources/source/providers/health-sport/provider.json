@@ -60,6 +60,25 @@
       ]
     },
     {
+      "templateId": "ActivityOverviewExerciseWideHero@1",
+      "businessId": "ActivityOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "今日活动摘要，大号展示步数，存在运动类型时以类型名替代“今日活动”标题，可补充运动时长、消耗热量、运动距离和平均心率紧凑指标行，并以纯文本补充最低心率，数据缺失时隐藏对应指标，可使用对应图标。 组件形态：wideHero。",
+      "optionalData": [
+        "/exerciseTypeName",
+        "/exerciseDurationText",
+        "/exerciseCalorieText",
+        "/dailyDistanceText",
+        "/exerciseHeartRateAvg",
+        "/exerciseHeartRateMin"
+      ],
+      "entry": "templates/activity-overview.cardtpl",
+      "primaryData": [
+        "/dailySteps"
+      ],
+      "secondaryData": []
+    },
+    {
       "templateId": "ActivityOverviewFull@1",
       "businessId": "ActivityOverview",
       "capabilityId": "GetHealthAndSportSummary",

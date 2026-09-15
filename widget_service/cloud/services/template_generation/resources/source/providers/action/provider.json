@@ -10,7 +10,7 @@
     },
     {
       "templateId": "CompactAction@1",
-      "description": "单行文本 Compact 动作模板，左侧展示 label，右侧展示 24x24 语义图标，由第二层通过 actionId、label 和 icon Props 填充。",
+      "description": "单行文本 Compact 动作模板，左侧展示 label 与可选 subtitle 副标题（由服务端按 Action 绑定下发），右侧展示 24x24 语义图标，由第二层通过 actionId、label 和 icon Props 填充。",
       "entry": "templates/action.cardtpl"
     },
     {

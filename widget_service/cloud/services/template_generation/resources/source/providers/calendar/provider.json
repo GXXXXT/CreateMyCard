@@ -51,6 +51,23 @@
       "optionalData": []
     },
     {
+      "templateId": "ScheduleOverviewReminderCompact@1",
+      "businessId": "CalendarOverview",
+      "capabilityId": "GetCalendarEvents",
+      "description": "日程提醒 Compact：展示首项日程的提前提醒分钟数，可选通知铃铛图标。组件形态：compact。",
+      "entry": "templates/schedule-overview.cardtpl",
+      "primaryData": [
+        "/events/0/remindTime/0"
+      ],
+      "secondaryData": [],
+      "optionalData": [],
+      "assetParameterSemanticTags": {
+        "bellIcon": [
+          "calendar"
+        ]
+      }
+    },
+    {
       "templateId": "ScheduleOverviewTimezoneFull@1",
       "businessId": "CalendarOverview",
       "capabilityId": "GetCalendarEvents",
@@ -128,10 +145,11 @@
         "/events/0/dtStart"
       ],
       "secondaryData": [
-        "/events/0/dtEnd",
         "/events/0/eventLocation"
       ],
-      "optionalData": []
+      "optionalData": [
+        "/events/0/dtEnd"
+      ]
     },
     {
       "templateId": "ScheduleOverviewMeetingWideFull@1",
@@ -293,7 +311,7 @@
       "templateId": "ScheduleOverviewEventCountDetailsFull@1",
       "businessId": "CalendarOverview",
       "capabilityId": "GetCalendarEvents",
-      "description": "近期日程清点 Full，以数量徽标展示日程总数，并展示最近一项的标题、开始时间和备注；可选日历图标与标题文案。",
+      "description": "近期日程清点 Full，并列展示日程总数、首项日程标题/开始时间/全天状态，备注为可选；可选日历图标与标题文案。",
       "entry": "templates/schedule-overview.cardtpl",
       "primaryData": [
         "/eventCount",
@@ -301,9 +319,11 @@
       ],
       "secondaryData": [
         "/events/0/dtStart",
-        "/events/0/description"
+        "/events/0/isAllDay"
       ],
-      "optionalData": []
+      "optionalData": [
+        "/events/0/description"
+      ]
     },
     {
       "templateId": "ScheduleOverviewTimezoneAllDayFull@1",
