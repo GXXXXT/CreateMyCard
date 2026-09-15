@@ -74,6 +74,9 @@ _LAYOUT_COMPONENTS = frozenset(
         "WideHalfTwoCompactLayout",
         "WideHalfCompactTwoLargeActionLayout",
         "WideHalfFourLargeActionLayout",
+        "WideTwoFocusLayout",
+        "WideTwoFocusActionLayout",
+        "WideTwoFocusTwoActionLayout",
     }
 )
 _CONDITIONAL_PARAMETER_COMPONENTS = frozenset({"IfParam", "IfMissingParam"})
@@ -2642,7 +2645,11 @@ def provider_template_context_admission(
     task_spec: TaskSpec,
 ) -> ProviderTemplateAdmission:
     """Apply Provider-owned constraints that depend on the selected generation context."""
-    if definition.requires_layout_action and not task_spec.eventCandidates:
+    if (
+        definition.requires_layout_action
+        and task_spec.size == "2x2"
+        and not task_spec.eventCandidates
+    ):
         return ProviderTemplateAdmission(False, "layout-action-required")
     return ProviderTemplateAdmission(True)
 

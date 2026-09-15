@@ -378,6 +378,23 @@
           "earphone-case"
         ]
       }
+    },
+    {
+      "templateId": "BluetoothDeviceOverviewStatusHero@1",
+      "businessId": "BluetoothDeviceOverview",
+      "capabilityId": "GetEarphoneInfo",
+      "description": "耳机仓充电状态 Hero，展示耳机仓充电状态大字和副标签，可选充电盒图标；用于左右双焦点拼接布局。",
+      "entry": "templates/bluetooth-device-overview.cardtpl",
+      "primaryData": [
+        "/chargingStatusDesc"
+      ],
+      "secondaryData": [],
+      "optionalData": [],
+      "assetParameterSemanticTags": {
+        "deviceIcon": [
+          "earphone-case"
+        ]
+      }
     }
   ],
   "compatibility": {

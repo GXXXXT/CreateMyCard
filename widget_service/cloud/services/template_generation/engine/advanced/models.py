@@ -31,6 +31,9 @@ UX_LAYOUT_COMPONENT_IDS = frozenset(
         "WideHalfTwoCompactLayout",
         "WideHalfCompactTwoLargeActionLayout",
         "WideHalfFourLargeActionLayout",
+        "WideTwoFocusLayout",
+        "WideTwoFocusActionLayout",
+        "WideTwoFocusTwoActionLayout",
     }
 )
 UX_DIRECT_BUSINESS_COMPONENT_IDS = frozenset(

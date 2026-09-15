@@ -283,7 +283,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         if path.is_dir()
     }
 
-    assert len(registry.provider_template_ids) == 139
+    assert len(registry.provider_template_ids) == 148
     assert {
         "ActivityOverviewFull@1",
         "AppUsageOverviewFull@1",
@@ -292,6 +292,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "BatteryOverviewChargingProgressHero@1",
         "BatteryOverviewChargingProgressFull@1",
         "BatteryOverviewChargingDiagnosticsHero@1",
+        "BatteryOverviewChargingDiagnosticsWideFull@1",
         "BatteryOverviewChargingRingHero@1",
         "BatteryOverviewHealthLevelHero@1",
         "BluetoothDeviceOverviewConnectionSupport@1",
@@ -314,6 +315,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "ScheduleOverviewDatedAllDayHero@1",
         "ScheduleOverviewDateFull@1",
         "ScheduleOverviewEventCountDetailsHero@1",
+        "ScheduleOverviewEventCountDetailsFull@1",
         "ScheduleOverviewLocationDescriptionEndFull@1",
         "ScheduleOverviewLocationHero@1",
         "ScheduleOverviewNextEventHero@1",
@@ -325,6 +327,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "ScheduleOverviewTimezoneFull@1",
         "ScheduleOverviewTwoEventsFull@1",
         "SleepOverviewCompact@1",
+        "SleepOverviewScoreCompact@1",
         "SleepOverviewFull@1",
         "SleepOverviewNapFull@1",
         "SleepOverviewNapHero@1",
@@ -988,6 +991,9 @@ def test_layout_template_wide_marker_drives_exclusive_card_size() -> None:
         "WideHalfTwoCompactLayout": ("2x4",),
         "WideHalfCompactTwoLargeActionLayout": ("2x4",),
         "WideHalfFourLargeActionLayout": ("2x4",),
+        "WideTwoFocusLayout": ("2x4",),
+        "WideTwoFocusActionLayout": ("2x4",),
+        "WideTwoFocusTwoActionLayout": ("2x4",),
     }
 
     assert set(registry.ux_layout_components) == set(expected_sizes)
@@ -1041,13 +1047,13 @@ def test_business_groups_are_derived_from_provider_templates() -> None:
     assert provider_layout_components == set(registry.ux_layout_components)
     assert len(registry.ux_business_component_provider_ids) == 12
     calendar = registry.require_ux_business_component("CalendarOverview")
-    assert len(calendar.local_template_ids) == 22
+    assert len(calendar.local_template_ids) == 23
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
     assert not any(
         template_id.startswith("DateOverview")
         for template_id in calendar.local_template_ids
     )
-    assert len(registry.ux_layout_component_provider_ids) == 20
+    assert len(registry.ux_layout_component_provider_ids) == 23
     for bundle in registry.provider_bundles.values():
         payload = json.loads(
             (registry.source_root / "providers" / bundle.manifest.provider_id.removeprefix(
@@ -2678,6 +2684,9 @@ def test_health_sport_templates_follow_latest_display_contract() -> None:
         "SleepOverviewCompact@1": (
             "睡眠情况紧凑摘要，展示睡眠时长，可使用睡眠图标。 组件形态：compact。"
         ),
+        "SleepOverviewScoreCompact@1": (
+            "睡眠得分紧凑摘要，展示睡眠得分和得分进度环，可使用睡眠图标。 组件形态：compact。"
+        ),
         "SleepOverviewNapFull@1": (
             "作息提醒完整摘要，展示小睡累计时长，可选展示入睡-醒来时段，可使用睡眠图标。 "
             "组件形态：full。"
@@ -2718,6 +2727,7 @@ def test_health_sport_templates_follow_latest_display_contract() -> None:
         "SleepOverviewFull@1": {"睡眠监测", "睡眠监测评分"},
         "SleepOverviewHero@1": {"睡眠监测"},
         "SleepOverviewCompact@1": {"睡眠监测时长"},
+        "SleepOverviewScoreCompact@1": {"睡眠得分"},
         "SleepOverviewNapFull@1": {"作息提醒"},
         "SleepOverviewNapHero@1": {"睡眠监测"},
     }
@@ -2730,7 +2740,9 @@ def test_health_sport_templates_follow_latest_display_contract() -> None:
         }
         assert expected_labels <= literal_labels
 
-    for template_id in ("SleepOverviewFull@1", "SleepOverviewHero@1"):
+    for template_id in (
+        "SleepOverviewFull@1", "SleepOverviewHero@1", "SleepOverviewScoreCompact@1"
+    ):
         root = registry.require_variant(template_id, "default").root
         progress_options = _template_nodes(root, "Progress")[0].values[-1]
         background = progress_options.properties["backgroundColor"]
@@ -2803,6 +2815,7 @@ def test_business_artwork_and_monochrome_icons_keep_explicit_color_policies() ->
         ("BluetoothDeviceOverviewEarphoneCaseCompact@1", "caseIcon"),
         ("BluetoothDeviceOverviewEarphoneHero@1", "earphoneIcon"),
         ("BluetoothDeviceOverviewEarphoneCompact@1", "earphoneIcon"),
+        ("BluetoothDeviceOverviewStatusHero@1", "deviceIcon"),
         ("HeartRateOverviewIconCompact@1", "sourceIcon"),
         ("HeartRateOverviewIconHero@1", "sourceIcon"),
         ("HeartRateOverviewUpdatedIconHero@1", "sourceIcon"),
@@ -2810,6 +2823,7 @@ def test_business_artwork_and_monochrome_icons_keep_explicit_color_policies() ->
         ("SleepOverviewFull@1", "sourceIcon"),
         ("SleepOverviewHero@1", "sourceIcon"),
         ("SleepOverviewCompact@1", "sourceIcon"),
+        ("SleepOverviewScoreCompact@1", "sourceIcon"),
         ("SleepOverviewSupport@1", "sourceIcon"),
         ("SleepOverviewNapFull@1", "sourceIcon"),
         ("SleepOverviewNapHero@1", "sourceIcon"),
@@ -2917,8 +2931,8 @@ def test_device_ring_progress_and_icons_bind_to_distinct_theme_colors() -> None:
                 assert fill_color.kind == "theme"
                 assert fill_color.name == "supportContentColor"
 
-    assert progress_count == 11
-    assert ring_icon_count == 10
+    assert progress_count == 13
+    assert ring_icon_count == 12
 
 
 def test_battery_ring_progress_uses_dedicated_track_theme_color() -> None:
@@ -3056,7 +3070,7 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
     registry = get_cardplan_registry()
     calendar = registry.require_ux_business_component("CalendarOverview")
 
-    assert len(calendar.local_template_ids) == 22
+    assert len(calendar.local_template_ids) == 23
     assert "ScheduleOverviewHeroContent@1" in calendar.local_template_ids
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
     assert "ScheduleOverviewTimeSupport@1" in calendar.local_template_ids
@@ -3078,6 +3092,10 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
         "ScheduleOverviewTimezoneFull@1": {"headerLabel"},
         "ScheduleOverviewDateFull@1": {"headerLabel"},
         "ScheduleOverviewNextEventLocationFull@1": {
+            "calendarIcon",
+            "headerLabel",
+        },
+        "ScheduleOverviewEventCountDetailsFull@1": {
             "calendarIcon",
             "headerLabel",
         },
@@ -3123,6 +3141,7 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
     assert "ScheduleOverviewDateFull@1" in rule_content
     assert "ScheduleOverviewTwoEventsFull@1" in rule_content
     assert "ScheduleOverviewEventCountDetailsHero@1" in rule_content
+    assert "ScheduleOverviewEventCountDetailsFull@1" in rule_content
     assert "Support" in rule_content
 
 
@@ -3138,11 +3157,14 @@ def test_battery_templates_follow_consolidated_state_contract() -> None:
         "BatteryOverviewChargingProgressHero@1",
         "BatteryOverviewChargingProgressFull@1",
         "BatteryOverviewChargingDiagnosticsHero@1",
+        "BatteryOverviewChargingDiagnosticsWideFull@1",
         "BatteryOverviewChargingRingHero@1",
         "BatteryOverviewPercentRingHero@1",
         "BatteryOverviewTemperatureFull@1",
         "BatteryOverviewSupport@1",
         "BatteryOverviewStatusSupport@1",
+        "BatteryOverviewStatusHero@1",
+        "BatteryOverviewChargeStatusHero@1",
     }
 
     assert set(battery.local_template_ids) == expected_template_ids
@@ -5182,6 +5204,79 @@ def test_bluetooth_identity_without_battery_is_a_complete_provider_fact():
     assert facts.battery_part_count == 0
 
 
+def test_bluetooth_ear_battery_pair_does_not_require_device_identity():
+    facts = extract_bluetooth_device_overview_facts(
+        {
+            "data": {
+                "earphone": {
+                    "earphoneName": _provider_field("FreeBuds Pro 3", "string"),
+                    "leftBatteryLevel": _provider_field(76, "integer"),
+                    "rightBatteryLevel": _provider_field(78, "integer"),
+                }
+            }
+        }
+    )
+
+    assert facts is not None
+    assert facts.is_connected is None
+    assert facts.earphone_name == "FreeBuds Pro 3"
+    assert facts.left_battery_level == 76
+    assert facts.right_battery_level == 78
+    assert facts.battery_part_count == 2
+
+
+def test_bluetooth_half_identity_without_ear_battery_pair_is_rejected():
+    name_only = extract_bluetooth_device_overview_facts(
+        {
+            "data": {
+                "earphone": {
+                    "earphoneName": _provider_field("FreeBuds Pro", "string"),
+                }
+            }
+        }
+    )
+    connection_only = extract_bluetooth_device_overview_facts(
+        {
+            "data": {
+                "earphone": {
+                    "isConnected": _provider_field(True, "boolean"),
+                }
+            }
+        }
+    )
+
+    assert name_only is None
+    assert connection_only is None
+
+
+def test_q039_earbud_pair_compact_facts_are_projectable():
+    task_spec = TaskSpec(
+        userQuery="准备戴耳机听歌，帮我做个卡片，看看耳机名称和左右耳电量。",
+        size="2x2",
+        dataModelSchema={
+            "data": {
+                "earphone": {
+                    "earphoneName": _provider_field("示例耳机", "string"),
+                    "leftBatteryLevel": _provider_field(76, "integer"),
+                    "rightBatteryLevel": _provider_field(78, "integer"),
+                }
+            }
+        },
+    )
+
+    projected = project_content_component_facts(
+        task_spec,
+        {"GetEarphoneInfo"},
+        ("BluetoothDeviceOverview",),
+    )
+
+    earphone = projected.dataModelSchema["data"]["BluetoothDeviceOverview"]
+    assert earphone["earphoneName"]["sampleValue"] == "示例耳机"
+    assert earphone["leftBatteryLevel"]["sampleValue"] == 76
+    assert earphone["rightBatteryLevel"]["sampleValue"] == 78
+    assert "isConnected" not in earphone
+
+
 @pytest.mark.asyncio
 async def test_bluetooth_music_action_uses_hero_pair_data():
     binding = CandidateDataBinding(
@@ -6058,6 +6153,89 @@ async def test_generic_countdown_query_uses_countdown_overview_without_workout_s
                 ]
             },
         }
+    )
+    assert not reporter.has_code("DISPLAY_UNIT_MISSING", "DISPLAY_UNIT_DUPLICATED")
+
+
+def _display_unit_artifact(components: list[dict[str, Any]]) -> Any:
+    genui = "\n".join(
+        json.dumps(message, ensure_ascii=False)
+        for message in [
+            {"createSurface": {"cardType": "WidgetCard"}},
+            {"updateComponents": {"root": "root", "components": components}},
+            {"updateDataModel": {"path": "/", "value": {}}},
+        ]
+    )
+    return validate_card(
+        artifact={
+            "genui": genui,
+            "cardSpec": {
+                "title": "耳机收藏",
+                "description": "耳机电量",
+                "suggestSize": "2x2",
+                "dataBindings": [
+                    {
+                        "capabilityId": "GetEarphoneInfo",
+                        "arguments": {},
+                        "writeResultTo": "/data/earphone",
+                    }
+                ],
+            },
+            "effectiveCapabilities": {
+                "data": [
+                    {
+                        "id": "GetEarphoneInfo",
+                        "type": "data",
+                        "outputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "batteryLevel": {
+                                    "type": "integer",
+                                    "displayUnits": ["%"],
+                                    "unitIncluded": False,
+                                }
+                            },
+                        },
+                    }
+                ]
+            },
+        }
+    )
+
+
+def test_display_unit_scan_stops_at_non_text_sibling() -> None:
+    """单位 Text 后跟随无 content 的兄弟组件（Row/Image 等）时扫描应停止而非崩溃。"""
+    reporter = _display_unit_artifact(
+        [
+            {"id": "root", "component": "Column", "children": ["batteryText", "infoRow"]},
+            {
+                "id": "batteryText",
+                "component": "Text",
+                "content": "{{ '' + ${/data/earphone/batteryLevel} + '%' }}",
+            },
+            {"id": "infoRow", "component": "Row", "children": ["nameText"]},
+            {
+                "id": "nameText",
+                "component": "Text",
+                "content": "${/data/earphone/earphoneName}",
+            },
+        ]
+    )
+    assert not reporter.has_code("DISPLAY_UNIT_MISSING", "DISPLAY_UNIT_DUPLICATED")
+
+
+def test_display_unit_scan_counts_trailing_static_unit_text() -> None:
+    """锚点 Text 后的静态单位 Text 仍应被计入，避免扫描过度截断。"""
+    reporter = _display_unit_artifact(
+        [
+            {"id": "root", "component": "Column", "children": ["batteryText", "unitText"]},
+            {
+                "id": "batteryText",
+                "component": "Text",
+                "content": "${/data/earphone/batteryLevel}",
+            },
+            {"id": "unitText", "component": "Text", "content": "%"},
+        ]
     )
     assert not reporter.has_code("DISPLAY_UNIT_MISSING", "DISPLAY_UNIT_DUPLICATED")
 

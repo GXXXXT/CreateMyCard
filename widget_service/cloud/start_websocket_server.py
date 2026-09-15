@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2026-2026. All rights reserved.
 import asyncio
+from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 
 import uvicorn
@@ -29,7 +30,9 @@ def configure_anyio_thread_pool() -> int:
     return configured_tokens
 
 
-def create_app() -> FastAPI:
+def create_app(
+    *, model_runtime_factory: Callable[[], ModelExecutionRuntime] = ModelExecutionRuntime,
+) -> FastAPI:
     """创建 FastAPI 应用实例。
 
     入参：无。
@@ -38,7 +41,7 @@ def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         configure_anyio_thread_pool()
-        model_runtime = ModelExecutionRuntime()
+        model_runtime = model_runtime_factory()
         _app.state.model_runtime = model_runtime
         """启动并回收 WebSocket 全局统计打印任务。"""
         reporter = asyncio.create_task(report_websocket_metrics(websocket_metrics))

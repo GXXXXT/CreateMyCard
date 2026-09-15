@@ -331,12 +331,17 @@ def test_checked_in_layout_templates_use_concrete_container_blueprints() -> None
         "WideHalfTwoCompactLayout@1": 3,
         "WideHalfCompactTwoLargeActionLayout@1": 4,
         "WideHalfFourLargeActionLayout@1": 5,
+        "WideTwoFocusLayout@1": 2,
+        "WideTwoFocusActionLayout@1": 3,
+        "WideTwoFocusTwoActionLayout@1": 4,
     }
     variable_children = {
         "SingleFocusLayout@1",
     }
     mirrored_slots = {
         "WideHeroActionFullLayout@1": [1, 2, 0],
+        "WideTwoFocusActionLayout@1": [0, 2, 1],
+        "WideTwoFocusTwoActionLayout@1": [0, 2, 1, 3],
     }
 
     for template_id in (*fixed_slots, *variable_children):
@@ -669,6 +674,53 @@ def test_provider_template_layout_suffix_combinations_are_enforced() -> None:
         (),
         "2x4",
     )
+    _validate_provider_template_layout_action_requirements(
+        "WideTwoFocusLayout",
+        (
+            template("WeatherOverviewConditionHero@1"),
+            template("BatteryOverviewStatusHero@1"),
+        ),
+        (),
+        "2x4",
+    )
+    with pytest.raises(TerselConversionError, match="slot combination is invalid"):
+        _validate_provider_template_layout_action_requirements(
+            "WideTwoFocusLayout",
+            (
+                template("WeatherOverviewConditionHero@1"),
+                template("BatteryOverviewStatusHero@1"),
+            ),
+            (pill_one,),
+            "2x4",
+        )
+    _validate_provider_template_layout_action_requirements(
+        "WideTwoFocusActionLayout",
+        (
+            template("WeatherOverviewConditionHero@1"),
+            template("BatteryOverviewStatusHero@1"),
+        ),
+        (pill_one,),
+        "2x4",
+    )
+    _validate_provider_template_layout_action_requirements(
+        "WideTwoFocusTwoActionLayout",
+        (
+            template("WeatherOverviewConditionHero@1"),
+            template("BatteryOverviewStatusHero@1"),
+        ),
+        (pill_one, pill_two),
+        "2x4",
+    )
+    with pytest.raises(TerselConversionError, match="slot combination is invalid"):
+        _validate_provider_template_layout_action_requirements(
+            "WideTwoFocusTwoActionLayout",
+            (
+                template("WeatherOverviewConditionHero@1"),
+                template("BatteryOverviewStatusHero@1"),
+            ),
+            (pill_one,),
+            "2x4",
+        )
     _validate_provider_template_layout_action_requirements(
         "WideFullHeroActionLayout",
         (template("WeatherOverviewFull@1"), template("BatteryOverviewNormalHero@1")),

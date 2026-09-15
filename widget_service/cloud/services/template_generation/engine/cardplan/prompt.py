@@ -90,6 +90,9 @@ _ASSET_SEMANTIC_TERMS = {
     "call": ("call", "phone", "电话", "拨打"),
     "weather": ("weather", "天气"),
     "weather-condition": ("晴天", "天气降雨", "台风", "大风提醒"),
+    "weather-temperature-indicator": (
+        "weather_thermometer", "天气温度", "当前气温", "温度计", "温度指标", "温差变化", "冷热趋势",
+    ),
     "weather-indicator": (
         "晴天", "天气降雨", "台风", "大风提醒", "体感温度", "天气温度", "当前气温",
     ),
@@ -1099,6 +1102,7 @@ def _provider_variant_matches_trusted_state(
         state_independent_variants = {
             "compact",
             "chargingDiagnosticsHero",
+            "chargingDiagnosticsWideFull",
             "chargingProgressFull",
             "chargingProgressHero",
             "chargingRingHero",
