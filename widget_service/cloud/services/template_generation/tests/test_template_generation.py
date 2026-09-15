@@ -6465,9 +6465,10 @@ async def test_template_pipeline_supports_2x4_wide_template() -> None:
     second_user = model.second_layer_prompt[1].get("content")
     assert isinstance(first_system, str)
     assert isinstance(second_user, str)
-    assert "themeId 必须从 themes 选择" in first_system
-    assert "不得输出主题" not in first_system
-    assert "primaryOutputFieldByCapability" not in first_system
+    assert "themeId 必须从 themes 选择" not in first_system
+    assert "不得输出主题" in first_system
+    assert "primaryOutputFieldByCapability" in first_system
+    assert "planCandidates=" in second_user
     assert "HeroTitleContentActionLayout 的三个直接 children" not in second_user
 
 

@@ -1529,6 +1529,7 @@ def project_content_component_facts(
     component_ids: tuple[str, ...],
     *,
     required_output_fields_by_capability: dict[str, tuple[str, ...]] | None = None,
+    generic_output_fields: tuple[str, ...] | None = None,
 ) -> TaskSpec:
     """Narrow the second-layer contract to selected component display facts.
 
@@ -1604,6 +1605,8 @@ def project_content_component_facts(
                 for name in requested_field_names
                 if name not in specialized_field_names
             )
+            if generic_output_fields is not None:
+                field_names = tuple(path.rsplit("/", 1)[-1] for path in generic_output_fields)
             source = _best_source_object(schema, field_names)
             selected = {
                 field_name: deepcopy(field)

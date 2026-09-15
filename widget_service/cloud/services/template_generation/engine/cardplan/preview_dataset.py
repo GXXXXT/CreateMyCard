@@ -286,11 +286,13 @@ def _build_case(
     theme = _preview_theme(definition, registry)
     parameters = _template_parameters(definition)
     if definition.business_id == "GenericMetricOverview":
+        if definition.data_domain is None:
+            raise ValueError("Generic preview requires a provider data domain")
         content = _expand_health_metric_generic_template(
             definition.wire_id,
             parameters,
             task_spec=task_spec,
-            provider_binding_roots={"GetHealthAndSportSummary": definition.data_domain},
+            provider_binding_roots={"GetHealthAndSportSummary": (definition.data_domain,)},
             theme_values=theme.reference_values,
         )
     else:
