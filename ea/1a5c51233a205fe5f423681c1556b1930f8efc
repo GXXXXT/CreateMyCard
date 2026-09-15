@@ -1,0 +1,112 @@
+widget_service/cloud/services/widget_generation_service.py
+  s_ceb54f00136a53::t_24817376238ab2 1590
+widget_service/cloud/services/validator.py
+  s_ceb54f00136a53::t_103997909dd1cc 45-46
+widget_service/cloud/config/default_config.yaml
+  s_ceb54f00136a53::t_a1e8d588213131 19
+  h_22e274a52827b7 18,30,52-53,71-74,80,85-86
+widget_service/cloud/config/config.py
+  s_ceb54f00136a53::t_22adf27979c737 79-81
+  s_ceb54f00136a53::t_01349c42f8d290 200
+  s_ceb54f00136a53::t_1eb3392ed2861e 32,62-64,170
+.gitignore
+  h_22e274a52827b7 68-70
+widget_service/cloud/custom/llmclient.py
+  h_22e274a52827b7 16,36,56-57,62-65,115-116,138-139,189-257
+widget_service/cloud/custom/model_runtime.py
+  h_22e274a52827b7 65-66,107,110-117,188-192,220-252
+widget_service/cloud/start_websocket_server.py
+  h_22e274a52827b7 9,61-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.1",
+  "base_commit_sha": "ea1a5c51233a205fe5f423681c1556b1930f8efc",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_772e1642396b76": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0467e-0bb4-7843-9c0b-c5d30652632f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yan_shuifeng <yanshuifeng@huawei.com>",
+      "total_additions": 0,
+      "total_deletions": 798,
+      "overridden_lines": 0
+    },
+    "s_7941eb7f12811a": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_129a58b0-453c-442e-8692-640f1f68f855",
+        "model": "glm-5.3"
+      },
+      "human_author": null,
+      "total_additions": 487,
+      "total_deletions": 388,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_0beb948b25eb25": "glm-5.3",
+        "t_12976d8deb5461": "glm-5.3",
+        "t_31413a645c4083": "glm-5.3",
+        "t_3d8154341cab1d": "glm-5.3",
+        "t_6c379a2b934ec5": "glm-5.3",
+        "t_71193aa1f4c390": "glm-5.3",
+        "t_7766aef6700343": "glm-5.3",
+        "t_7928f74c86d5b6": "glm-5.3",
+        "t_8830c140704ed2": "glm-5.3",
+        "t_8a81daa7d1cc91": "glm-5.3",
+        "t_910176b667c341": "glm-5.3",
+        "t_a2cfff84c1a14c": "glm-5.3",
+        "t_ac2ce781abef7b": "glm-5.3",
+        "t_bd42b8096ccb31": "glm-5.3",
+        "t_cdf97cdee18edc": "glm-5.3",
+        "t_d359c787a9a447": "glm-5.3",
+        "t_d550607016d5fb": "glm-5.3",
+        "t_d5d30f3f961638": "glm-5.3",
+        "t_dc37f347c9f3ae": "glm-5.3",
+        "t_e0ca985af0d0ae": "glm-5.3",
+        "t_e4c99e76bb52c9": "glm-5.3",
+        "t_f13150f254f9d2": "glm-5.3",
+        "t_f743ab1d420c3c": "glm-5.3",
+        "t_fd7ce9af2fa507": "glm-5.3",
+        "t_fe2307bbb21d9e": "glm-5.3"
+      },
+      "model_totals": {
+        "glm-5.3": {
+          "additions": 487,
+          "deletions": 388
+        }
+      }
+    },
+    "s_ceb54f00136a53": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_3954b3ca-dcbc-4382-baf8-cd3474155746",
+        "model": "glm-5.3"
+      },
+      "human_author": null,
+      "total_additions": 8,
+      "total_deletions": 2,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_01349c42f8d290": "glm-5.3",
+        "t_103997909dd1cc": "glm-5.3",
+        "t_22adf27979c737": "glm-5.3",
+        "t_24817376238ab2": "glm-5.3",
+        "t_a1e8d588213131": "glm-5.3"
+      },
+      "model_totals": {
+        "glm-5.3": {
+          "additions": 8,
+          "deletions": 2
+        }
+      }
+    }
+  }
+}
