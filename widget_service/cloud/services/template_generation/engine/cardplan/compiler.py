@@ -65,6 +65,7 @@ from .fusion_ball_background import (
     apply_content_safe_inset,
     apply_fusion_ball_background,
 )
+from .generic_metrics import GENERIC_HEALTH_LABELS
 from .models import (
     CARDTPL_SOURCE_FORMATS,
     TEMPLATE_CHILD_SLOT_COMPONENT,
@@ -4721,45 +4722,32 @@ def _template_spread_parent(root: TemplateNode) -> str | None:
     return matches[0] if matches else None
 
 
-_GENERIC_HEALTH_LABELS = {
-    "/dailySteps": "步数",
-    "/exerciseDurationText": "运动时长",
-    "/exerciseHeartRateAvg": "平均心率",
-    "/deepSleepDurationText": "深睡",
-    "/exerciseHeartRateMin": "最低心率",
-}
-
-
 def _expand_health_metric_generic_template(
     wire_id: str,
     params: dict[str, Any],
     *,
     task_spec: TaskSpec,
-    provider_binding_roots: dict[str, str],
+    provider_binding_roots: dict[str, tuple[str, ...]],
     theme_values: dict[str, object],
 ) -> Nested2Node:
-    root = provider_binding_roots.get("GetHealthAndSportSummary")
-    if not isinstance(root, str):
-        raise TerselConversionError("Generic health metric requires a data binding root.")
+    roots = provider_binding_roots.get("GetHealthAndSportSummary", ())
+    if len(roots) != 1:
+        raise TerselConversionError("Generic health metric requires exactly one data binding root.")
+    root = roots[0]
     path_names = (
         ("valuePath",)
         if wire_id == "GenericMetricOverviewCompact@1"
         else ("firstValuePath", "secondValuePath")
     )
     selected: list[tuple[str, str]] = []
+    seen_paths: set[str] = set()
     for name in path_names:
         relative = params.get(name)
-        if relative is None and name == "secondaryPath":
-            continue
         if not isinstance(relative, str) or not relative.startswith("/"):
             raise TerselConversionError(f"Generic health metric path is invalid: {name}")
         # Invocation paths are provider-relative (for example
         # ``/dailySteps``); the compiler is the only place that qualifies
         # them with the capability binding root.
-        if not isinstance(relative, str) or not relative.startswith("/"):
-            raise TerselConversionError(
-                f"Generic health metric path must be provider-relative: {name}"
-            )
         if relative == root or relative.startswith(root.rstrip("/") + "/"):
             raise TerselConversionError(
                 f"Generic health metric path must not include data root: {name}"
@@ -4771,6 +4759,11 @@ def _expand_health_metric_generic_template(
             raise TerselConversionError(
                 f"Generic health metric path is not in TaskSpec: {relative}"
             )
+        if leaf.get("type") not in {"string", "integer", "number", "boolean"}:
+            raise TerselConversionError("Generic health metric requires a scalar field.")
+        if relative in seen_paths:
+            raise TerselConversionError("Generic health metric fields must be distinct.")
+        seen_paths.add(relative)
         title_name = {
             "valuePath": "title",
             "firstValuePath": "firstTitle",
@@ -4779,7 +4772,7 @@ def _expand_health_metric_generic_template(
         title = params.get(title_name)
         if not isinstance(title, str) or not title.strip():
             raise TerselConversionError(f"Generic metric title is invalid: {title_name}")
-        display_title = _GENERIC_HEALTH_LABELS.get(relative, title.strip())
+        display_title = GENERIC_HEALTH_LABELS.get(relative, title.strip())
         display_value = placeholder
         sample = leaf.get("sampleValue") if isinstance(leaf, dict) else None
         description = leaf.get("description", "") if isinstance(leaf, dict) else ""
@@ -6697,6 +6690,9 @@ def _composition_matches_template_plan(
         if child.kind != "template" or child.name != slot.template_id:
             return False
         params = child.values[0] if child.values and isinstance(child.values[0], dict) else {}
+        for parameter, path in slot.field_bindings.items():
+            if params.get(parameter) != path:
+                return False
         expected_action_id = embedded_actions.get(slot.position)
         if expected_action_id is None and "actionId" in params:
             return False

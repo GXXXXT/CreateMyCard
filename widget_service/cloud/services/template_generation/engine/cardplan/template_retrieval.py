@@ -50,7 +50,7 @@ class TemplateSearchIntent(BaseModel):
         default_factory=dict,
         alias="primaryOutputFieldByCapability",
     )
-    action_ids: tuple[str, ...] = Field(default=(), alias="action", max_length=2)
+    action_ids: tuple[str, ...] = Field(default=(), alias="action", max_length=4)
 
     @field_validator("required_output_fields_by_capability")
     @classmethod
@@ -109,7 +109,7 @@ class TemplateRetrievalQuery(BaseModel):
     required_output_fields_by_capability: dict[str, tuple[str, ...]] = Field(
         alias="requiredOutputFieldsByCapability",
     )
-    action_ids: tuple[str, ...] = Field(default=(), alias="action", max_length=2)
+    action_ids: tuple[str, ...] = Field(default=(), alias="action", max_length=4)
 
     @field_validator("required_output_fields_by_capability")
     @classmethod
@@ -186,15 +186,8 @@ def build_template_retrieval_prompt(
         "无法判断时省略该 capability，不能按模板或领域常识猜测。"
         "不得输出主题。"
     )
-    if task_spec.size == "2x4":
-        theme_ids = registry.first_layer_theme_ids(component_ids)
-        payload["themes"] = theme_ids
-        payload["themeFirstLayerRules"] = registry.theme_first_layer_rule_documents(theme_ids)
-        schema = TemplateRetrievalQuery.model_json_schema(by_alias=True)
-        ui_instruction = (
-            "themeId 必须从 themes 选择；themes 已按当前业务和版本过滤。"
-            "2x4 保留宽卡片候选和槽位组合流程。"
-        )
+    action_limit = 4 if task_spec.size == "2x4" else 2
+    schema["properties"]["action"]["maxItems"] = action_limit
     system = (
         "你是模板生成第一层。只输出 template-retrieval-query/1 JSON。"
         "requiredOutputFieldsByCapability 的 key 必须来自 "
@@ -209,7 +202,7 @@ def build_template_retrieval_prompt(
         "这些组合约束由服务端 Planner 在数据 Search 之后处理。"
         "用户只要求某领域卡片、未明确字段时，该 capability 输出空数组。"
         "action 仅当用户明确要求点击、跳转或操作时才选择 actionCandidates 中"
-        "语义一致的零到两个不重复 eventId；不能因候选事件存在而默认选择。"
+        f"语义一致的零到 {action_limit} 个不重复 eventId；不能因候选事件存在而默认选择。"
         "不得输出 schemaVersion、组件、模板、Variant、尺寸、布局、Props 或理由。\n"
         + ui_instruction + "\n"
         + json.dumps(schema, ensure_ascii=False)
@@ -232,9 +225,9 @@ def search_template_variants(
     """Search only data-eligible templates for the requested card size.
 
     Layout, Theme, Action placement, business order, and final ranking intentionally
-    remain outside this function. Every returned candidate independently covers all
-    explicit fields of its capability; fields declared only as optionalData are valid
-    coverage and are never treated as a hard admission requirement.
+    remain outside this function. Small-card candidates independently cover all
+    explicit fields; wide-card candidates report partial coverage for composition.
+    Optional fields remain coverage, never hard admission requirements.
     """
     if not intent.required_output_fields_by_capability:
         raise TemplateRetrievalMiss("template Search has no requested capability")
@@ -273,14 +266,16 @@ def search_template_variants(
             card_spec,
             preferred_template_ids,
             candidate_output_fields=candidate_paths,
+            retain_all_candidates=task_spec.size == "2x4",
         )
         for business_id, matches in matches_by_business.items():
             candidates: list[TemplateSearchCandidate] = []
             for template_id, covered_paths in matches.items():
                 if preferred_ids and template_id not in preferred_ids:
                     continue
-                if not set(explicit_fields).issubset(covered_paths):
-                    continue
+                if task_spec.size == "2x2":
+                    if not set(explicit_fields).issubset(covered_paths):
+                        continue
                 candidates.append(
                     TemplateSearchCandidate(
                         templateId=template_id,
@@ -603,7 +598,11 @@ def retrieve_template_variants(
                 (),
             )
             if primary_group and generic_group:
-                required_groups = [primary_group, generic_group, generic_group]
+                required_groups = []
+                for candidate in candidates:
+                    required_groups.append(candidate.available_template_ids)
+                    if candidate.component_id == "GenericMetricOverview":
+                        required_groups.append(candidate.available_template_ids)
     logger.info(
         "[Template Retrieval] candidate_groups_resolved "
         f"group_count={len(required_groups)} "
@@ -694,6 +693,11 @@ def restrict_query_to_preferred_templates(
         if record.template_id not in preferred_ids:
             continue
         matched_ids.add(record.template_id)
+        if record.business_id == "GenericMetricOverview":
+            # 通用指标没有固定字段表，保留显式请求交给 Search 校验候选来源和类型。
+            available_paths_by_capability.setdefault(record.capability_id, set()).update(
+                query.required_output_fields_by_capability.get(record.capability_id, ())
+            )
         available_paths_by_capability.setdefault(record.capability_id, set()).update(
             record.available_paths
         )
@@ -974,6 +978,7 @@ def _component_templates_for_capability(
     preferred_template_ids: tuple[str, ...] = (),
     preferred_layout_suffix: str | None = None,
     candidate_output_fields: set[str] | None = None,
+    retain_all_candidates: bool = False,
 ) -> dict[str, dict[str, frozenset[str]]]:
     result: dict[str, dict[str, frozenset[str]]] = {}
     data_roots = _capability_data_roots(card_spec, capability_id)
@@ -1041,6 +1046,8 @@ def _component_templates_for_capability(
                 preferred_template_ids,
                 preferred_layout_suffix,
             )
+            if retain_all_candidates:
+                limited_matches = matches
             result[business_id] = limited_matches
         _log_template_candidate_evaluation(
             capability_id=capability_id,
@@ -1495,6 +1502,9 @@ def _validate_selected_actions(query: TemplateRetrievalQuery, task_spec: TaskSpe
 
 
 def _validate_selected_action_ids(action_ids: tuple[str, ...], task_spec: TaskSpec) -> None:
+    limit = 4 if task_spec.size == "2x4" else 2
+    if len(action_ids) > limit:
+        raise TemplateRetrievalMiss("selected Action count exceeds the card size budget")
     if not action_ids:
         return
     candidate_ids = {event.id for event in task_spec.eventCandidates if event.id}

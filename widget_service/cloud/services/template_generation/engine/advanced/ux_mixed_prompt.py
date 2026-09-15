@@ -12,6 +12,7 @@ from models.generation import TaskSpec
 from services.template_generation.engine.cardplan.generated.prompts import (
     UX_MIXED_SYSTEM_PROMPT_KERNEL,
 )
+from services.template_generation.engine.cardplan.generic_metrics import GENERIC_HEALTH_LABELS
 from services.template_generation.engine.cardplan.models import (
     CARDTPL_SOURCE_FORMATS,
     BusinessTemplateGroup,
@@ -91,6 +92,7 @@ class _ScopePromptBridge(BaseModel):
     adaptive_template_id: None = None
     advanced_component_ids: tuple[str, ...]
     disable_template_fallback: bool = True
+    preserve_search_candidates: bool = False
 
 
 @dataclass(frozen=True)
@@ -123,7 +125,8 @@ def build_ux_mixed_validation_retry_prompt(
                 "数组 children、Markdown 或解释。"
                 "若原动态契约包含 planCandidates，必须完整选择其中一个原子 Plan，"
                 "不得跨 Plan 混用布局、业务模板或 Action 消费位置；"
-                "每个 requiredLocalTemplateGroups 恰好选择一个业务 Template；"
+                "有 Plan 时按 Plan 的业务实例数生成；无 Plan 时每个 "
+                "requiredLocalTemplateGroups 恰好选择一个业务 Template；"
                 "不得新增基础组件、业务文本、Action 或候选外 Template。"
                 "只输出类 Tersel 调用树，不要解释。"
             ),
@@ -259,6 +262,7 @@ def build_ux_mixed_prompt(
         local_template_ids=selected_template_ids,
         primary_domain=primary_component.domain_id,
         advanced_component_ids=scope.advanced_component_ids,
+        preserve_search_candidates=bool(template_plans),
     )
     base = build_hybrid_prompt(
         task_spec=task_spec,
@@ -416,6 +420,9 @@ def build_ux_mixed_prompt(
     required_numbers = tuple(item for item in required_numbers if item not in provider_owned_values)
     contract = base.contract.model_copy(
         update={
+            "trusted_literals": tuple(dict.fromkeys(
+                (*base.contract.trusted_literals, *GENERIC_HEALTH_LABELS.values())
+            )),
             # 原子计划已校验操作归属，内置按钮不占布局根的 Action 槽位。
             "content_action_ids": (
                 selected_action_ids if template_plans else base.contract.content_action_ids
@@ -624,7 +631,8 @@ def build_ux_mixed_prompt(
             (
                 "Planner 已给出最多三个完整原子 Plan。必须完整选择其中一个 Plan，"
                 "严格保持 layoutTemplateId、业务 Template 顺序以及 Action 消费位置；"
-                "不得跨 Plan 混用。仅补全所选 Template 的开放 Props 与可信素材。"
+                "不得跨 Plan 混用或更换 fieldBindings；重复通用模板按 Plan 实例数生成。"
+                "仅补全所选 Template 的开放 Props 与可信素材。"
                 if template_plans
                 else (
                     "第一层已完成展示覆盖。从每个 requiredLocalTemplateGroups 恰好选择一个"
@@ -1047,6 +1055,11 @@ def _planned_output_grammar(
                     "position": slot.position,
                     "templateId": slot.template_id,
                     "layoutRole": slot.layout_role,
+                    "requiredFieldBindings": slot.field_bindings,
+                    "fieldLabels": {
+                        path: GENERIC_HEALTH_LABELS.get(path)
+                        for path in slot.field_bindings.values()
+                    },
                     "syntax": (
                         f'Template("{slot.template_id}", <matching props>)'
                     ),
@@ -1061,7 +1074,7 @@ def _planned_output_grammar(
                 }
             )
         root_actions = []
-        for index, assignment in enumerate(plan.action_assignments):
+        for assignment in plan.action_assignments:
             if assignment.consumer != "root-action":
                 continue
             action = actions_by_id.get(assignment.action_id)
@@ -1072,7 +1085,7 @@ def _planned_output_grammar(
                 raise ValueError("Root Action Plan is missing its Template")
             root_actions.append(
                 {
-                    "position": len(plan.business_slots) + index,
+                    "position": len(plan.business_slots) + len(root_actions),
                     "templateId": action_template_id,
                     "syntax": _action_output_syntax(action_template_id, action),
                 }
