@@ -32,6 +32,7 @@
   - `BatteryOverviewHealthLevelHero@1`：电池健康与当前电量等级 Hero，只表达顶部英雄内容，展示“电池体检”、`/healthStatusDesc` 和 `/batteryCapacityLevelDesc`；底部按钮必须由第二层组合 `PillAction@1`。主数据：/healthStatusDesc；次要数据：/batteryCapacityLevelDesc；可选数据：无。
   - `BatteryOverviewTemperatureFull@1`：电池温度 Full，顶部展示“电池温度”和右侧温度图标，中部依次展示 `/batteryTemperatureText` 与 `/pluggedTypeDesc`，底部两行展示“更新时间：”和 `/updatedAt`。主数据：/batteryTemperatureText；次要数据：/pluggedTypeDesc, /updatedAt；可选数据：无。
   - `BatteryOverviewStatusHero@1`：手机电量状态 Hero，只表达单个焦点面板内容；顶部为“手机电量”标签行，右侧可选 20vp 电量图标，下方以 20vp 大字展示 `/batterySOC` 加百分号，辅行展示 `/chargingStatusDesc`。主数据：/batterySOC；次要数据：/chargingStatusDesc；可选数据：无。
+  - `BatteryOverviewPhoneTextCompact@1`：手机电量文本 Compact；左侧以 20vp 大字展示 `/batterySOCText` 并配“手机”辅标签，右侧为纯装饰电池造型色块；不接收素材参数，不含动作。主数据：/batterySOCText；次要数据：无；可选数据：无。
 - props 只能使用本次 Prompt 下发的可信文本、数值或素材；不得输出数据路径。
 - 选择能够完整表达用户显式要求字段且自身 `primaryData` 与 `secondaryData` 全部可用的模板。
 - 除下述 Support 设备标识规则外，`batteryIcon` 表达电池、电量或当前充电状态，不得使用动作图标或其他设备品类图标替代；它不绑定固定素材 ID，只在本轮素材候选中匹配。模板将该参数声明为必选时必须传入匹配素材；声明为可选时仅在存在匹配素材时传入，否则省略。

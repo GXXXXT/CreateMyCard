@@ -1,6 +1,6 @@
 #Template ScheduleOverviewMeetingEntryHero@1(props: {})
 data = { start: $path("/events/0/dtStart"), location: $path("/events/0/eventLocation") }
-Column({"width": "matchParent", "height": "matchParent", "justifyContent": "start",
+Column({"_advancedComponent": "ScheduleOverview", "width": "matchParent", "height": "matchParent", "justifyContent": "start",
   "alignItems": "start", "itemMargin": 14},
   Text("今日日程", {"height": 16, "fontSize": 12, "fontWeight": 400,
     "fontColor": $theme('supportContentColor')}),

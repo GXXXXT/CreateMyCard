@@ -283,7 +283,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         if path.is_dir()
     }
 
-    assert len(registry.provider_template_ids) == 148
+    assert len(registry.provider_template_ids) == 164
     assert {
         "ActivityOverviewFull@1",
         "AppUsageOverviewFull@1",
@@ -994,6 +994,7 @@ def test_layout_template_wide_marker_drives_exclusive_card_size() -> None:
         "WideTwoFocusLayout": ("2x4",),
         "WideTwoFocusActionLayout": ("2x4",),
         "WideTwoFocusTwoActionLayout": ("2x4",),
+        "WideTwoHeroActionLayout": ("2x4",),
     }
 
     assert set(registry.ux_layout_components) == set(expected_sizes)
@@ -1047,13 +1048,13 @@ def test_business_groups_are_derived_from_provider_templates() -> None:
     assert provider_layout_components == set(registry.ux_layout_components)
     assert len(registry.ux_business_component_provider_ids) == 12
     calendar = registry.require_ux_business_component("CalendarOverview")
-    assert len(calendar.local_template_ids) == 23
+    assert len(calendar.local_template_ids) == 24
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
     assert not any(
         template_id.startswith("DateOverview")
         for template_id in calendar.local_template_ids
     )
-    assert len(registry.ux_layout_component_provider_ids) == 23
+    assert len(registry.ux_layout_component_provider_ids) == 24
     for bundle in registry.provider_bundles.values():
         payload = json.loads(
             (registry.source_root / "providers" / bundle.manifest.provider_id.removeprefix(
@@ -2758,6 +2759,9 @@ def test_earphone_templates_bind_progress_color_to_theme_support_content() -> No
         "BluetoothDeviceOverviewEarphoneHero@1",
         "BluetoothDeviceOverviewChargeSupport@1",
         "BluetoothDeviceOverviewConnectionSupport@1",
+        "BluetoothDeviceOverviewCaseConnectionHero@1",
+        "BluetoothDeviceOverviewEarbudChargingWideFull@1",
+        "BluetoothDeviceOverviewMusicFull@1",
     }
     progress_count = 0
 
@@ -2778,7 +2782,7 @@ def test_earphone_templates_bind_progress_color_to_theme_support_content() -> No
             )
             assert color.name == expected_color
 
-    assert progress_count == 16
+    assert progress_count == 20
 
 
 def test_business_artwork_and_monochrome_icons_keep_explicit_color_policies() -> None:
@@ -2816,6 +2820,16 @@ def test_business_artwork_and_monochrome_icons_keep_explicit_color_policies() ->
         ("BluetoothDeviceOverviewEarphoneHero@1", "earphoneIcon"),
         ("BluetoothDeviceOverviewEarphoneCompact@1", "earphoneIcon"),
         ("BluetoothDeviceOverviewStatusHero@1", "deviceIcon"),
+        ("BluetoothDeviceOverviewCaseConnectionHero@1", "deviceIcon"),
+        ("BluetoothDeviceOverviewEarbudChargingWideFull@1", "leftEarIcon"),
+        ("BluetoothDeviceOverviewEarbudChargingWideFull@1", "rightEarIcon"),
+        ("BluetoothDeviceOverviewEarbudsChargingWideFull@1", "leftEarIcon"),
+        ("BluetoothDeviceOverviewEarbudsChargingWideFull@1", "rightEarIcon"),
+        ("BluetoothDeviceOverviewEarbudsChargingWideFull@1", "deviceIcon"),
+        ("BluetoothDeviceOverviewMusicFull@1", "caseIcon"),
+        ("BluetoothDeviceOverviewTripleBatteryWideHalf@1", "deviceIcon"),
+        ("BluetoothDeviceOverviewTripleBatteryWideHalf@1", "leftEarIcon"),
+        ("BluetoothDeviceOverviewTripleBatteryWideHalf@1", "rightEarIcon"),
         ("HeartRateOverviewIconCompact@1", "sourceIcon"),
         ("HeartRateOverviewIconHero@1", "sourceIcon"),
         ("HeartRateOverviewUpdatedIconHero@1", "sourceIcon"),
@@ -3070,7 +3084,7 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
     registry = get_cardplan_registry()
     calendar = registry.require_ux_business_component("CalendarOverview")
 
-    assert len(calendar.local_template_ids) == 23
+    assert len(calendar.local_template_ids) == 24
     assert "ScheduleOverviewHeroContent@1" in calendar.local_template_ids
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
     assert "ScheduleOverviewTimeSupport@1" in calendar.local_template_ids
@@ -3113,6 +3127,7 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
             "calendarIcon",
             "headerLabel",
         },
+        "ScheduleOverviewMeetingEntryHero@1": set(),
     }
     for template_id, prop_names in expected_props.items():
         definition = registry.require_template(template_id)
@@ -3165,6 +3180,7 @@ def test_battery_templates_follow_consolidated_state_contract() -> None:
         "BatteryOverviewStatusSupport@1",
         "BatteryOverviewStatusHero@1",
         "BatteryOverviewChargeStatusHero@1",
+        "BatteryOverviewPhoneTextCompact@1",
     }
 
     assert set(battery.local_template_ids) == expected_template_ids

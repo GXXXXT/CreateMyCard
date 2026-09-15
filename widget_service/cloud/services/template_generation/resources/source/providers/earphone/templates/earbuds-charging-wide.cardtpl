@@ -5,7 +5,7 @@ data = {
   left: $path("/leftBatteryLevel"), leftChargingStatus: $path("/leftChargingStatusDesc"),
   right: $path("/rightBatteryLevel"), rightChargingStatus: $path("/rightChargingStatusDesc")
 }
-Row({"width": "matchParent", "height": "matchParent", "itemMargin": 12},
+Row({"_advancedComponent": "BluetoothDeviceOverview", "width": "matchParent", "height": "matchParent", "itemMargin": 12},
   Column({"layoutWeight": 1, "height": "matchParent", "padding": 8, "borderRadius": 16,
     "justifyContent": "spaceBetween", "backgroundColor": $theme('supportContentStyle.backgroundColor')},
     Column({"width": "matchParent", "itemMargin": 4},

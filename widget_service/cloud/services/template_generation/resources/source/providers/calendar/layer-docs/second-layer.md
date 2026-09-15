@@ -17,6 +17,8 @@
     `headerLabel`。
   - `ScheduleOverviewDatedMeetingHero@1`：带日期会议 Hero；展示真实日期、标题、起止时间和地点，
     不接收展示 Prop。
+  - `ScheduleOverviewMeetingEntryHero@1`：会议条目 Hero；以时间轴样式展示首项日程的开始时间和地点，
+    两者均为必需；不接收展示 Prop，不含动作。
   - `ScheduleOverviewHeroContent@1`：日程 HeroContent；展示标题、起止时间和地点；只用于
     `HeroTitleContentActionLayout@1` 的第二个业务 child。
   - `ScheduleOverviewTimeSupport@1`：开始时间必需，标题、结束时间和地点可选；有标题时主行显示标题、

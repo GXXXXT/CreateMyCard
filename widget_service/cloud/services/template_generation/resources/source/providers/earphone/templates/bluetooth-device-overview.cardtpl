@@ -1380,7 +1380,7 @@ data = {
   right: $path("/rightBatteryLevel"),
   rightChargingStatus: $path("/rightChargingStatusDesc")
 }
-Row({"width": "matchParent", "height": "matchParent", "itemMargin": 12, "alignItems": "start"},
+Row({"_advancedComponent": "BluetoothDeviceOverview", "width": "matchParent", "height": "matchParent", "itemMargin": 12, "alignItems": "start"},
   Column({"layoutWeight": 1, "height": "matchParent", "padding": 8, "borderRadius": 16,
     "justifyContent": "spaceBetween", "backgroundColor": $theme('supportContentStyle.backgroundColor')},
     Column({"width": "matchParent", "height": 37, "itemMargin": 2},
@@ -1451,7 +1451,7 @@ data = {
   battery: $path("/batteryLevel"),
   updated: $path("/updatedAt")
 }
-Column({"width": "matchParent", "height": "matchParent", "justifyContent": "spaceBetween"},
+Column({"_advancedComponent": "BluetoothDeviceOverview", "width": "matchParent", "height": "matchParent", "justifyContent": "spaceBetween"},
   Column({"width": "matchParent", "itemMargin": 14},
     Text(data.name, {"height": 16, "fontSize": 12, "fontWeight": 400,
       "fontColor": $theme('supportContentColor'), "maxLines": 1}),

@@ -1887,7 +1887,11 @@ def test_search_without_action_keeps_only_full_candidates() -> None:
     )
 
     template_ids = set(result.component_candidates[0].available_template_ids)
-    assert template_ids == {"WeatherOverviewFull@1"}
+    # AlertInfoFull shares Full@1's primary/secondary contract, so the
+    # condition-only query matches both.
+    assert template_ids == {
+        "WeatherOverviewFull@1", "WeatherOverviewAlertInfoFull@1",
+    }
 
 
 def test_search_index_reports_per_field_matches_before_route_intersection() -> None:
@@ -2553,7 +2557,7 @@ def test_earphone_battery_2x4_composes_two_focus_panels_with_two_actions() -> No
         "BatteryOverview",
     ]
     assert candidate_groups[0]["availableTemplateIds"] == [
-        "BluetoothDeviceOverviewStatusHero@1"
+        "BluetoothDeviceOverviewCaseSettingsHero@1"
     ]
     assert candidate_groups[1]["availableTemplateIds"] == [
         "BatteryOverviewChargeStatusHero@1"
@@ -2571,7 +2575,7 @@ def test_earphone_battery_2x4_composes_two_focus_panels_with_two_actions() -> No
     )
     source = (
         'Template("WideTwoFocusTwoActionLayout@1",{},'
-        'Template("BluetoothDeviceOverviewStatusHero@1",{}),'
+        'Template("BluetoothDeviceOverviewCaseSettingsHero@1",{}),'
         'Template("BatteryOverviewChargeStatusHero@1",{}),'
         f"{action_payloads});"
     )
