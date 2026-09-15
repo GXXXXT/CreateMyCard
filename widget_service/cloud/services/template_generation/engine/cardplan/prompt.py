@@ -44,6 +44,7 @@ _PLAIN_LAYOUTS = ("card", "section", "compact", "between", "actions", "list", "d
 _ACTION_TEMPLATE_IDS = (
     "PillAction@1",
     "CompactAction@1",
+    "PlaylistCompactAction@1",
     "IconAction@1",
     "LargeIconAction@1",
 )

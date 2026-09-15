@@ -364,7 +364,7 @@
       "templateId": "BluetoothDeviceOverviewTripleBatteryWideHalf@1",
       "businessId": "BluetoothDeviceOverview",
       "capabilityId": "GetEarphoneInfo",
-      "description": "耳机三组电量 WideHalf：横向展示耳机仓、左耳机、右耳机电量；不含连接状态或操作。",
+      "description": "耳机三组电量横向半区，输入包含连接状态时同时展示连接状态。",
       "entry": "templates/triple-battery-wide-half.cardtpl",
       "primaryData": [
         "/batteryLevel",
@@ -372,7 +372,9 @@
         "/rightBatteryLevel"
       ],
       "secondaryData": [],
-      "optionalData": [],
+      "optionalData": [
+        "/isConnected"
+      ],
       "assetParameterSemanticTags": {
         "deviceIcon": [
           "earphone-case"

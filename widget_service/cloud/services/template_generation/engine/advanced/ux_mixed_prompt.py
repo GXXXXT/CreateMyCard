@@ -486,6 +486,9 @@ def build_ux_mixed_prompt(
     action_template_ids = (
         layout_selection.action_template_ids if selected_action_ids else ()
     )
+    if layout_selection.layout_ids == ("WideHalfTwoCompactLayout",):
+        if selected_action_ids == ("event.open.music.daily",):
+            action_template_ids = ("PlaylistCompactAction@1",)
     action_template_contracts = build_template_prompt_contracts(
         action_template_ids,
         contract,
@@ -873,6 +876,11 @@ def _layout_output_option(
         "WideFullHeroActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideHeroActionFullLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideFullTwoCompactLayout": _COMPACT_ACTION_TEMPLATE_ID,
+        "WideHalfTwoCompactLayout": (
+            "PlaylistCompactAction@1"
+            if "PlaylistCompactAction@1" in action_template_ids
+            else _COMPACT_ACTION_TEMPLATE_ID
+        ),
         "WideFullHeroTwoActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideTwoHeroActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideFullFourActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
@@ -904,7 +912,7 @@ def _action_output_syntax(
     action_template_id: str,
     action: dict[str, str],
 ) -> str:
-    if action_template_id == _COMPACT_ACTION_TEMPLATE_ID:
+    if action_template_id in {_COMPACT_ACTION_TEMPLATE_ID, "PlaylistCompactAction@1"}:
         props = {
             **action,
             "icon": "<one semantically matching trustedAssetSource>",
@@ -1247,7 +1255,14 @@ def _second_layer_layout_selection(
                 "WideFourCompactLayout", ("Compact",) * 4, ()
             )
         elif (component_count, action_count) == (2, 1):
-            if len(group_kinds) >= 2 and "Compact" in group_kinds[1]:
+            if has_half(0) and "Compact" in group_kinds[1]:
+                selection = _SecondLayerLayoutSelection(
+                    layout_ids=("WideHalfTwoCompactLayout",),
+                    layout_kinds=("WideHalf",),
+                    action_template_ids=(_COMPACT_ACTION_TEMPLATE_ID,),
+                    business_layout_kinds_by_position=("WideHalf", "Compact"),
+                )
+            elif len(group_kinds) >= 2 and "Compact" in group_kinds[1]:
                 if "Full" in group_kinds[0]:
                     selection = _SecondLayerLayoutSelection(
                         layout_ids=("WideFullTwoCompactLayout",),

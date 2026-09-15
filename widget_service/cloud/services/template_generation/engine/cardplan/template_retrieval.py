@@ -363,12 +363,18 @@ def retrieve_template_variants(
         raise TemplateRetrievalMiss("first-layer Theme must not be layout-scoped")
     _validate_selected_actions(query, task_spec)
     action_count = _selected_action_count(query, task_spec)
+    meeting_template = "ScheduleOverviewMeetingEntryHero@1"
+    prefer_meeting_entry = "event.enter.meeting" in query.action_ids
+    if prefer_meeting_entry and not preferred_template_ids:
+        preferred_template_ids = (meeting_template,)
     if not query.required_output_fields_by_capability:
         raise TemplateRetrievalMiss("template retrieval has no requested capability")
     has_multiple_capabilities = len(query.required_output_fields_by_capability) > 1
     preferred_layout_suffix = None
     if not has_multiple_capabilities:
         preferred_layout_suffix = {1: "Hero", 2: "Compact"}.get(action_count)
+    elif task_spec.size == "2x4" and action_count == 1:
+        preferred_layout_suffix = "WideHalf"
     candidate_ids = {binding.capabilityId for binding in coverage_bindings}
     if not set(query.required_output_fields_by_capability).issubset(candidate_ids):
         raise TemplateRetrievalMiss("requested capability is outside candidate data bindings")
@@ -565,6 +571,19 @@ def retrieve_template_variants(
             _candidate_with_complete_field_coverage(candidate, required_groups)
             for candidate in candidates
         )
+        if prefer_meeting_entry:
+            candidates = _prefer_eligible_template(candidates, meeting_template)
+        prefer_case_settings = (
+            len(candidates) == 2
+            and action_count == 2
+            and "event.open.settings.bluetooth" in query.action_ids
+        )
+        if prefer_case_settings:
+            candidates = _prefer_eligible_template(
+                candidates, "BluetoothDeviceOverviewCaseSettingsHero@1"
+            )
+        if action_count == 1:
+            candidates = _prefer_half_compact_pair(candidates)
         required_groups = [candidate.available_template_ids for candidate in candidates]
         if repeated_generic_compact_slots and primary_health is not None:
             primary_group = next(
@@ -609,6 +628,43 @@ def retrieve_template_variants(
         requiredTemplateGroups=tuple(required_groups),
         requiredOutputFieldsByCapability=query.required_output_fields_by_capability,
     )
+
+
+def _prefer_eligible_template(
+    candidates: tuple[TemplateComponentCandidate, ...],
+    template_id: str,
+) -> tuple[TemplateComponentCandidate, ...]:
+    result = []
+    for candidate in candidates:
+        if template_id in candidate.available_template_ids:
+            candidate = candidate.model_copy(update={"available_template_ids": (template_id,)})
+        result.append(candidate)
+    return tuple(result)
+
+
+def _prefer_half_compact_pair(
+    candidates: tuple[TemplateComponentCandidate, ...],
+) -> tuple[TemplateComponentCandidate, ...]:
+    """Use a complete half-width pairing only when both business slots support it."""
+    if len(candidates) != 2:
+        return candidates
+    for half_index in (0, 1):
+        half = candidates[half_index]
+        compact = candidates[1 - half_index]
+        half_ids = []
+        compact_ids = []
+        for template_id in half.available_template_ids:
+            if provider_template_layout_kind(template_id) == "WideHalf":
+                half_ids.append(template_id)
+        for template_id in compact.available_template_ids:
+            if provider_template_layout_kind(template_id) == "Compact":
+                compact_ids.append(template_id)
+        if half_ids and compact_ids:
+            return (
+                half.model_copy(update={"available_template_ids": tuple(half_ids)}),
+                compact.model_copy(update={"available_template_ids": tuple(compact_ids)}),
+            )
+    return candidates
 
 
 def _component_candidate_order_key(

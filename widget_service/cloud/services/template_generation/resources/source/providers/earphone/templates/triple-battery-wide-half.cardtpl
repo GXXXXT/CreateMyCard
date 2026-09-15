@@ -1,5 +1,5 @@
 #Template BluetoothDeviceOverviewTripleBatteryWideHalf@1(props: { deviceIcon?: asset, leftEarIcon?: asset, rightEarIcon?: asset })
-data = { battery: $path("/batteryLevel"), left: $path("/leftBatteryLevel"), right: $path("/rightBatteryLevel") }
+data = { battery: $path("/batteryLevel"), left: $path("/leftBatteryLevel"), right: $path("/rightBatteryLevel"), connected: $optionalPath("/isConnected") }
 Row({"width": "matchParent", "height": "matchParent", "itemMargin": 8},
   Row({"layoutWeight": 1, "height": "matchParent", "padding": 8, "itemMargin": 12,
     "alignItems": "center", "borderRadius": 16,
@@ -21,6 +21,14 @@ Row({"width": "matchParent", "height": "matchParent", "itemMargin": 8},
     #if props.leftEarIcon
       Image(props.leftEarIcon, {"width": 24, "height": 24, "flexShrink": 0,
         "objectFit": "contain", "fillColor": $theme('supportContentColor')}),
+    #else
+      Stack({"width": 24, "height": 24, "flexShrink": 0, "alignContent": "center"},
+        Stack({"width": 17.5, "height": 17.5, "borderRadius": 8.75,
+          "alignContent": "center", "backgroundColor": $theme('supportContentColor')},
+          Text("L", {"width": 17.5, "height": 17.5, "textAlign": "center",
+            "fontSize": 12, "fontWeight": 500, "fontColor": "#FFFFFFFF", "maxLines": 1})
+        )
+      ),
     #endif
     Column({"layoutWeight": 1, "itemMargin": 2},
       Text(Expr(data.left + '%'), {"height": 16, "fontSize": 12, "fontWeight": 700,
@@ -35,6 +43,14 @@ Row({"width": "matchParent", "height": "matchParent", "itemMargin": 8},
     #if props.rightEarIcon
       Image(props.rightEarIcon, {"width": 24, "height": 24, "flexShrink": 0,
         "objectFit": "contain", "fillColor": $theme('supportContentColor')}),
+    #else
+      Stack({"width": 24, "height": 24, "flexShrink": 0, "alignContent": "center"},
+        Stack({"width": 17.5, "height": 17.5, "borderRadius": 8.75,
+          "alignContent": "center", "backgroundColor": $theme('supportContentColor')},
+          Text("R", {"width": 17.5, "height": 17.5, "textAlign": "center",
+            "fontSize": 12, "fontWeight": 500, "fontColor": "#FFFFFFFF", "maxLines": 1})
+        )
+      ),
     #endif
     Column({"layoutWeight": 1, "itemMargin": 2},
       Text(Expr(data.right + '%'), {"height": 16, "fontSize": 12, "fontWeight": 700,

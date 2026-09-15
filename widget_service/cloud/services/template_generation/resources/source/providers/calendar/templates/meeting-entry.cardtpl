@@ -1,28 +1,23 @@
-#Template ScheduleOverviewMeetingEntryHero@1(props: { title?: string })
+#Template ScheduleOverviewMeetingEntryHero@1(props: {})
 data = { start: $path("/events/0/dtStart"), location: $path("/events/0/eventLocation") }
-Column({"width": "matchParent", "height": "matchParent", "justifyContent": "spaceBetween"},
+Column({"width": "matchParent", "height": "matchParent", "justifyContent": "start",
+  "alignItems": "start", "itemMargin": 14},
   Text("今日日程", {"height": 16, "fontSize": 12, "fontWeight": 400,
     "fontColor": $theme('supportContentColor')}),
-  Row({"width": "matchParent", "height": 70, "itemMargin": 8},
-    Column({"width": 8, "height": "matchParent", "padding": {"top": 6},
+  Row({"width": "matchParent", "height": 48, "itemMargin": 8, "alignItems": "start"},
+    Column({"width": 8, "height": 48, "padding": {"top": 3},
       "itemMargin": 4, "alignItems": "center", "flexShrink": 0},
       Stack({"width": 8, "height": 8, "borderRadius": 4, "borderWidth": 1.5,
         "borderColor": $theme('primaryColor')},
         Divider({"width": 0, "height": 0, "strokeWidth": 0})),
-      Divider({"width": 1, "layoutWeight": 1, "vertical": true, "strokeWidth": 1,
+      Divider({"width": 1, "height": 32, "vertical": true, "strokeWidth": 1,
         "color": $theme('supportContentColor')})
     ),
-    Column({"layoutWeight": 1, "itemMargin": 2},
-      #if props.title
-        Text(props.title, {"height": 20, "fontSize": 14, "fontWeight": 700,
-          "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"}),
-      #else
-        Text("会议", {"height": 20, "fontSize": 14, "fontWeight": 700,
-          "fontColor": $theme('primaryColor'), "maxLines": 1}),
-      #endif
-      Text(data.start, {"height": 14, "fontSize": 10, "fontWeight": 400,
+    Column({"layoutWeight": 1, "height": 48, "itemMargin": 2,
+      "justifyContent": "start", "alignItems": "start"},
+      Text(data.start, {"width": "matchParent", "height": 14, "fontSize": 10, "fontWeight": 400,
         "fontColor": $theme('supportContentColor'), "maxLines": 1}),
-      Text(data.location, {"height": 32, "fontSize": 12, "fontWeight": 400,
+      Text(data.location, {"width": "matchParent", "height": 32, "fontSize": 12, "fontWeight": 400,
         "fontColor": $theme('supportContentColor'), "maxLines": 2, "textOverflow": "ellipsis"})
     )
   )

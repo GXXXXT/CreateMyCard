@@ -94,6 +94,7 @@ _UX_ACTION_COMPONENTS = frozenset(
 _ACTION_TEMPLATE_COMPONENTS = {
     "PillAction@1": "PillAction",
     "CompactAction@1": "CompactAction",
+    "PlaylistCompactAction@1": "CompactAction",
     "IconAction@1": "IconAction",
     "LargeIconAction@1": "LargeIconAction",
 }
@@ -1069,6 +1070,8 @@ def _wrap_action_template(
             f"Action Provider Template root must be Stack: {wire_id}"
         )
     action_id = params.get("actionId")
+    if wire_id == "PlaylistCompactAction@1" and action_id != "event.open.music.daily":
+        raise TerselConversionError("Playlist template requires the approved daily music action.")
     if not isinstance(action_id, str):
         raise TerselConversionError(
             f"Action Provider Template actionId is invalid: {wire_id}"
@@ -1126,6 +1129,7 @@ def _validate_provider_template_state(
             "hero",
             "healthLevelHero",
             "percentRingHero",
+            "phoneTextCompact",
             "progressCompact",
             "progressSupport",
             "statusIconCompact",
@@ -1169,7 +1173,7 @@ def _validate_provider_template_state(
                     "Bluetooth Provider Template variant does not match the trusted case status."
                 )
             return
-        if variant_name == "statusHero":
+        if variant_name in {"statusHero", "caseSettingsHero"}:
             if facts.case_charging_status is None:
                 raise TerselConversionError(
                     "Bluetooth Provider Template variant does not match the trusted case status."
@@ -6529,6 +6533,10 @@ def _validate_provider_template_layout_action_requirements(
                 f"{layout_id} Provider Template slot combination is invalid."
             )
         return
+    if layout_id == "WideHalfTwoCompactLayout" and action_names == ("CompactAction",):
+        if layout_kinds != ("WideHalf", "Compact"):
+            raise TerselConversionError(f"{layout_id} requires WideHalf, Compact and one Action.")
+        return
     if wide_composition is not None:
         expected_kinds, expected_action_names = wide_composition
         if layout_kinds != expected_kinds or action_names != expected_action_names:
@@ -7602,6 +7610,9 @@ def _inject_phone_earphone_title(
         return node
     if "TwoSupportLayout@1" in template_ids:
         # 双业务 Support 行各自占满半卡片高度，不再挤入一行“设备电量”标题。
+        return node
+    if "WideHalfTwoCompactLayout@1" in template_ids:
+        # 三个槽位已有业务标签，并已占满 136vp 安全区。
         return node
     if any(template_id.startswith("WideTwoFocus") for template_id in template_ids):
         # 双焦点拼接布局的左右面板自带业务标签行，不再注入整卡“设备电量”标题。

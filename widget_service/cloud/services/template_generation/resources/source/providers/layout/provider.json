@@ -578,20 +578,20 @@
     },
     {
       "name": "WideHalfTwoCompactLayout",
-      "description": "仅用于 2x4；依次承载 WideHalf 和下方左右两个 Compact，不接受 Action。",
+      "description": "2x4 上方 WideHalf，下方两个 Compact；允许右下槽位替换为一个 CompactAction。",
       "supportedCardSizes": [
         "2x4"
       ],
-      "minChildren": 3,
+      "minChildren": 2,
       "maxChildrenBySize": {
         "2x4": 3
       },
-      "actionPolicy": "none",
+      "actionPolicy": "optional",
       "minActionChildrenBySize": {
         "2x4": 0
       },
       "maxActionChildrenBySize": {
-        "2x4": 0
+        "2x4": 1
       },
       "parametersSchema": {
         "type": "object",
