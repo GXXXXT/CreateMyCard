@@ -307,7 +307,10 @@
     },
     {
       "templateId": "ScheduleOverviewTimeSupport@1",
-      "supportedEventIds": ["event.viewCalendarEvent","event.enter.meeting"],
+      "supportedEventIds": [
+        "event.viewCalendarEvent",
+        "event.enter.meeting"
+      ],
       "businessId": "CalendarOverview",
       "capabilityId": "GetCalendarEvents",
       "description": "日程时间 Support：有标题时主行展示标题、辅助行展示开始时间或时间段；无标题时主行展示开始时间、辅助行展示地点或查看提示。仅在绑定事件时显示可选 24vp 日历或会议图标。",
@@ -332,7 +335,10 @@
     },
     {
       "templateId": "ScheduleOverviewLocationSupport@1",
-      "supportedEventIds": ["event.viewCalendarEvent","event.enter.meeting"],
+      "supportedEventIds": [
+        "event.viewCalendarEvent",
+        "event.enter.meeting"
+      ],
       "businessId": "CalendarOverview",
       "capabilityId": "GetCalendarEvents",
       "description": "日程 地点 Support：主行展示首项日程标题，辅助行展示地点；可选 24vp 日历图标，根节点可绑定事件。",
@@ -352,7 +358,10 @@
     },
     {
       "templateId": "ScheduleOverviewStartTimeSupport@1",
-      "supportedEventIds": ["event.viewCalendarEvent","event.enter.meeting"],
+      "supportedEventIds": [
+        "event.viewCalendarEvent",
+        "event.enter.meeting"
+      ],
       "businessId": "CalendarOverview",
       "capabilityId": "GetCalendarEvents",
       "description": "日程 开始时间 Support：主行展示首项日程标题，辅助行展示开始时间；可选 24vp 日历图标，根节点可绑定事件。",
@@ -372,7 +381,10 @@
     },
     {
       "templateId": "ScheduleOverviewDateSupport@1",
-      "supportedEventIds": ["event.viewCalendarEvent","event.enter.meeting"],
+      "supportedEventIds": [
+        "event.viewCalendarEvent",
+        "event.enter.meeting"
+      ],
       "businessId": "CalendarOverview",
       "capabilityId": "GetCalendarEvents",
       "description": "日程 日期 Support：主行展示首项日程标题，辅助行展示日期；可选 24vp 日历图标，根节点可绑定事件。",
@@ -389,6 +401,19 @@
           "calendar"
         ]
       }
+    },
+    {
+      "templateId": "ScheduleOverviewMeetingEntryHero@1",
+      "businessId": "CalendarOverview",
+      "capabilityId": "GetCalendarEvents",
+      "description": "Q058 日程 Hero：今日日程、开始时间及地点，会议标题可从可信输入提供；入会按钮由骨架组合。",
+      "entry": "templates/meeting-entry.cardtpl",
+      "primaryData": [
+        "/events/0/dtStart",
+        "/events/0/eventLocation"
+      ],
+      "secondaryData": [],
+      "optionalData": []
     }
   ],
   "compatibility": {

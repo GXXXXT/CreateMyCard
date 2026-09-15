@@ -404,6 +404,10 @@ def build_ux_mixed_prompt(
     required_numbers = tuple(item for item in required_numbers if item not in provider_owned_values)
     contract = base.contract.model_copy(
         update={
+            # 原子计划已校验操作归属，内置按钮不占布局根的 Action 槽位。
+            "content_action_ids": (
+                selected_action_ids if template_plans else base.contract.content_action_ids
+            ),
             "required_template_groups": effective_required_template_groups,
             "allowed_template_ids": tuple(
                 dict.fromkeys(
@@ -815,6 +819,7 @@ def _layout_output_option(
         "WideFullTwoCompactLayout": "Full",
         "WideFourCompactLayout": ("Compact",) * 4,
         "WideFullHeroTwoActionLayout": ("Full", "Hero"),
+        "WideTwoHeroActionLayout": ("Hero", "Hero"),
         "WideFullFourActionLayout": "Full",
         "WideTwoHalfLayout": "WideHalf",
         "WideHalfTwoCompactLayout": ("WideHalf", "Compact", "Compact"),
@@ -854,6 +859,7 @@ def _layout_output_option(
         "WideHeroActionFullLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideFullTwoCompactLayout": _COMPACT_ACTION_TEMPLATE_ID,
         "WideFullHeroTwoActionLayout": _PILL_ACTION_TEMPLATE_ID,
+        "WideTwoHeroActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideFullFourActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
         "WideHalfCompactTwoLargeActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
         "WideHalfFourLargeActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
@@ -1126,6 +1132,10 @@ def _second_layer_layout_selection(
             layout_id, kinds, actions = (
                 "WideSingleFocusLayout", ("WideHero",), (_PILL_ACTION_TEMPLATE_ID,)
             )
+        elif (component_count, action_count) == (1, 2):
+            layout_id, kinds, actions = (
+                "WideFullTwoCompactLayout", ("Full",), (_COMPACT_ACTION_TEMPLATE_ID,)
+            )
         elif (component_count, action_count) == (2, 0):
             if (
                 len(group_kinds) >= 3
@@ -1211,6 +1221,10 @@ def _second_layer_layout_selection(
                     (_PILL_ACTION_TEMPLATE_ID,),
                 )
             )
+            if kinds == ("Full", "Hero") and "Full" not in group_kinds[0]:
+                if all("Hero" in group for group in group_kinds):
+                    kinds = ("Hero", "Hero")
+                    layout_id = "WideTwoHeroActionLayout"
         elif (component_count, action_count) == (1, 4):
             layout_id, kinds, actions = (
                 ("WideHalfFourLargeActionLayout", ("WideHalf",), (_LARGE_ICON_ACTION_TEMPLATE_ID,))

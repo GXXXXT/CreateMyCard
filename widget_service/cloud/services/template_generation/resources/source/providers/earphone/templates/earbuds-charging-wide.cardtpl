@@ -1,0 +1,71 @@
+#Template BluetoothDeviceOverviewEarbudsChargingWideFull@1(props: { actionId?: string, leftEarIcon?: asset, rightEarIcon?: asset, deviceIcon?: asset })
+data = {
+  name: $path("/earphoneName"), connected: $path("/isConnected"),
+  battery: $path("/batteryLevel"), chargingStatus: $path("/chargingStatusDesc"),
+  left: $path("/leftBatteryLevel"), leftChargingStatus: $path("/leftChargingStatusDesc"),
+  right: $path("/rightBatteryLevel"), rightChargingStatus: $path("/rightChargingStatusDesc")
+}
+Row({"width": "matchParent", "height": "matchParent", "itemMargin": 12},
+  Column({"layoutWeight": 1, "height": "matchParent", "padding": 8, "borderRadius": 16,
+    "justifyContent": "spaceBetween", "backgroundColor": $theme('supportContentStyle.backgroundColor')},
+    Column({"width": "matchParent", "itemMargin": 4},
+      Text(data.name, {"height": 16, "fontSize": 12, "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"}),
+      Text(Expr(data.connected ? '已连接' : '未连接'), {"height": 24, "fontSize": 18,
+        "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1})
+    ),
+    Row({"width": "matchParent", "itemMargin": 2},
+      Column({"layoutWeight": 1, "itemMargin": 2},
+        #if props.leftEarIcon
+          Image(props.leftEarIcon, {"width": 16, "height": 16,
+            "fillColor": $theme('supportContentColor'), "objectFit": "contain"}),
+        #endif
+        Text(Expr(data.left + '%'), {"height": 16, "fontSize": 12, "fontWeight": 500,
+          "fontColor": $theme('supportContentColor'), "maxLines": 1}),
+        Text(data.leftChargingStatus, {"fontSize": 12, "fontWeight": 500,
+          "fontColor": $theme('supportContentColor'), "maxLines": 2})
+      ),
+      Column({"layoutWeight": 1, "itemMargin": 2},
+        #if props.rightEarIcon
+          Image(props.rightEarIcon, {"width": 16, "height": 16,
+            "fillColor": $theme('supportContentColor'), "objectFit": "contain"}),
+        #endif
+        Text(Expr(data.right + '%'), {"height": 16, "fontSize": 12, "fontWeight": 500,
+          "fontColor": $theme('supportContentColor'), "maxLines": 1}),
+        Text(data.rightChargingStatus, {"fontSize": 12, "fontWeight": 500,
+          "fontColor": $theme('supportContentColor'), "maxLines": 2})
+      ),
+      Column({"layoutWeight": 1, "itemMargin": 2},
+        #if props.deviceIcon
+          Image(props.deviceIcon, {"width": 16, "height": 16,
+            "fillColor": $theme('supportContentColor'), "objectFit": "contain"}),
+        #endif
+        Text(Expr(data.battery + '%'), {"height": 16, "fontSize": 12, "fontWeight": 500,
+          "fontColor": $theme('supportContentColor'), "maxLines": 1}),
+        Text(data.chargingStatus, {"fontSize": 12, "fontWeight": 500,
+          "fontColor": $theme('supportContentColor'), "maxLines": 2})
+      )
+    )
+  ),
+  Column({"layoutWeight": 1, "height": "matchParent", "padding": 8, "borderRadius": 16,
+    "justifyContent": "spaceBetween", "backgroundColor": $theme('supportContentStyle.backgroundColor')},
+    Column({"width": "matchParent", "height": 37, "itemMargin": 2},
+      Text("每日30首", {"width": "matchParent", "height": 19, "fontSize": 14, "fontWeight": 700,
+        "fontColor": $theme('primaryColor'), "maxLines": 1}),
+      Text("精选歌单", {"width": 116, "height": 16, "fontSize": 12, "fontWeight": 500,
+        "fontColor": $theme('supportContentColor'), "maxLines": 1})
+    ),
+    Stack({"width": "matchParent", "height": 36, "borderRadius": 20, "alignContent": "center",
+      "backgroundColor": $theme('actionStyle.backgroundColor')},
+      Text("每日推荐", {"width": 84, "height": 19, "fontSize": 14, "fontWeight": 500,
+        "fontColor": $theme('actionStyle.contentColor'), "textAlign": "center", "maxLines": 1}),
+      #if props.actionId
+        Stack({"width": "matchParent", "height": "matchParent",
+          "onClick": EventAction(props.actionId)},
+          Text("", {"width": "matchParent", "height": "matchParent"})
+        )
+      #endif
+    )
+  )
+)
+#End

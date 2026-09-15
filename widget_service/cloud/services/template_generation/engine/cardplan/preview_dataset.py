@@ -130,6 +130,7 @@ _SAMPLE_BY_BUSINESS_BINDING: dict[tuple[str, str], Any] = {
     ("AppUsageOverview", "duration"): "1小时26分",
     ("AppUsageOverview", "updatedAt"): "今天 09:00",
     ("BluetoothDeviceOverview", "battery"): 80,
+    ("BluetoothDeviceOverview", "updated"): "14:00",
     ("BluetoothDeviceOverview", "percent"): 80,
     ("BluetoothDeviceOverview", "chargingStatus"): "充电中",
     ("BluetoothDeviceOverview", "left"): 76,

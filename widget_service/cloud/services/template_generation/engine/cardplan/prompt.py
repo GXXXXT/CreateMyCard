@@ -1151,6 +1151,8 @@ def _provider_variant_matches_trusted_state(
             return False
         if variant_name == "hero":
             return True
+        if variant_name == "musicFull":
+            return has_case
         if variant_name == "earbudPairCompact":
             return has_left and has_right
         if variant_name == "earbudPairFull":

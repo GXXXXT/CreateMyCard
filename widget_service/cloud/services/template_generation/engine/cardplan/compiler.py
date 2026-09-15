@@ -383,7 +383,9 @@ def compile_ux_layout_card(
         registry=registry,
         embedded_actions=True,
     )
-    matched_plan_id = _validate_allowed_template_plan(composition, contract, registry)
+    matched_plan_id = _validate_allowed_template_plan(
+        composition, contract, registry, card_size=task_spec.size,
+    )
     raw_count = _count_calls(composition)
     if raw_count > contract.limits.max_raw_components:
         raise TerselConversionError("Hybrid raw component budget exceeded.")
@@ -424,6 +426,13 @@ def compile_ux_layout_card(
     embedded_action_count = sum(
         _parsed_ux_action_component(child) is not None for child in composition.children
     )
+    if matched_plan_id is not None:
+        for plan in contract.allowed_template_plans:
+            if plan.plan_id != matched_plan_id:
+                continue
+            embedded_action_count += sum(
+                item.consumer == "business-template" for item in plan.action_assignments
+            )
     if layout_id != "TwoSupportLayout" and len(state.action_occurrences) != embedded_action_count:
         raise TerselConversionError(
             "UX Layout Actions must use the dedicated Action nodes."
@@ -923,6 +932,7 @@ def _expand_call(
             "WideFullTwoCompactLayout",
             "WideFourCompactLayout",
             "WideFullHeroTwoActionLayout",
+            "WideTwoHeroActionLayout",
             "WideFullFourActionLayout",
             "WideHalfTwoCompactLayout",
             "WideHalfCompactTwoLargeActionLayout",
@@ -1188,6 +1198,14 @@ def _validate_provider_template_state(
         has_left = facts.left_battery_level is not None
         has_right = facts.right_battery_level is not None
         has_case = facts.case_battery_level is not None
+        if variant_name == "caseConnectionHero":
+            if facts.is_connected is None or not has_case:
+                raise TerselConversionError("Case connection Hero requires connection and battery.")
+            return
+        if variant_name == "tripleBatteryWideHalf":
+            if not has_case or not has_left or not has_right:
+                raise TerselConversionError("Triple battery WideHalf requires all three batteries.")
+            return
         if variant_name == "connectionSupport":
             # /batteryLevel 为可选数据：仅要求可信连接状态，电量缺失时按条件分支省略。
             if facts.is_connected is None:
@@ -1208,11 +1226,36 @@ def _validate_provider_template_state(
                     "Bluetooth Provider Template variant does not match the trusted data shape."
                 )
             return
+        if variant_name == "earbudChargingWideFull":
+            has_batteries = has_left and has_right
+            has_statuses = (
+                facts.left_charging_status is not None
+                and facts.right_charging_status is not None
+            )
+            if not has_batteries or not has_statuses:
+                raise TerselConversionError(
+                    "Earbud charging Template requires both batteries and charging states."
+                )
+            return
         if facts.is_connected is None or facts.earphone_name is None:
             raise TerselConversionError(
                 "Bluetooth Provider Template has no trusted earphone identity."
             )
         if variant_name == "hero":
+            return
+        if variant_name == "earbudsChargingWideFull":
+            required_values = (
+                facts.case_battery_level, facts.left_battery_level, facts.right_battery_level,
+                facts.case_charging_status, facts.left_charging_status, facts.right_charging_status,
+            )
+            if any(value is None for value in required_values):
+                raise TerselConversionError(
+                    "Earbuds charging WideFull requires all three batteries and charging states."
+                )
+            return
+        if variant_name == "musicFull":
+            if not has_case:
+                raise TerselConversionError("Earphone music Full requires a case battery level.")
             return
         if variant_name == "earbudPairCompact":
             if not has_left or not has_right:
@@ -6440,6 +6483,7 @@ def _validate_provider_template_layout_action_requirements(
             ("Full",),
             ("LargeIconAction",) * 4,
         ),
+        "WideTwoHeroActionLayout": (("Hero", "Hero"), ("PillAction", "PillAction")),
         "WideTwoHalfLayout": (("WideHalf", "WideHalf"), ()),
         "WideHalfTwoCompactLayout": (("WideHalf", "Compact", "Compact"), ()),
         "WideHalfCompactTwoLargeActionLayout": (
@@ -6452,6 +6496,12 @@ def _validate_provider_template_layout_action_requirements(
         ),
     }
     wide_composition = wide_composition_contracts.get(layout_id)
+    if layout_id == "WideFullTwoCompactLayout" and action_names == ("CompactAction",) * 2:
+        if layout_kinds != ("Full",):
+            raise TerselConversionError(
+                f"{layout_id} two Actions require exactly one Full data Template."
+            )
+        return
     if layout_id == "WideFullTwoCompactLayout" and action_names == ("CompactAction",):
         if layout_kinds not in {("Full", "Compact"), ("Hero", "Compact")}:
             raise TerselConversionError(
@@ -6570,6 +6620,8 @@ def _validate_allowed_template_plan(
     composition: ParsedCall,
     contract: HybridBodyContract,
     registry: CardPlanRegistry,
+    *,
+    card_size: str = "2x2",
 ) -> str | None:
     """Require the model output to match one complete Planner result atomically."""
     if not contract.allowed_template_plans:
@@ -6588,7 +6640,7 @@ def _validate_allowed_template_plan(
             continue
         definition = registry.require_template(child.name)
         params = child.values[0] if child.values and isinstance(child.values[0], dict) else {}
-        _validate_business_template_action(definition, params, contract, "2x2")
+        _validate_business_template_action(definition, params, contract, card_size)
     return matched_plan_ids[0]
 
 
