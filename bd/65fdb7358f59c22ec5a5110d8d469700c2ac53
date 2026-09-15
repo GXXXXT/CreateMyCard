@@ -1,0 +1,101 @@
+widget_service/cloud/services/template_generation/tests/test_template_generation.py
+  s_4cba56cf54e5de::t_60334e6f88f04c 3186-3193
+  s_4cba56cf54e5de::t_f06ab8389b5b34 286
+  s_4cba56cf54e5de::t_cddd50d079eec0 5625-5626
+  s_4cba56cf54e5de::t_237a942b517d94 2934
+  s_4cba56cf54e5de::t_88f92264d62b59 2935
+  s_4cba56cf54e5de::t_c01231a49d23ce 3194
+  s_4cba56cf54e5de::t_64c221ac54ec3a 5627
+widget_service/cloud/services/template_generation/resources/source/providers/battery/templates/battery-overview.cardtpl
+  s_4cba56cf54e5de::t_d9dba832362e86 175
+  s_4cba56cf54e5de::t_ba871753864f48 172-174
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/second-layer.md
+  s_4cba56cf54e5de::t_7d1ca92a0477ff 14-17
+  s_4cba56cf54e5de::t_552882719e0be0 18
+widget_service/cloud/services/template_generation/resources/source/providers/battery/provider.json
+  s_4cba56cf54e5de::t_18bbc2c44542f4 228-231,233-248
+  s_4cba56cf54e5de::t_b5609b90196d10 232
+  s_4cba56cf54e5de::t_dec89c4a2eb61a 227
+widget_service/cloud/services/template_generation/engine/cardplan/compiler.py
+  s_4cba56cf54e5de::t_b96f595205d5c0 1127
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/first-layer.md
+  s_4cba56cf54e5de::t_464bffc03b42f5 25-26
+widget_service/cloud/services/template_generation/tests/test_template_preview_dataset.py
+  s_4cba56cf54e5de::t_c7e649bd93d7bd 19,25,31-33
+widget_service/cloud/services/template_generation/docs/provider-template-capability-checklist.md
+  s_4cba56cf54e5de::t_8cbb1042713f2e 65
+  s_4cba56cf54e5de::t_262baa98756352 84
+widget_service/cloud/services/template_generation/engine/cardplan/prompt.py
+  s_4cba56cf54e5de::t_0c5b36fb7181a6 1112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.1",
+  "base_commit_sha": "bd65fdb7358f59c22ec5a5110d8d469700c2ac53",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_4cba56cf54e5de": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_d36803cb-078c-4ea1-a158-524dca025d2e",
+        "model": "glm-5.3"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 260,
+      "total_deletions": 30,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_003c21a50ac1c3": "glm-5.3",
+        "t_02e61d67525579": "glm-5.3",
+        "t_0337f97d56f5c9": "glm-5.3",
+        "t_0c5b36fb7181a6": "glm-5.3",
+        "t_18bbc2c44542f4": "glm-5.3",
+        "t_1a321d42e4f9e1": "glm-5.3",
+        "t_237a942b517d94": "glm-5.3",
+        "t_262baa98756352": "glm-5.3",
+        "t_28957c3cdc3df1": "glm-5.3",
+        "t_35e16370d448f1": "glm-5.3",
+        "t_3623e2fd5436b0": "glm-5.3",
+        "t_403e0db33b7270": "glm-5.3",
+        "t_464bffc03b42f5": "glm-5.3",
+        "t_552882719e0be0": "glm-5.3",
+        "t_5670deb8306c2d": "glm-5.3",
+        "t_60334e6f88f04c": "glm-5.3",
+        "t_713bd47535d582": "glm-5.3",
+        "t_7623f20d2daa4d": "glm-5.3",
+        "t_781feb94fdb983": "glm-5.3",
+        "t_7cf2f346c6cdfb": "glm-5.3",
+        "t_7d1ca92a0477ff": "glm-5.3",
+        "t_8cbb1042713f2e": "glm-5.3",
+        "t_962213ad1d631f": "glm-5.3",
+        "t_98b5cda08711ec": "glm-5.3",
+        "t_b10f96056a2625": "glm-5.3",
+        "t_b3460e2970ee3b": "glm-5.3",
+        "t_b5609b90196d10": "glm-5.3",
+        "t_b586b76ec5ff5f": "glm-5.3",
+        "t_b96f595205d5c0": "glm-5.3",
+        "t_bd9d6bea186e4a": "glm-5.3",
+        "t_c7e649bd93d7bd": "glm-5.3",
+        "t_cca39873651622": "glm-5.3",
+        "t_cddd50d079eec0": "glm-5.3",
+        "t_d9dba832362e86": "glm-5.3",
+        "t_e98562592dc3bb": "glm-5.3",
+        "t_f06ab8389b5b34": "glm-5.3",
+        "t_f173af62566091": "glm-5.3",
+        "t_f40ddc18e15245": "glm-5.3",
+        "t_fd3b8b735d316c": "glm-5.3"
+      },
+      "model_totals": {
+        "glm-5.3": {
+          "additions": 260,
+          "deletions": 30
+        }
+      }
+    }
+  }
+}
