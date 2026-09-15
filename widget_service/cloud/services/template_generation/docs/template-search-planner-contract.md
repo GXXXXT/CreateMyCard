@@ -145,3 +145,7 @@ Support 通过模板条目的 `supportedEventIds` 声明内嵌事件白名单。
 
 旧 `firstLayerComponentSelector=llm` 路径保留原有 `TemplateRouteSelection` 行为用于兼容，不使用新的
 Planner 原子 Plan 契约。
+
+### 完整横版模板的内置操作
+
+2x4 维持原字段检索；仅单业务、单操作、候选完整覆盖所选字段，且 WideFull 显式声明 supportedEventIds 和 actionId 时，生成 WideFullOnlyLayout 原子计划。操作唯一归属模板内部，沿用事件校验；其它输入继续原组合路径。

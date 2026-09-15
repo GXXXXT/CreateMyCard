@@ -416,6 +416,10 @@ def build_ux_mixed_prompt(
     required_numbers = tuple(item for item in required_numbers if item not in provider_owned_values)
     contract = base.contract.model_copy(
         update={
+            # 原子计划已校验操作归属，内置按钮不占布局根的 Action 槽位。
+            "content_action_ids": (
+                selected_action_ids if template_plans else base.contract.content_action_ids
+            ),
             "required_template_groups": effective_required_template_groups,
             "allowed_template_ids": tuple(
                 dict.fromkeys(
@@ -482,6 +486,9 @@ def build_ux_mixed_prompt(
     action_template_ids = (
         layout_selection.action_template_ids if selected_action_ids else ()
     )
+    if layout_selection.layout_ids == ("WideHalfTwoCompactLayout",):
+        if selected_action_ids == ("event.open.music.daily",):
+            action_template_ids = ("PlaylistCompactAction@1",)
     action_template_contracts = build_template_prompt_contracts(
         action_template_ids,
         contract,
@@ -827,6 +834,7 @@ def _layout_output_option(
         "WideFullTwoCompactLayout": "Full",
         "WideFourCompactLayout": ("Compact",) * 4,
         "WideFullHeroTwoActionLayout": ("Full", "Hero"),
+        "WideTwoHeroActionLayout": ("Hero", "Hero"),
         "WideFullFourActionLayout": "Full",
         "WideTwoHalfLayout": "WideHalf",
         "WideHalfTwoCompactLayout": ("WideHalf", "Compact", "Compact"),
@@ -868,7 +876,13 @@ def _layout_output_option(
         "WideFullHeroActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideHeroActionFullLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideFullTwoCompactLayout": _COMPACT_ACTION_TEMPLATE_ID,
+        "WideHalfTwoCompactLayout": (
+            "PlaylistCompactAction@1"
+            if "PlaylistCompactAction@1" in action_template_ids
+            else _COMPACT_ACTION_TEMPLATE_ID
+        ),
         "WideFullHeroTwoActionLayout": _PILL_ACTION_TEMPLATE_ID,
+        "WideTwoHeroActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideFullFourActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
         "WideHalfCompactTwoLargeActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
         "WideHalfFourLargeActionLayout": _LARGE_ICON_ACTION_TEMPLATE_ID,
@@ -898,7 +912,7 @@ def _action_output_syntax(
     action_template_id: str,
     action: dict[str, str],
 ) -> str:
-    if action_template_id == _COMPACT_ACTION_TEMPLATE_ID:
+    if action_template_id in {_COMPACT_ACTION_TEMPLATE_ID, "PlaylistCompactAction@1"}:
         props = {
             **action,
             "icon": "<one semantically matching trustedAssetSource>",
@@ -1197,6 +1211,10 @@ def _second_layer_layout_selection(
             layout_id, kinds, actions = (
                 "WideSingleFocusLayout", ("WideHero",), (_PILL_ACTION_TEMPLATE_ID,)
             )
+        elif (component_count, action_count) == (1, 2):
+            layout_id, kinds, actions = (
+                "WideFullTwoCompactLayout", ("Full",), (_COMPACT_ACTION_TEMPLATE_ID,)
+            )
         elif (component_count, action_count) == (2, 0):
             if (
                 len(group_kinds) >= 3
@@ -1237,7 +1255,14 @@ def _second_layer_layout_selection(
                 "WideFourCompactLayout", ("Compact",) * 4, ()
             )
         elif (component_count, action_count) == (2, 1):
-            if len(group_kinds) >= 2 and "Compact" in group_kinds[1]:
+            if has_half(0) and "Compact" in group_kinds[1]:
+                selection = _SecondLayerLayoutSelection(
+                    layout_ids=("WideHalfTwoCompactLayout",),
+                    layout_kinds=("WideHalf",),
+                    action_template_ids=(_COMPACT_ACTION_TEMPLATE_ID,),
+                    business_layout_kinds_by_position=("WideHalf", "Compact"),
+                )
+            elif len(group_kinds) >= 2 and "Compact" in group_kinds[1]:
                 if "Full" in group_kinds[0]:
                     selection = _SecondLayerLayoutSelection(
                         layout_ids=("WideFullTwoCompactLayout",),

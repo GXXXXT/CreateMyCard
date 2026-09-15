@@ -20,6 +20,18 @@
   ],
   "templates": [
     {
+      "templateId": "BatteryOverviewPhoneTextCompact@1",
+      "businessId": "BatteryOverview",
+      "capabilityId": "GetPhoneBatteryInfo",
+      "description": "手机电量 Compact：电量文本和固定手机副标题，可作为横版下方半宽槽位。",
+      "entry": "templates/phone-text-compact.cardtpl",
+      "primaryData": [
+        "/batterySOCText"
+      ],
+      "secondaryData": [],
+      "optionalData": []
+    },
+    {
       "templateId": "BatteryOverviewFull@1",
       "businessId": "BatteryOverview",
       "capabilityId": "GetPhoneBatteryInfo",
@@ -204,7 +216,11 @@
     },
     {
       "templateId": "BatteryOverviewSupport@1",
-      "supportedEventIds": ["event.open.settings.battery","event.open.settings.batteryHealth","event.setPowerSavingMode"],
+      "supportedEventIds": [
+        "event.open.settings.battery",
+        "event.open.settings.batteryHealth",
+        "event.setPowerSavingMode"
+      ],
       "businessId": "BatteryOverview",
       "capabilityId": "GetPhoneBatteryInfo",
       "description": "手机电量 Support：左侧展示电量主行，充电状态为可选辅行（缺失时回退展示可选电池温度，都缺失时只保留电量行），右侧 40vp 电量环，环内可选 16vp 手机设备图标，标识电量所属设备；数值电量必需，带单位电量文本、充电状态与电池温度可选，可在根节点绑定事件。",
@@ -226,7 +242,11 @@
     },
     {
       "templateId": "BatteryOverviewStatusSupport@1",
-      "supportedEventIds": ["event.open.settings.battery","event.open.settings.batteryHealth","event.setPowerSavingMode"],
+      "supportedEventIds": [
+        "event.open.settings.battery",
+        "event.open.settings.batteryHealth",
+        "event.setPowerSavingMode"
+      ],
       "businessId": "BatteryOverview",
       "capabilityId": "GetPhoneBatteryInfo",
       "description": "手机充电状态 Support：展示当前充电状态和连接的充电器类型；两个文本字段必需，可在根节点绑定事件。",

@@ -22,6 +22,11 @@
       "templateId": "LargeIconAction@1",
       "description": "64x64 大型图标动作模板，由第二层通过 actionId 和 icon Props 填充展示内容。",
       "entry": "templates/action.cardtpl"
+    },
+    {
+      "templateId": "PlaylistCompactAction@1",
+      "description": "每日30首歌单 Compact 入口，仅用于 event.open.music.daily；显示30首及批准的入口名称。",
+      "entry": "templates/playlist-compact.cardtpl"
     }
   ],
   "compatibility": {

@@ -44,6 +44,7 @@ _PLAIN_LAYOUTS = ("card", "section", "compact", "between", "actions", "list", "d
 _ACTION_TEMPLATE_IDS = (
     "PillAction@1",
     "CompactAction@1",
+    "PlaylistCompactAction@1",
     "IconAction@1",
     "LargeIconAction@1",
 )
@@ -1155,6 +1156,8 @@ def _provider_variant_matches_trusted_state(
             return False
         if variant_name == "hero":
             return True
+        if variant_name == "musicFull":
+            return has_case
         if variant_name == "earbudPairCompact":
             return has_left and has_right
         if variant_name == "earbudPairFull":

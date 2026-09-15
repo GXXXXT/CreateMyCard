@@ -59,6 +59,7 @@ from services.template_generation.engine.cardplan.template_retrieval import (
     retrieve_template_variants,
     search_template_variants,
 )
+from services.template_generation.engine.cardplan.wide_full_planner import plan_embedded_wide_full
 from services.template_generation.engine.tersel_converter import (
     TerselConversionError,
 )
@@ -172,6 +173,16 @@ async def generate_template_a2ui(
                     card_spec,
                     preferred_template_ids=trusted_template_candidate_ids,
                 )
+                template_plans = plan_embedded_wide_full(
+                    query, selection, selected_task_spec, registry,
+                )
+                if template_plans:
+                    selection = TemplateRouteSelection(
+                        scope=planner_scope(template_plans),
+                        componentCandidates=planner_component_candidates(template_plans),
+                        actionIds=query.action_ids,
+                        requiredTemplateGroups=planner_required_template_groups(template_plans),
+                    )
                 logger.info(
                     f"{_MODULE} template_retrieval matched=True "
                     f"component_count={len(selection.component_candidates)}"

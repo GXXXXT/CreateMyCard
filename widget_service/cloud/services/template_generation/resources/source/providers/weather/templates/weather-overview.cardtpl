@@ -2039,6 +2039,8 @@ Column(
   )
 )
 
+#End
+
 #Template WeatherOverviewFeelsLikeAlertFull@1(props: { location?: string, conditionIcon?: asset })
 data = {
     city: $optionalPath("/location/prefectureName"),
@@ -2158,6 +2160,8 @@ Column(
     #endif
   )
 )
+
+#End
 
 #Template WeatherOverviewHumidityWindFull@1(props: { location?: string, conditionIcon?: asset })
 data = {
@@ -2283,6 +2287,8 @@ Column(
   )
 )
 
+#End
+
 #Template WeatherOverviewUvColdFull@1(props: { location?: string, conditionIcon?: asset })
 data = {
     city: $optionalPath("/location/prefectureName"),
@@ -2383,6 +2389,8 @@ Column(
   )
 )
 
+#End
+
 #Template WeatherOverviewFeelsLikeWindSupport@1(props: { temperatureIcon: asset })
 data = {
     feelsLike: $path("/current/feelsLikeC"),
@@ -2442,6 +2450,8 @@ Row(
     }
   )
 )
+
+#End
 
 #Template WeatherOverviewDailySummaryFull@1(props: { location?: string })
 data = {
@@ -2564,3 +2574,4 @@ Column(
     )
   )
 )
+#End

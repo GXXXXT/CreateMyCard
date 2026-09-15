@@ -33,7 +33,7 @@ Stack({
 )
 #End
 
-#Template CompactAction@1(props: { actionId: string, label: string, icon: asset })
+#Template CompactAction@1(props: { actionId: string, label: string, icon: asset, prominent?: boolean })
 data = {
 }
 
@@ -45,6 +45,32 @@ Stack({
   "alignContent": "center",
   "onClick": EventAction(props.actionId)
 },
+#if props.prominent
+  Row({
+    "width": "matchParent",
+    "height": "matchParent",
+    "padding": {"left": 8, "top": 0, "right": 8, "bottom": 0},
+    "justifyContent": "spaceBetween",
+    "alignItems": "center"
+  },
+    Text(props.label, {
+      "layoutWeight": 1,
+      "height": 21,
+      "fontSize": 16,
+      "fontWeight": 700,
+      "fontColor": $theme('primaryColor'),
+      "maxLines": 1,
+      "textOverflow": "ellipsis",
+      "textAlign": "start"
+    }),
+    Image(props.icon, {
+      "width": 24,
+      "height": 24,
+      "objectFit": "contain",
+      "flexShrink": 0
+    })
+  )
+#else
   Row({
     "width": "matchParent",
     "height": "matchParent",
@@ -69,6 +95,7 @@ Stack({
       "flexShrink": 0
     })
   )
+#endif
 )
 #End
 
