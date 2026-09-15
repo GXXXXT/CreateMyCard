@@ -1,6 +1,6 @@
 #Template BluetoothDeviceOverviewTripleBatteryWideHalf@1(props: { deviceIcon?: asset, leftEarIcon?: asset, rightEarIcon?: asset })
 data = { battery: $path("/batteryLevel"), left: $path("/leftBatteryLevel"), right: $path("/rightBatteryLevel"), connected: $optionalPath("/isConnected") }
-Row({"width": "matchParent", "height": "matchParent", "itemMargin": 8},
+Row({"_advancedComponent": "BluetoothDeviceOverview", "width": "matchParent", "height": "matchParent", "itemMargin": 8},
   Row({"layoutWeight": 1, "height": "matchParent", "padding": 8, "itemMargin": 12,
     "alignItems": "center", "borderRadius": 16,
     "backgroundColor": $theme('supportContentStyle.backgroundColor')},

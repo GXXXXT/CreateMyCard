@@ -318,6 +318,10 @@ def _components(a2ui: str) -> list[dict[str, Any]]:
 
 
 _EXPECTED_COMPLETE: dict[str, set[str]] = {
+    "Q018": {
+        "ScheduleOverviewLocationHero@1",
+        "ScheduleOverviewMeetingEntryHero@1",
+    },
     "Q035": {
         "ScheduleOverviewEventCountDetailsHero@1",
         "ScheduleOverviewEventCountDetailsFull@1",

@@ -1,6 +1,6 @@
 #Template BluetoothDeviceOverviewCaseConnectionHero@1(props: { deviceIcon: asset })
 data = { battery: $path("/batteryLevel"), connected: $path("/isConnected") }
-Column({"width": "matchParent", "height": "matchParent",
+Column({"_advancedComponent": "BluetoothDeviceOverview", "width": "matchParent", "height": "matchParent",
   "justifyContent": "start", "alignItems": "start", "itemMargin": 14},
   Text("耳机仓", {"height": 16, "fontSize": 12, "fontWeight": 400,
     "fontColor": $theme('supportContentColor'), "maxLines": 1}),

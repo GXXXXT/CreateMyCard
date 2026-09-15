@@ -2391,7 +2391,7 @@ Column(
 
 #End
 
-#Template WeatherOverviewFeelsLikeWindSupport@1(props: { temperatureIcon: asset })
+#Template WeatherOverviewFeelsLikeWindSupport@1(props: { temperatureIcon: asset, actionId?: string })
 data = {
     feelsLike: $path("/current/feelsLikeC"),
     windLevel: $path("/current/windLevel")
@@ -2399,14 +2399,15 @@ data = {
 
 Row(
   {
-    "_advancedComponent": "WeatherOverviewFeelsLikeWindSupport",
+    "_advancedComponent": "WeatherOverview",
     "width": "matchParent",
     "height": "matchParent",
     "padding": { "left": 8, "top": 0, "right": 8, "bottom": 0 },
     "justifyContent": "spaceBetween",
     "alignItems": "center",
     "clip": true,
-    "constraintSize": { "minWidth": 0, "minHeight": 0 }
+    "constraintSize": { "minWidth": 0, "minHeight": 0 },
+    "onClick": EventAction(props?.actionId)
   },
   Column(
     {
@@ -2431,7 +2432,7 @@ Row(
       Expr("风力 " + data.windLevel + "级"),
       {
         "height": 13,
-        "fontSize": 10,
+        "fontSize": 12,
         "fontWeight": 400,
         "fontColor": $theme('supportContentColor'),
         "maxLines": 1,
