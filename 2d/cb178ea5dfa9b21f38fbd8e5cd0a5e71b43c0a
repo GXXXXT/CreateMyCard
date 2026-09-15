@@ -17,7 +17,9 @@
         "model": "gpt-5.6-sol"
       },
       "human_author": "yan_shuifeng <yanshuifeng@huawei.com>",
-      "total_deletions": 798
+      "total_additions": 0,
+      "total_deletions": 798,
+      "overridden_lines": 0
     }
   }
 }
