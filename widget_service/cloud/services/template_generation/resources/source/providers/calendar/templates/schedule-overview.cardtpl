@@ -1012,17 +1012,17 @@ Column(
   ),
   Column(
     {
-      "width": 112,
+      "width": "matchParent",
       "height": 76,
       "itemMargin": 8,
       "justifyContent": "start",
       "alignItems": "start",
       "clip": true,
-      "constraintSize": {"minWidth": 0, "minHeight": 0}
+      "constraintSize": {"minWidth": 0, "minHeight": 0, "maxWidth": 112}
     },
     Row(
       {
-        "width": 112,
+        "width": "matchParent",
         "height": 34,
         "itemMargin": 8,
         "justifyContent": "start",
@@ -1104,7 +1104,7 @@ Column(
     ),
     Row(
       {
-        "width": 112,
+        "width": "matchParent",
         "height": 34,
         "itemMargin": 8,
         "justifyContent": "start",

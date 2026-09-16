@@ -2594,12 +2594,12 @@ Column(
   {
     "_advancedComponent": "WeatherOverview",
     "width": "matchParent",
-    "height": 103,
+    "height": "matchParent",
     "itemMargin": 0,
     "justifyContent": "start",
     "alignItems": "start",
     "clip": true,
-    "constraintSize": { "minWidth": 0, "minHeight": 0 }
+    "constraintSize": { "minWidth": 0, "minHeight": 0, "maxHeight": 103 }
   },
   Row(
     {
@@ -2703,7 +2703,7 @@ Column(
     {
       "width": "matchParent",
       "height": 16,
-      "margin": { "top": 12 },
+      "margin": { "top": 11 },
       "itemMargin": 0,
       "justifyContent": "spaceBetween",
       "alignItems": "center",

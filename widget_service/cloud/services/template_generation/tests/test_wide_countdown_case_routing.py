@@ -47,6 +47,11 @@ _WEATHER_THREE_DAY_FULL = "WeatherOverviewThreeDayForecastFull@1"
 _WEATHER_DESTINATION_FULL = "WeatherOverviewDestinationDayFull@1"
 _COUNTDOWN_ICON = "resources/base/media/stopwatch_fill.svg"
 _RUN_ICON = "resources/base/media/figure_run.svg"
+_TARGET_BODY_WIDTH = 300 - 2 * 12
+_TARGET_BODY_HEIGHT = 150 - 2 * 12
+_TARGET_HALF_WIDTH = (_TARGET_BODY_WIDTH - 8) // 2
+_TARGET_MASK_CONTENT_WIDTH = _TARGET_HALF_WIDTH - 2 * 12
+_TARGET_MASK_CONTENT_HEIGHT = _TARGET_BODY_HEIGHT - 2 * 12
 
 
 @dataclass(frozen=True)
@@ -430,6 +435,19 @@ def _a2ui_components(compilation: HybridCompilation) -> tuple[dict[str, Any], ..
     return tuple(components)
 
 
+def _components_by_id(compilation: HybridCompilation) -> dict[str, dict[str, Any]]:
+    return {
+        component["id"]: component
+        for component in _a2ui_components(compilation)
+        if isinstance(component.get("id"), str)
+    }
+
+
+def _assert_target_height_budget(compilation: HybridCompilation) -> None:
+    assert compilation.stats.estimated_height_vp <= _TARGET_BODY_HEIGHT
+    assert compilation.stats.space_constrained is False
+
+
 def test_q068_routes_two_fulls_and_embeds_the_calendar_action() -> None:
     case = _calendar_countdown_case()
     routed = _route(case)
@@ -468,6 +486,39 @@ def test_q068_routes_two_fulls_and_embeds_the_calendar_action() -> None:
     assert _CALENDAR_FULL in compilation.stats.template_used_ids
     assert "WideTwoFullLayout@1" in compilation.stats.template_used_ids
     assert compilation.stats.max_depth == 9
+    _assert_target_height_budget(compilation)
+
+    components_by_id = _components_by_id(compilation)
+    layout_root = components_by_id["template_root"]
+    assert layout_root.get("itemMargin") == 8
+    assert len(layout_root["children"]) == 2
+    for panel_id in layout_root["children"]:
+        panel = components_by_id[panel_id]
+        assert panel["styles"].get("layoutWeight") == 1
+        content = components_by_id[panel["children"][0]]
+        assert content["styles"].get("padding") == 12
+    assert _TARGET_HALF_WIDTH == 134
+    assert _TARGET_MASK_CONTENT_WIDTH == 110
+    assert _TARGET_MASK_CONTENT_HEIGHT == 102
+
+    calendar_bodies = []
+    for component in components_by_id.values():
+        styles = component.get("styles", {})
+        if component.get("component") != "Column":
+            continue
+        if styles.get("height") != 76:
+            continue
+        if styles.get("constraintSize", {}).get("maxWidth") == 112:
+            calendar_bodies.append(component)
+    assert len(calendar_bodies) == 1
+    calendar_body = calendar_bodies[0]
+    assert calendar_body["styles"].get("width") == "matchParent"
+    event_rows = [components_by_id[item] for item in calendar_body["children"]]
+    assert len(event_rows) == 2
+    assert all(row["styles"].get("width") == "matchParent" for row in event_rows)
+    assert all(row["styles"].get("height") == 34 for row in event_rows)
+    assert 16 + 76 <= _TARGET_MASK_CONTENT_HEIGHT
+
     event_text_columns: list[dict[str, Any]] = []
     timeline_dots: list[dict[str, Any]] = []
     for component in _a2ui_components(compilation):
@@ -544,9 +595,38 @@ def test_weather_full_and_countdown_hero_keep_the_action_at_the_layout_root(
     assert compilation.stats.action_used_ids == (action.action_id,)
     assert weather_template in compilation.stats.template_used_ids
     assert countdown_template in compilation.stats.template_used_ids
+    _assert_target_height_budget(compilation)
 
-    if weather_template != _WEATHER_THREE_DAY_FULL:
+    components_by_id = _components_by_id(compilation)
+    layout_root = components_by_id["template_root"]
+    hero_action_column = components_by_id[layout_root["children"][0]]
+    assert hero_action_column.get("itemMargin") == 8
+    hero_slot = components_by_id[hero_action_column["children"][0]]
+    action_slot = components_by_id[hero_action_column["children"][1]]
+    assert hero_slot["styles"].get("layoutWeight") == 1
+    assert "height" not in hero_slot["styles"]
+    assert action_slot["styles"].get("height") == 36
+    target_hero_height = _TARGET_BODY_HEIGHT - 8 - 36
+    assert target_hero_height == 82
+    assert 62 <= target_hero_height
+
+    weather_panel = components_by_id[layout_root["children"][1]]
+    weather_content = components_by_id[weather_panel["children"][0]]
+    assert weather_content["styles"].get("padding") == 12
+    weather_root = components_by_id[weather_content["children"][0]]
+
+    if weather_template == _WEATHER_DESTINATION_FULL:
+        assert weather_root.get("itemMargin") == 11
+        weather_header = components_by_id[weather_root["children"][0]]
+        weather_details = components_by_id[weather_root["children"][1]]
+        assert weather_header["styles"].get("height") == 37
+        assert weather_details["styles"].get("layoutWeight") == 1
+        detail_rows = [components_by_id[item] for item in weather_details["children"]]
+        assert len(detail_rows) == 3
+        assert all(row["styles"].get("height") == 16 for row in detail_rows)
+        assert 37 + 11 + 3 * 16 <= _TARGET_MASK_CONTENT_HEIGHT
         return
+
     components = _a2ui_components(compilation)
     component_source = json.dumps(
         components,
@@ -579,6 +659,14 @@ def test_weather_full_and_countdown_hero_keep_the_action_at_the_layout_root(
     ]
     assert len(daily_summaries) == 9
     assert len(daily_rows) == 3
+    weather_rows = [components_by_id[item] for item in weather_root["children"]]
+    row_heights = [row["styles"].get("height", 0) for row in weather_rows]
+    top_margins = [
+        row["styles"].get("margin", {}).get("top", 0) for row in weather_rows
+    ]
+    assert row_heights == [16, 16, 16, 16]
+    assert sum(row_heights) + sum(top_margins) <= _TARGET_MASK_CONTENT_HEIGHT
+    assert weather_root["styles"].get("constraintSize", {}).get("maxHeight") == 103
     assert sum(item["styles"].get("width") == 31 for item in trailing_value_stacks) == 3
     assert sum(item["styles"].get("width") == 26 for item in trailing_value_stacks) == 3
     assert len(separators) == 3
@@ -647,6 +735,25 @@ def test_q084_routes_health_full_countdown_compact_and_compact_action() -> None:
     assert compilation.stats.action_used_ids == (action.action_id,)
     assert _HEALTH_FULL in compilation.stats.template_used_ids
     assert _COUNTDOWN_COMPACT in compilation.stats.template_used_ids
+    _assert_target_height_budget(compilation)
+
+    components_by_id = _components_by_id(compilation)
+    layout_root = components_by_id["template_root"]
+    health_slot = components_by_id[layout_root["children"][0]]
+    compact_column = components_by_id[layout_root["children"][1]]
+    assert compact_column.get("itemMargin") == 8
+    compact_slots = [components_by_id[item] for item in compact_column["children"]]
+    assert len(compact_slots) == 2
+    assert all(slot["styles"].get("layoutWeight") == 1 for slot in compact_slots)
+    assert all("height" not in slot["styles"] for slot in compact_slots)
+    assert (_TARGET_BODY_HEIGHT - 8) // 2 == 59
+
+    health_root = components_by_id[health_slot["children"][0]]
+    assert health_root["styles"].get("justifyContent") == "spaceBetween"
+    health_groups = [components_by_id[item] for item in health_root["children"]]
+    assert [group["styles"].get("height") for group in health_groups] == [76, 36]
+    assert 76 + 36 <= _TARGET_BODY_HEIGHT
+
     image_sources = {
         component.get("src")
         for component in _a2ui_components(compilation)
