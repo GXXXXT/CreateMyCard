@@ -1126,7 +1126,9 @@ Column(
 
 #Template BatteryOverviewChargeStatusHero@1(props: { batteryIcon?: asset })
 data = {
-    percent: $path("/batterySOC")
+    percent: $path("/batterySOC"),
+    charging: $path("/chargingStatusDesc"),
+    pluggedType: $path("/pluggedTypeDesc")
 }
 
 Column(
@@ -1134,17 +1136,17 @@ Column(
     "_advancedComponent": "BatteryOverview",
     "width": "matchParent",
     "height": "matchParent",
-    "itemMargin": 4,
+    "itemMargin": 12,
     "justifyContent": "start",
     "alignItems": "start",
     "clip": true,
     "constraintSize": {"minWidth": 0, "minHeight": 0}
   },
   Text(
-    "手机",
+    data.pluggedType,
     {
       "width": "matchParent",
-      "height": 20,
+      "height": 16,
       "fontSize": 12,
       "fontWeight": 400,
       "fontColor": $theme('supportContentColor'),
@@ -1156,7 +1158,7 @@ Column(
   Row(
     {
       "width": "matchParent",
-      "layoutWeight": 1,
+      "height": 44,
       "itemMargin": 8,
       "justifyContent": "start",
       "alignItems": "center",
@@ -1173,7 +1175,7 @@ Column(
           "backgroundColor": $theme('progressBackgroundColor'),
           "width": 44,
           "height": 44,
-          "strokeWidth": 5
+          "strokeWidth": 6
         }
       ),
       #if props.batteryIcon
@@ -1190,7 +1192,8 @@ Column(
     ),
     Column(
       {
-        "itemMargin": 3,
+        "layoutWeight": 1,
+        "itemMargin": 2,
         "justifyContent": "start",
         "alignItems": "start",
         "constraintSize": {"minWidth": 0, "minHeight": 0}
@@ -1198,6 +1201,7 @@ Column(
       Text(
         Expr(data.percent + "%"),
         {
+          "height": 19,
           "fontSize": 14,
           "fontWeight": 700,
           "fontColor": $theme('primaryColor'),
@@ -1206,8 +1210,9 @@ Column(
         }
       ),
       Text(
-        "手机电量",
+        data.charging,
         {
+          "height": 14,
           "fontSize": 10,
           "fontWeight": 400,
           "fontColor": $theme('supportContentColor'),
