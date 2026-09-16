@@ -272,6 +272,7 @@ def compile_hybrid_card(
         content,
         contract,
         registry,
+        task_spec.size,
     )
     fusion_palette = _template_fusion_ball_palette(
         task_spec.size,
@@ -300,7 +301,7 @@ def compile_hybrid_card(
     if depth > contract.limits.max_nesting_depth:
         raise TerselConversionError("Hybrid component depth budget exceeded.")
     _validate_expanded_tree(root, contract)
-    body_budget = _body_budget(card_params, contract, registry)
+    body_budget = _body_budget(card_params, contract, registry, task_spec.size)
     space_constrained = content_height > body_budget
     if space_constrained:
         content = _constrain_content_height(content, body_budget)
@@ -472,7 +473,7 @@ def compile_ux_layout_card(
     content = _lower_capsule_progress(content)
     content = _deduplicate_visible_text(content, task_spec)
     content_height = _estimate_height(content)
-    body_budget = _ux_layout_body_budget(registry)
+    body_budget = _ux_layout_body_budget(registry, task_spec.size)
     if content_height > body_budget:
         content = _constrain_content_height(content, body_budget)
     fusion_palette = _template_fusion_ball_palette(
@@ -922,6 +923,9 @@ def _expand_call(
         contract,
         variant.parameters_schema,
     )
+    params = _normalize_charging_settings_button(
+        wire_id, params, provider_binding_roots, task_spec.size
+    )
     _validate_business_template_action(definition, params, contract, task_spec.size)
     _validate_template_parameter_relations(params, variant.parameter_relations)
     standard_template_in_wide_composition = (
@@ -1054,6 +1058,28 @@ def _expand_call(
         if action_id not in state.action_ids:
             state.action_ids.append(action_id)
     return root
+
+
+def _normalize_charging_settings_button(
+    wire_id: str,
+    params: dict[str, Any],
+    provider_binding_roots: dict[str, tuple[str, ...]],
+    size: str,
+) -> dict[str, Any]:
+    if wire_id != "PillAction@1" or size != "2x4":
+        return params
+    charging_pair = {"GetEarphoneInfo", "GetPhoneBatteryInfo"}.issubset(
+        provider_binding_roots
+    )
+    settings_button = params.get("actionId") in {
+        "event.open.settings.bluetooth",
+        "event.open.settings.battery",
+    }
+    if not charging_pair or not settings_button:
+        return params
+    normalized = dict(params)
+    normalized.pop("icon", None)
+    return normalized
 
 
 def _wrap_action_template(
@@ -5766,6 +5792,7 @@ def _reclaim_optional_chrome_for_content(
     content: Nested2Node,
     contract: HybridBodyContract,
     registry: CardPlanRegistry,
+    size: str = "2x2",
 ) -> dict[str, Any]:
     """Drop only a non-required subtitle when it is stealing body space."""
     content_height = _estimate_height(content)
@@ -5783,7 +5810,7 @@ def _reclaim_optional_chrome_for_content(
     # for deterministic reclamation; the model may omit an optional title at
     # generation time, but trusted compilation never silently removes one.
     for key in ("subtitle",):
-        if content_height <= _body_budget(normalized, contract, registry):
+        if content_height <= _body_budget(normalized, contract, registry, size):
             break
         value = normalized.get(key)
         if not isinstance(value, str):
@@ -9523,6 +9550,7 @@ def _body_budget(
     params: dict[str, Any],
     contract: HybridBodyContract,
     registry: CardPlanRegistry,
+    size: str = "2x2",
 ) -> int:
     theme = registry.require_theme(contract.theme_profile_id)
     padding = (
@@ -9553,11 +9581,13 @@ def _body_budget(
     )
     chrome_count = int(header > 0) + int(action > 0)
     root_gap = 8 * chrome_count
-    return max(24, 160 - vertical_padding - header - action - root_gap)
+    canvas_height = 150 if size == "2x4" else 160
+    return max(24, canvas_height - vertical_padding - header - action - root_gap)
 
 
-def _ux_layout_body_budget(registry: CardPlanRegistry) -> int:
-    return 160 - registry.ux_tokens["safeInset"] * 2
+def _ux_layout_body_budget(registry: CardPlanRegistry, size: str = "2x2") -> int:
+    canvas_height = 150 if size == "2x4" else 160
+    return canvas_height - registry.ux_tokens["safeInset"] * 2
 
 
 def _estimate_height(node: Nested2Node) -> int:

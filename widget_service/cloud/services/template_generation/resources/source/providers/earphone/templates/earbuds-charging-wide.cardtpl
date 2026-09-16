@@ -16,7 +16,7 @@ Row({"_advancedComponent": "BluetoothDeviceOverview", "width": "matchParent", "h
     Row({"width": "matchParent", "itemMargin": 12, "justifyContent": "spaceBetween"},
       Column({"layoutWeight": 1, "justifyContent": "start",
         "alignItems": "center", "itemMargin": 2},
-        Column({"width": 44, "height": 54, "padding": {"top": 4},
+        Column({"width": 44, "height": 48, "padding": {"top": 4},
           "justifyContent": "start", "alignItems": "center"},
           Stack({"width": 44, "height": 44, "alignContent": "center"},
           Progress({"value": data.left, "total": 100, "type": "ring",
@@ -31,13 +31,15 @@ Row({"_advancedComponent": "BluetoothDeviceOverview", "width": "matchParent", "h
           )
         ),
         Text(Expr(data.left + '%'), {"width": "matchParent", "height": 22, "fontSize": 16,
+          "padding": {"top": 6},
           "fontWeight": 700, "textAlign": "center", "fontColor": $theme('primaryColor'), "maxLines": 1}),
         Text(data.leftChargingStatus, {"width": "matchParent", "height": 14, "fontSize": 10,
+          "padding": {"top": 4},
           "textAlign": "center", "fontColor": $theme('supportContentColor'), "maxLines": 1})
       ),
       Column({"layoutWeight": 1, "justifyContent": "start",
         "alignItems": "center", "itemMargin": 2},
-        Column({"width": 44, "height": 54, "padding": {"top": 4},
+        Column({"width": 44, "height": 48, "padding": {"top": 4},
           "justifyContent": "start", "alignItems": "center"},
           Stack({"width": 44, "height": 44, "alignContent": "center"},
           Progress({"value": data.right, "total": 100, "type": "ring",
@@ -52,8 +54,10 @@ Row({"_advancedComponent": "BluetoothDeviceOverview", "width": "matchParent", "h
           )
         ),
         Text(Expr(data.right + '%'), {"width": "matchParent", "height": 22, "fontSize": 16,
+          "padding": {"top": 6},
           "fontWeight": 700, "textAlign": "center", "fontColor": $theme('primaryColor'), "maxLines": 1}),
         Text(data.rightChargingStatus, {"width": "matchParent", "height": 14, "fontSize": 10,
+          "padding": {"top": 4},
           "textAlign": "center", "fontColor": $theme('supportContentColor'), "maxLines": 1})
       )
     )

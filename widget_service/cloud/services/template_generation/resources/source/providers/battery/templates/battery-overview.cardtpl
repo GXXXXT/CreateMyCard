@@ -1136,7 +1136,7 @@ Column(
     "_advancedComponent": "BatteryOverview",
     "width": "matchParent",
     "height": "matchParent",
-    "itemMargin": 12,
+    "itemMargin": 8,
     "justifyContent": "start",
     "alignItems": "start",
     "clip": true,

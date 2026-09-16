@@ -366,10 +366,10 @@ Column({
   "height": "matchParent",
   "itemMargin": 8
 },
-  Column({"width": "matchParent", "height": 64}, children[0]),
-  Row({"width": "matchParent", "height": 64, "itemMargin": 8},
-    Column({"layoutWeight": 1, "height": 64}, children[1]),
-    Column({"layoutWeight": 1, "height": 64}, children[2])
+  Column({"width": "matchParent", "layoutWeight": 1}, children[0]),
+  Row({"width": "matchParent", "layoutWeight": 1, "itemMargin": 8},
+    Column({"layoutWeight": 1, "height": "matchParent"}, children[1]),
+    Column({"layoutWeight": 1, "height": "matchParent"}, children[2])
   )
 )
 #End
@@ -441,8 +441,8 @@ Row({
   Column({
     "layoutWeight": 1,
     "height": "matchParent",
-    "padding": {"left": 12, "top": 8, "right": 12, "bottom": 8},
-    "itemMargin": 6,
+    "padding": {"left": 12, "top": 4, "right": 12, "bottom": 4},
+    "itemMargin": 4,
     "backgroundColor": $theme("supportContentStyle.backgroundColor"),
     "borderRadius": $theme("supportContentStyle.borderRadius")
   },
@@ -473,7 +473,7 @@ Row({
     "layoutWeight": 1,
     "height": "matchParent",
     "padding": {"left": 12, "top": 8, "right": 12, "bottom": 8},
-    "itemMargin": 6,
+    "itemMargin": 0,
     "backgroundColor": $theme("supportContentStyle.backgroundColor"),
     "borderRadius": $theme("supportContentStyle.borderRadius")
   },
@@ -484,7 +484,7 @@ Row({
     "layoutWeight": 1,
     "height": "matchParent",
     "padding": {"left": 12, "top": 8, "right": 12, "bottom": 8},
-    "itemMargin": 6,
+    "itemMargin": 0,
     "backgroundColor": $theme("supportContentStyle.backgroundColor"),
     "borderRadius": $theme("supportContentStyle.borderRadius")
   },
