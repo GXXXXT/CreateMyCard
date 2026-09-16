@@ -33,7 +33,7 @@ Stack({
 )
 #End
 
-#Template CompactAction@1(props: { actionId: string, label: string, icon: asset, prominent?: boolean })
+#Template CompactAction@1(props: { actionId: string, label: string, icon: asset, subtitle?: string, prominent?: boolean })
 data = {
 }
 
@@ -49,25 +49,46 @@ Stack({
   Row({
     "width": "matchParent",
     "height": "matchParent",
-    "padding": {"left": 8, "top": 0, "right": 8, "bottom": 0},
+    "padding": {"left": 12, "top": 0, "right": 12, "bottom": 0},
     "justifyContent": "spaceBetween",
     "alignItems": "center"
   },
-    Text(props.label, {
+    Column({
       "layoutWeight": 1,
-      "height": 21,
-      "fontSize": 16,
-      "fontWeight": 700,
-      "fontColor": $theme('primaryColor'),
-      "maxLines": 1,
-      "textOverflow": "ellipsis",
-      "textAlign": "start"
-    }),
+      "justifyContent": "center",
+      "alignItems": "start",
+      "itemMargin": 1
+    },
+      Text(props.label, {
+        "width": "matchParent",
+        "height": 21,
+        "fontSize": 16,
+        "fontWeight": 700,
+        "fontColor": $theme('primaryColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "textAlign": "start"
+      }),
+      #if props.subtitle
+        Text(props.subtitle, {
+          "width": "matchParent",
+          "height": 14,
+          "fontSize": 10,
+          "fontWeight": 500,
+          "fontColor": $theme('supportContentColor'),
+          "maxLines": 1,
+          "textOverflow": "ellipsis",
+          "textAlign": "start",
+          "_preserveOriginalColor": true
+        })
+      #endif
+    ),
     Image(props.icon, {
       "width": 24,
       "height": 24,
       "objectFit": "contain",
-      "flexShrink": 0
+      "flexShrink": 0,
+      "fillColor": $theme("supportContentColor")
     })
   )
 #else
@@ -78,21 +99,42 @@ Stack({
     "justifyContent": "spaceBetween",
     "alignItems": "center"
   },
-    Text(props.label, {
+    Column({
       "layoutWeight": 1,
-      "height": 19,
-      "fontSize": 14,
-      "fontWeight": 700,
-      "fontColor": $theme('primaryColor'),
-      "maxLines": 1,
-      "textOverflow": "ellipsis",
-      "textAlign": "start"
-    }),
+      "justifyContent": "center",
+      "alignItems": "start",
+      "itemMargin": 1
+    },
+      Text(props.label, {
+        "width": "matchParent",
+        "height": 19,
+        "fontSize": 14,
+        "fontWeight": 700,
+        "fontColor": $theme('primaryColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "textAlign": "start"
+      }),
+      #if props.subtitle
+        Text(props.subtitle, {
+          "width": "matchParent",
+          "height": 14,
+          "fontSize": 10,
+          "fontWeight": 500,
+          "fontColor": $theme('supportContentColor'),
+          "maxLines": 1,
+          "textOverflow": "ellipsis",
+          "textAlign": "start",
+          "_preserveOriginalColor": true
+        })
+      #endif
+    ),
     Image(props.icon, {
       "width": 24,
       "height": 24,
       "objectFit": "contain",
-      "flexShrink": 0
+      "flexShrink": 0,
+      "fillColor": $theme("supportContentColor")
     })
   )
 #endif
@@ -126,8 +168,8 @@ data = {
 }
 
 Stack({
-  "width": 64,
-  "height": 64,
+  "width": 59,
+  "height": 59,
   "borderRadius": 16,
   "backgroundColor": $theme('actionStyle.backgroundColor'),
   "alignContent": "center",

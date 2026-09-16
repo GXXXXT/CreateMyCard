@@ -57,6 +57,7 @@ class ActionBinding(StrictModel):
     action_id: str
     event_id: str = Field(exclude=True)
     display_label: str
+    display_subtitle: str = ""
     call: str
     args: dict[str, Any]
     importance: Literal["primary", "secondary"] = "primary"

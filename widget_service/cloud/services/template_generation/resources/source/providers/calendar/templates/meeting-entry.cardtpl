@@ -1,7 +1,7 @@
 #Template ScheduleOverviewMeetingEntryHero@1(props: {})
 data = { start: $path("/events/0/dtStart"), location: $path("/events/0/eventLocation") }
 Column({"_advancedComponent": "ScheduleOverview", "width": "matchParent", "height": "matchParent", "justifyContent": "start",
-  "alignItems": "start", "itemMargin": 14},
+  "alignItems": "start", "itemMargin": 10},
   Text("今日日程", {"height": 16, "fontSize": 12, "fontWeight": 400,
     "fontColor": $theme('supportContentColor')}),
   Row({"width": "matchParent", "height": 48, "itemMargin": 8, "alignItems": "start"},
@@ -10,7 +10,7 @@ Column({"_advancedComponent": "ScheduleOverview", "width": "matchParent", "heigh
       Stack({"width": 8, "height": 8, "borderRadius": 4, "borderWidth": 1.5,
         "borderColor": $theme('primaryColor')},
         Divider({"width": 0, "height": 0, "strokeWidth": 0})),
-      Divider({"width": 1, "height": 32, "vertical": true, "strokeWidth": 1,
+      Divider({"width": 1, "height": 27, "vertical": true, "strokeWidth": 1,
         "color": $theme('supportContentColor')})
     ),
     Column({"layoutWeight": 1, "height": 48, "itemMargin": 2,

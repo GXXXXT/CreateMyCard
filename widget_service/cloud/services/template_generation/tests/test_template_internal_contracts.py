@@ -465,8 +465,12 @@ def test_checked_in_action_templates_expose_second_layer_props() -> None:
     assert large_icon_schema["required"] == ["actionId", "icon"]
     assert set(large_icon_schema["properties"]) == {"actionId", "icon"}
     large_options = large_icon.variants[0].root.values[0].properties
-    assert large_options["width"].value == 64
-    assert large_options["height"].value == 64
+    large_width = large_options.get("width")
+    large_height = large_options.get("height")
+    assert large_width is not None
+    assert large_height is not None
+    assert large_width.value == 59
+    assert large_height.value == 59
     assert large_options["borderRadius"].value == 16
     for definition in (pill, icon, large_icon):
         root = definition.variants[0].root

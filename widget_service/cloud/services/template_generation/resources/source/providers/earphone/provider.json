@@ -341,8 +341,12 @@
       "templateId": "BluetoothDeviceOverviewEarbudsChargingWideFull@1",
       "businessId": "BluetoothDeviceOverview",
       "capabilityId": "GetEarphoneInfo",
-      "description": "Q073 完整耳机全览：名称、连接状态、三组电量及充电状态，右侧每日歌单面板。",
+      "description": "Q073 左侧连接状态与名称、左右耳44vp电量环及充电状态；右侧上块耳机仓电量和状态，下块每日歌单入口。",
       "entry": "templates/earbuds-charging-wide.cardtpl",
+      "assetParameterSemanticTags": {
+        "deviceIcon": ["earphone-case"],
+        "musicIcon": ["music"]
+      },
       "primaryData": [
         "/earphoneName",
         "/isConnected"

@@ -287,7 +287,7 @@
       "templateId": "BatteryOverviewChargeStatusHero@1",
       "businessId": "BatteryOverview",
       "capabilityId": "GetPhoneBatteryInfo",
-      "description": "手机电量三段式 Hero：顶部“手机”标题，中间 44vp 电量圆环（环内可选手机图标）加右侧电量百分比标题和“手机电量”副标题，底部按钮由布局 PillAction 槽位提供；用于左右双焦点拼接布局。",
+      "description": "手机充电 Hero：顶部充电器类型，中间44vp电量环及手机图标，右侧14vp百分比和10vp手机充电状态；设置按钮由布局组合。",
       "optionalData": [],
       "entry": "templates/battery-overview.cardtpl",
       "primaryData": [

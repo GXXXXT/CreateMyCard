@@ -19,6 +19,7 @@
   - `ActivityOverviewTrainingSummaryFull@1`：备赛或训练综合摘要，展示每日步数、最近一次运动时长和运动平均心率，可传本轮可信 `title`。组件形态：full。主数据：/dailySteps；次要数据：/exerciseDurationText, /exerciseHeartRateAvg；可选数据：无。三项字段同时被明确要求时优先使用该模板；2x4 可与 `CountdownOverviewTargetCompact@1` 及承载 `event.open.health.sport` 的 `CompactAction@1` 放入 `WideFullTwoCompactLayout@1`，事件由 Action 模板承载，不向本 Full 传 `actionId`。
   - `ActivityOverviewHero@1`：今日活动步数主视觉，展示步数和固定万步基准进度，可使用步数图标。 组件形态：hero。 布局场景：约 2x1.7；Hero + 1 个 PillAction。主数据：/dailySteps；次要数据：无；可选数据：无。
   - `ActivityOverviewWideHero@1`：每日活动摘要，展示步数，可补充热量、距离和目标日期。 组件形态：wideHero。 布局场景：约 4x1.7；WideHero + 1 个 PillAction。 主数据：/dailySteps；次要数据：/dailyTotalCaloriesText, /dailyDistanceText, /targetDateText；可选数据：无。
+  - `ActivityOverviewExerciseWideHero@1`：今日活动摘要，大号展示步数，存在运动类型时以类型名替代“今日活动”标题，可补充运动时长、消耗热量、运动距离和平均心率紧凑指标行，并以纯文本补充最低心率，数据缺失时隐藏对应指标，可使用对应图标。 组件形态：wideHero。 布局场景：约 4x1.7；WideHero + 1 个 PillAction。 主数据：/dailySteps；次要数据：无；可选数据：/exerciseTypeName, /exerciseDurationText, /exerciseCalorieText, /dailyDistanceText, /exerciseHeartRateAvg, /exerciseHeartRateMin。
   - `ActivityOverviewWideFull@1`：每日活动摘要，展示步数，可补充热量、距离和目标日期。 组件形态：wideFull。 布局场景：完整 4x2；单独使用。主数据：/dailySteps；次要数据：/dailyTotalCaloriesText, /dailyDistanceText, /targetDateText；可选数据：无。
   - `WorkoutOverviewFull@1`：最近一次单次运动训练摘要，展示该次热量、时长和结束时间，可选展示运动类型。 组件形态：latest。 布局场景：完整 2x2；无 Action 时单独使用。主数据：/exerciseDurationText；次要数据：/exerciseCalorieText, /exerciseEndTimeText；可选数据：/exerciseTypeName。
   - `WorkoutOverviewCompact@1`：最近一次单次运动训练摘要，展示该次热量和时长，可选展示运动类型，可使用运动图标。 组件形态：latestCompact。 布局场景：约 2x1；单 Compact + 2 个 PillAction。主数据：/exerciseDurationText；次要数据：/exerciseCalorieText；可选数据：/exerciseTypeName。
@@ -49,7 +50,8 @@
   入睡和醒来时刻同时存在时补充展示。无 Action 时选择 Full 形态，带一个 Action 时选择 Hero 形态。
 - 素材参数描述的是槽位语义，不代表固定素材清单；只在本轮素材候选中匹配，没有合适候选时省略可选参数：
   - `ActivityOverview*.stepsIcon`：步行、步数或日常活动语义。
-  - `ActivityOverviewWideHero@1`、`ActivityOverviewWideFull@1` 的 `caloriesIcon`：热量、能量消耗或火焰语义；`distanceIcon`：距离、里程或路线语义。其它活动模板不得传入这两个参数。
+  - `ActivityOverviewWideHero@1`、`ActivityOverviewWideFull@1`、`ActivityOverviewExerciseWideHero@1` 的 `caloriesIcon`：热量、能量消耗或火焰语义；`distanceIcon`：距离、里程或路线语义。其它活动模板不得传入这两个参数。
+  - `ActivityOverviewExerciseWideHero@1` 的 `timeIcon`：运动计时或时长语义；`heartIcon`：心率或心脏语义。
   - `WorkoutOverview*.sourceIcon`：与本轮运动类型一致的训练或运动项目语义。
   - `HeartRateOverview*.sourceIcon`：心率、脉搏或心脏健康语义；需要图标的模板只有存在匹配素材时才可选择。
   - `heartIcon`：HeartRateOverviewSupport 的心脏健康图标，不接受运动或天气资源。

@@ -87,7 +87,9 @@ _CONTAINERS = _STANDARD_CONTAINERS | UX_LAYOUT_COMPONENT_IDS
 _SINGLE_TEMPLATE_CONDITIONS = frozenset(
     {"IfParam", "IfMissingParam", "IfBind", "IfMissingBind"}
 )
-_GROUPED_TEMPLATE_CONDITIONS = frozenset({"IfAllBind", "IfAnyMissingBind"})
+_GROUPED_TEMPLATE_CONDITIONS = frozenset(
+    {"IfAllBind", "IfAnyMissingBind", "IfAnyBind", "IfAllMissingBind"}
+)
 _TEMPLATE_CONDITIONS = _SINGLE_TEMPLATE_CONDITIONS | _GROUPED_TEMPLATE_CONDITIONS
 _UX_ACTION_COMPONENTS = frozenset(
     {"PillAction", "CompactAction", "IconAction", "LargeIconAction", "ActionTile"}
@@ -272,6 +274,7 @@ def compile_hybrid_card(
         content,
         contract,
         registry,
+        task_spec.size,
     )
     fusion_palette = _template_fusion_ball_palette(
         task_spec.size,
@@ -300,7 +303,7 @@ def compile_hybrid_card(
     if depth > contract.limits.max_nesting_depth:
         raise TerselConversionError("Hybrid component depth budget exceeded.")
     _validate_expanded_tree(root, contract)
-    body_budget = _body_budget(card_params, contract, registry)
+    body_budget = _body_budget(card_params, contract, registry, task_spec.size)
     space_constrained = content_height > body_budget
     if space_constrained:
         content = _constrain_content_height(content, body_budget)
@@ -476,7 +479,7 @@ def compile_ux_layout_card(
     content = _lower_capsule_progress(content)
     content = _deduplicate_visible_text(content, task_spec)
     content_height = _estimate_height(content)
-    body_budget = _ux_layout_body_budget(registry)
+    body_budget = _ux_layout_body_budget(registry, task_spec.size)
     if content_height > body_budget:
         content = _constrain_content_height(content, body_budget)
     fusion_palette = _template_fusion_ball_palette(
@@ -926,6 +929,9 @@ def _expand_call(
         contract,
         variant.parameters_schema,
     )
+    params = _normalize_charging_settings_button(
+        wire_id, params, provider_binding_roots, task_spec.size
+    )
     _validate_business_template_action(definition, params, contract, task_spec.size)
     _validate_template_parameter_relations(params, variant.parameter_relations)
     standard_template_in_wide_composition = (
@@ -1060,6 +1066,28 @@ def _expand_call(
     return root
 
 
+def _normalize_charging_settings_button(
+    wire_id: str,
+    params: dict[str, Any],
+    provider_binding_roots: dict[str, tuple[str, ...]],
+    size: str,
+) -> dict[str, Any]:
+    if wire_id != "PillAction@1" or size != "2x4":
+        return params
+    charging_pair = {"GetEarphoneInfo", "GetPhoneBatteryInfo"}.issubset(
+        provider_binding_roots
+    )
+    settings_button = params.get("actionId") in {
+        "event.open.settings.bluetooth",
+        "event.open.settings.battery",
+    }
+    if not charging_pair or not settings_button:
+        return params
+    normalized = dict(params)
+    normalized.pop("icon", None)
+    return normalized
+
+
 def _wrap_action_template(
     root: Nested2Node,
     *,
@@ -1104,6 +1132,16 @@ def _wrap_action_template(
         "LargeIconAction",
     } and not isinstance(icon, str):
         raise TerselConversionError(f"{action_component} requires an approved icon.")
+    if wire_id == "CompactAction@1":
+        expected_subtitle = binding.display_subtitle
+        actual_subtitle = params.get("subtitle")
+        if expected_subtitle:
+            if actual_subtitle != expected_subtitle:
+                raise TerselConversionError(
+                    "CompactAction subtitle/actionId pair is not approved."
+                )
+        elif actual_subtitle is not None:
+            raise TerselConversionError("CompactAction subtitle is not approved.")
     bound_root, action_ids = _bind_template_actions(root, contract)
     if action_ids != (action_id,):
         raise TerselConversionError(
@@ -4655,8 +4693,15 @@ def _template_condition_should_render(
 ) -> bool:
     if node.component in _GROUPED_TEMPLATE_CONDITIONS:
         binding_names = _template_condition_binding_names(node)
+        any_present = any(name in bindings for name in binding_names)
         all_present = all(name in bindings for name in binding_names)
-        return all_present if node.component == "IfAllBind" else not all_present
+        if node.component == "IfAllBind":
+            return all_present
+        if node.component == "IfAnyBind":
+            return any_present
+        if node.component == "IfAnyMissingBind":
+            return not all_present
+        return not any_present
     guard_name = node.values[0].value
     if not isinstance(guard_name, str):
         raise TerselConversionError("Template conditional guard must be a string.")
@@ -4667,15 +4712,15 @@ def _template_condition_should_render(
     return present if node.component in {"IfParam", "IfBind"} else not present
 
 
-def _template_condition_binding_names(node: TemplateNode) -> tuple[str, str]:
+def _template_condition_binding_names(node: TemplateNode) -> tuple[str, ...]:
     if len(node.values) != 1 or node.values[0].kind != "array":
         raise TerselConversionError(
-            "Template grouped conditional requires two binding names."
+            "Template grouped conditional requires a binding name array."
         )
     items = node.values[0].items
-    if len(items) != 2:
+    if len(items) < 2:
         raise TerselConversionError(
-            "Template grouped conditional requires two binding names."
+            "Template grouped conditional requires at least two binding names."
         )
     binding_names: list[str] = []
     for item in items:
@@ -4684,7 +4729,7 @@ def _template_condition_binding_names(node: TemplateNode) -> tuple[str, str]:
                 "Template grouped conditional binding must be a string."
             )
         binding_names.append(item.value)
-    return binding_names[0], binding_names[1]
+    return tuple(binding_names)
 
 
 def _template_child_slot_index(node: TemplateNode) -> int | None:
@@ -5770,6 +5815,7 @@ def _reclaim_optional_chrome_for_content(
     content: Nested2Node,
     contract: HybridBodyContract,
     registry: CardPlanRegistry,
+    size: str = "2x2",
 ) -> dict[str, Any]:
     """Drop only a non-required subtitle when it is stealing body space."""
     content_height = _estimate_height(content)
@@ -5787,7 +5833,7 @@ def _reclaim_optional_chrome_for_content(
     # for deterministic reclamation; the model may omit an optional title at
     # generation time, but trusted compilation never silently removes one.
     for key in ("subtitle",):
-        if content_height <= _body_budget(normalized, contract, registry):
+        if content_height <= _body_budget(normalized, contract, registry, size):
             break
         value = normalized.get(key)
         if not isinstance(value, str):
@@ -9096,6 +9142,8 @@ def _lower_action_template_tree(
         children = tuple(apply_foreground(child, preserve_here) for child in current.children)
         styled = Nested2Node(current.component_type, current.values, children)
         if current.component_type == "Text":
+            if preserve_here:
+                return styled
             return _merge_node_options(styled, {"fontColor": foreground})
         if current.component_type == "Image":
             _validate_image_color_options(options, preserve_original=preserve_here)
@@ -9527,6 +9575,7 @@ def _body_budget(
     params: dict[str, Any],
     contract: HybridBodyContract,
     registry: CardPlanRegistry,
+    size: str = "2x2",
 ) -> int:
     theme = registry.require_theme(contract.theme_profile_id)
     padding = (
@@ -9557,11 +9606,13 @@ def _body_budget(
     )
     chrome_count = int(header > 0) + int(action > 0)
     root_gap = 8 * chrome_count
-    return max(24, 160 - vertical_padding - header - action - root_gap)
+    canvas_height = 150 if size == "2x4" else 160
+    return max(24, canvas_height - vertical_padding - header - action - root_gap)
 
 
-def _ux_layout_body_budget(registry: CardPlanRegistry) -> int:
-    return 160 - registry.ux_tokens["safeInset"] * 2
+def _ux_layout_body_budget(registry: CardPlanRegistry, size: str = "2x2") -> int:
+    canvas_height = 150 if size == "2x4" else 160
+    return canvas_height - registry.ux_tokens["safeInset"] * 2
 
 
 def _estimate_height(node: Nested2Node) -> int:

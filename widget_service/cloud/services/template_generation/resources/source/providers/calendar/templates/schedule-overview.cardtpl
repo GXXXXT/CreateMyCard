@@ -1192,7 +1192,8 @@ data = {
     eventCount: $path("/eventCount"),
     title: $path("/events/0/title"),
     start: $path("/events/0/dtStart"),
-    description: $path("/events/0/description")
+    allDay: $path("/events/0/isAllDay"),
+    description: $optionalPath("/events/0/description")
 }
 
 Column(
@@ -1268,14 +1269,23 @@ Column(
         data.title,
         { "height": 20, "margin": {"bottom": 2}, "fontSize": 14, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
       ),
-      Text(
-        data.start,
-        { "height": 14, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+      Row(
+        { "height": 14, "itemMargin": 4, "justifyContent": "start", "alignItems": "center", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+        Text(
+          data.start,
+          { "height": 14, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+        ),
+        Text(
+          Expr(data.allDay ? "全天" : "非全天"),
+          { "height": 14, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0, "constraintSize": {"minWidth": 0, "minHeight": 0}}
+        )
       ),
-      Text(
-        data.description,
-        { "height": 14, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
-      )
+      #if data.description
+        Text(
+          data.description,
+          { "height": 14, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+        )
+      #endif
     )
   )
 )
@@ -1724,6 +1734,50 @@ Column(
 )
 #End
 
+#Template ScheduleOverviewReminderCompact@1(props: { bellIcon?: asset })
+data = {
+    reminder: $path("/events/0/remindTime/0")
+}
+
+Row(
+  {
+    "_advancedComponent": "ScheduleOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "padding": { "left": 12, "top": 0, "right": 16, "bottom": 0 },
+    "backgroundColor": $theme('supportContentStyle.backgroundColor'),
+    "borderRadius": $theme('supportContentStyle.borderRadius'),
+    "alignItems": "center",
+    "clip": true,
+    "constraintSize": { "minWidth": 0, "minHeight": 0 }
+  },
+  Column(
+    {
+      "layoutWeight": 1,
+      "itemMargin": 2,
+      "justifyContent": "center",
+      "alignItems": "start",
+      "clip": true,
+      "constraintSize": { "minWidth": 0, "minHeight": 0 }
+    },
+    Text(
+      `${data.reminder}分钟`,
+      { "fontSize": 14, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
+    ),
+    Text(
+      "日程提醒",
+      { "fontSize": 10, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
+    )
+  ),
+  #if props.bellIcon
+    Image(
+      props.bellIcon,
+      { "width": 20, "height": 20, "objectFit": "contain", "fillColor": $theme('supportContentColor'), "flexShrink": 0 }
+    )
+  #endif
+)
+#End
+
 #Template ScheduleOverviewTimezoneFull@1(props: { headerLabel?: string })
 data = {
     title: $path("/events/0/title"),
@@ -2149,7 +2203,7 @@ data = {
     title: $path("/events/0/title"),
     location: $path("/events/0/eventLocation"),
     start: $path("/events/0/dtStart"),
-    end: $path("/events/0/dtEnd")
+    end: $optionalPath("/events/0/dtEnd")
 }
 
 Column(
@@ -2285,10 +2339,17 @@ Column(
           "margin": { "bottom": 2 },
         }
       ),
-      Text(
-        Expr(data.start == "" ? "" : `${data.start} - ${data.end}`),
-        { "height": 14, "fontSize": 10, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
-      ),
+      #if data.end
+        Text(
+          `${data.start} - ${data.end}`,
+          { "height": 14, "fontSize": 10, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
+        )
+      #else
+        Text(
+          Expr(data.start == "" ? "" : data.start),
+          { "height": 14, "fontSize": 10, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
+        )
+      #endif
       Text(
         Expr(data.location == "" ? "" : data.location),
         { "height": 14, "fontSize": 10, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
