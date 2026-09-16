@@ -19,6 +19,7 @@ class TemplateSourceGenerator:
     trusted_template_candidate_ids: tuple[str, ...] = ()
     trusted_template_action_ids: tuple[str, ...] = ()
     trusted_template_sample_overrides: dict[str, Any] = field(default_factory=dict)
+    deterministic_plan: bool = False
     processor_kind: DslProcessorKind | None = field(default=None, init=False)
     protocol_profile: dict[str, Any] | None = field(default=None, init=False)
     model_runtime: ModelExecutionRuntime | None = field(default=None, init=False)
@@ -50,4 +51,5 @@ class TemplateSourceGenerator:
             trusted_template_candidate_ids=self.trusted_template_candidate_ids,
             trusted_template_action_ids=self.trusted_template_action_ids,
             trusted_template_sample_overrides=self.trusted_template_sample_overrides,
+            deterministic_plan=self.deterministic_plan,
         )

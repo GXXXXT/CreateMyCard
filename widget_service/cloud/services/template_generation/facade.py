@@ -35,16 +35,23 @@ async def request_template_source_dsl(
     trusted_template_candidate_ids: tuple[str, ...] = (),
     trusted_template_action_ids: tuple[str, ...] = (),
     trusted_template_sample_overrides: dict[str, Any] | None = None,
+    deterministic_plan: bool = False,
 ) -> str:
     """请求模板引擎并返回当前 Processor 可直接消费的源 DSL。"""
     if not isinstance(enable_fusion_ball, bool):
         raise TypeError("enable_fusion_ball must be boolean")
-    model_client = create_template_model_client(
-        model_runtime,
-        model_request_context,
+    model_client = (
+        None
+        if deterministic_plan
+        else create_template_model_client(
+            model_runtime,
+            model_request_context,
+        )
     )
     template_bindings = tuple(enrich_template_bindings(list(effective_bindings)))
     engine_options: dict[str, Any] = {"enable_fusion_ball": enable_fusion_ball}
+    if deterministic_plan:
+        engine_options["deterministic_plan"] = True
     if trusted_template_candidate_ids:
         engine_options["trusted_template_candidate_ids"] = trusted_template_candidate_ids
     if trusted_template_action_ids:

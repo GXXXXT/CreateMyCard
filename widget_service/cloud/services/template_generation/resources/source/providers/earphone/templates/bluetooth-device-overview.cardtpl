@@ -1561,3 +1561,65 @@ Column(
   )
 )
 #End
+
+#Template BluetoothDeviceOverviewConnectionBatteryCompact@1(props: { caseIcon?: asset })
+data = {
+    battery: $path("/batteryLevel"),
+    connected: $path("/isConnected")
+}
+
+Row(
+  {
+    "_advancedComponent": "BluetoothDeviceOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "justifyContent": "spaceBetween",
+    "alignItems": "center",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Column(
+    {
+      "layoutWeight": 1,
+      "height": 36,
+      "margin": {"top": 1},
+      "itemMargin": 2,
+      "justifyContent": "start",
+      "alignItems": "start"
+    },
+    Text(
+      Expr(`'电量 ' + ${data.battery} + '%'`),
+      {
+        "width": "matchParent",
+        "height": 20,
+        "fontSize": 14,
+        "fontWeight": 700,
+        "fontColor": $theme('primaryColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis"
+      }
+    ),
+    Text(
+      Expr(`${data.connected}? '耳机已连接' : '耳机未连接'`),
+      {
+        "width": "matchParent",
+        "height": 14,
+        "fontSize": 10,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis"
+      }
+    )
+  ),
+  #if props.caseIcon
+    Image(props.caseIcon, {
+      "width": 24,
+      "height": 24,
+      "objectFit": "contain",
+      "fillColor": $theme('supportContentColor'),
+      "flexShrink": 0
+    })
+  #endif
+)
+#End

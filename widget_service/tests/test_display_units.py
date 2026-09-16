@@ -198,6 +198,34 @@ def test_validator_accepts_raw_number_with_separate_unit_text():
     assert not reporter.has_code("DISPLAY_UNIT_MISSING", "DISPLAY_UNIT_DUPLICATED")
 
 
+def test_validator_ignores_non_text_sibling_without_content():
+    rows = [json.loads(line) for line in _dsl("{{ ${/data/battery/level} + '%' }}").splitlines()]
+    update = rows[1]["updateComponents"]
+    update["components"][0]["children"].append("icon")
+    update["components"].append(
+        {
+            "id": "icon",
+            "component": "Image",
+            "src": "resources/base/media/battery.svg",
+        }
+    )
+    dsl = "\n".join(
+        json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in rows
+    )
+
+    reporter = validate_card(
+        artifact={
+            "genui": dsl,
+            "cardSpec": _card_spec(),
+            "effectiveCapabilities": {
+                "data": [_capability(unit_included=False).model_dump(mode="json")]
+            },
+        }
+    )
+
+    assert not reporter.has_code("DISPLAY_UNIT_MISSING", "DISPLAY_UNIT_DUPLICATED")
+
+
 def test_validator_accepts_raw_number_when_following_text_contains_unit():
     reporter = validate_card(
         artifact={

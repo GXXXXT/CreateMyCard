@@ -1424,11 +1424,12 @@ def _validate_progress_props(
     component_id: str,
     props: dict[str, Any],
 ) -> None:
-    _require_numeric_or_binding(
-        component_id,
-        "Progress.value",
-        props.get("value"),
-    )
+    if not _is_progress_percent_binding(props.get("value")):
+        _require_numeric_or_binding(
+            component_id,
+            "Progress.value",
+            props.get("value"),
+        )
     if "total" not in props:
         raise CompactDslConversionError(f"{component_id}: Progress.total is required.")
     _require_numeric_or_binding(
@@ -1436,6 +1437,18 @@ def _validate_progress_props(
         "Progress.total",
         props["total"],
     )
+
+
+def _is_progress_percent_binding(value: Any) -> bool:
+    if not isinstance(value, dict) or set(value) != {"call", "args"}:
+        return False
+    if value.get("call") != "toProgressPercent":
+        return False
+    args = value.get("args")
+    if not isinstance(args, dict) or set(args) != {"value"}:
+        return False
+    argument = args.get("value")
+    return _is_path_binding(argument) or _is_binding_expression(argument)
 
 
 def _require_numeric_or_binding(

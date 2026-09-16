@@ -51,6 +51,7 @@ class CardPlanRegistry:
     ) -> None:
         if not isinstance(enable_fusion_ball, bool):
             raise ValueError("enable_fusion_ball must be boolean")
+        self.enable_fusion_ball = enable_fusion_ball
         bundled_source_root = Path(__file__).resolve().parents[2] / "resources" / "source"
         self.source_root = source_root or bundled_source_root
         self.disabled_provider_ids = frozenset(disabled_provider_ids)
