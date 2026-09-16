@@ -7,6 +7,8 @@ widget_service/cloud/services/template_generation/tests/test_wide_template_plann
   s_d06788a38a9339::t_49f23b834424ae 517-524
   s_d06788a38a9339::t_95d67c76e00b2d 492-501,503-516,525-555,557-569,572-574,576-578,581-595
   s_d06788a38a9339::t_97b00a660af2b9 502
+  s_52a59f8672dc51::t_54bbed2ebfa18e 139,151-153
+  s_52a59f8672dc51::t_1ae354b07d797d 556,570-571,575,579-580
 widget_service/cloud/services/template_generation/resources/source/providers/calendar/provider.json
   s_5c78a3c42b8638::t_aa1059a28ab4f6 202
   s_5c78a3c42b8638::t_10ad79941382f7 203-205,207-222
@@ -33,6 +35,7 @@ widget_service/cloud/services/template_generation/resources/source/providers/bat
   s_a8eb4bbbd2407f::t_27839ef90a3fb2 175-302,1257-1258,1272-1286,1300,1366-1782,1784-1800,1802-1821,1823-1829,1832-1838,1841-1944
   s_82c495373ec6b3::t_fc1e3a98bf0159 1801
   s_82c495373ec6b3::t_d2ea6ba7f0daec 1822,1830-1831,1839-1840
+  s_52a59f8672dc51::t_06e8252ed6f543 1288,1291,1304,1321,1338,1354
 widget_service/cloud/services/template_generation/docs/provider-template-e2e-gallery.md
   s_afa21b5bb31967::t_6f6b9e2edc0331 48
 widget_service/cloud/data/protocol_profiles/design-compact-dsl/PROMPT.md
@@ -79,11 +82,15 @@ widget_service/cloud/services/template_generation/resources/source/themes/fusion
   s_afa21b5bb31967::t_bb0c7f4c40360d 3-4
 widget_service/cloud/services/template_generation/tests/test_template_preview_dataset.py
   s_e369308494531a::t_8227320ef4f952 28
+  s_52a59f8672dc51::t_2c40d9994e0b2e 104
+  s_52a59f8672dc51::t_d1b7ce6c13fc8c 19,24-27,31-33
+  s_52a59f8672dc51::t_8f5dfdf2ca37f9 155-159
 widget_service/cloud/services/template_generation/engine/cardplan/models.py
   s_550b8c6eab44be::t_9facb47488789b 60
 widget_service/cloud/services/template_generation/resources/source/providers/action/provider.json
   s_a8eb4bbbd2407f::t_926e399fa1be7e 14-15
   s_550b8c6eab44be::t_c53c9d7ede55dd 16-18
+  s_52a59f8672dc51::t_c0c3e328df52fe 13
 widget_service/cloud/services/template_generation/docs/support-template-action-policy.md
   s_e369308494531a::t_5289253aa734a9 29
 widget_service/cloud/services/template_generation/resources/source/themes/fusion-battery-teal/first-layer.md
@@ -97,12 +104,20 @@ widget_service/cloud/services/template_generation/tests/test_template_generation
   s_e369308494531a::t_ae933e4a9588f6 3218
   s_e369308494531a::t_b0501b6fa27a4c 3221
   h_22e274a52827b7 3213
+  s_52a59f8672dc51::t_2329a54a3c4b56 2960
+  s_52a59f8672dc51::t_060fa732e12bc7 1055,2959,3099,3202-3204
+  s_52a59f8672dc51::t_1d6bb02d600c54 1726,1825-1826,1830-1836
+  s_52a59f8672dc51::t_f77b7d9cb6a389 286
 widget_service/cloud/services/template_generation/engine/advanced/ux_mixed_prompt.py
   s_550b8c6eab44be::t_477de035cc5138 965-966
   s_550b8c6eab44be::t_d3d04140359fd9 969
   h_22e274a52827b7 59,115-122,131-132,900-902,907-908,962-963
   s_550b8c6eab44be::t_a4199b5e2c15f4 967-968
   s_550b8c6eab44be::t_2db8da5d1e773f 753-755,760
+  s_52a59f8672dc51::t_a0e8fa055de121 1488-1490
+  s_52a59f8672dc51::t_7fbe39e840280d 946
+  s_52a59f8672dc51::t_c59ad5daa2f9bd 903-906
+  s_52a59f8672dc51::t_d66230dbdfa741 964
 widget_service/cloud/services/task_spec_builder.py
   s_e369308494531a::t_dd19a626d53230 117,121
 widget_service/cloud/services/template_generation/resources/source/providers/battery/provider.json
@@ -154,6 +169,8 @@ widget_service/cloud/services/template_generation/resources/source/themes/fusion
   s_afa21b5bb31967::t_57b2c9fbf1deea 4-5
 widget_service/cloud/services/template_generation/tests/test_template_retrieval.py
   s_e369308494531a::t_47c42a6df49353 1903
+  s_52a59f8672dc51::t_847e50cfb84704 1229-1236
+  s_52a59f8672dc51::t_17dfada07eaceb 1376
 widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/first-layer.md
   h_22e274a52827b7 25-26
   h_22e274a52827b7 31,33-36
@@ -165,6 +182,7 @@ widget_service/cloud/services/template_generation/resources/source/providers/act
   s_a8eb4bbbd2407f::t_23f39be8f2353d 86,94,134,142,194,201
   s_550b8c6eab44be::t_17d60d55c924bb 158-159
   s_550b8c6eab44be::t_a7889e4d052a9e 199
+  s_52a59f8672dc51::t_8956ac02ff1f22 36
 widget_service/cloud/services/template_generation/engine/cardplan/wide_template_planner.py
   s_550b8c6eab44be::t_34ac32d0e1463a 59,61
   s_2816259fc57861::t_f6d23321ad3af8 32
@@ -179,6 +197,11 @@ widget_service/cloud/services/template_generation/engine/cardplan/wide_template_
   s_d06788a38a9339::t_82f95c03813dfd 52-53
   s_550b8c6eab44be::t_e7b36b4480d98d 60
   s_2816259fc57861::t_e9bbe6bfeb6b08 331-334,339
+  s_52a59f8672dc51::t_4fa60240851819 436,438-441,445-449
+  s_52a59f8672dc51::t_9850dc91d02070 348-349
+  s_52a59f8672dc51::t_ba01db6253b8ec 432-435,437,442-444,450-451
+  s_52a59f8672dc51::t_47a91304a1e347 341,368-374,380
+  s_52a59f8672dc51::t_778f02404e8ffb 131,134-138,144
 widget_service/cloud/services/template_generation/resources/source/providers/calendar/templates/schedule-overview.cardtpl
   s_5c78a3c42b8638::t_76e381bf4c05fd 2599-2621,2623-2838
   s_5c78a3c42b8638::t_7eeb95afb6d556 2622
@@ -209,10 +232,18 @@ widget_service/cloud/services/template_generation/docs/provider-template-capabil
 widget_service/cloud/services/template_generation/resources/source/providers/calendar/layer-docs/first-layer.md
   s_5c78a3c42b8638::t_19b08d5dc3472f 5,22-25
   s_5c78a3c42b8638::t_a02d7e62ad3ff4 46-47
+  s_52a59f8672dc51::t_9d35721f1b5e99 27-29
 widget_service/cloud/services/template_generation/resources/source/providers/weather/layer-docs/second-layer.md
   s_5c78a3c42b8638::t_e7776e9e16ea3e 29-32
   s_2816259fc57861::t_1d6fa6d1ca4d9c 26-28
   s_2816259fc57861::t_eb41716b0e7b09 59-61
+widget_service/cloud/services/template_generation/tests/test_provider_gallery_batch.py
+  s_52a59f8672dc51::t_2bd6997dea3d00 303,570
+  s_52a59f8672dc51::t_29fd0ca31d7211 213,567
+widget_service/cloud/services/template_generation/engine/cardplan/preview_dataset.py
+  s_52a59f8672dc51::t_40c0eed27ed2a6 120-121
+widget_service/cloud/services/template_generation/tests/test_image_color_policy.py
+  s_52a59f8672dc51::t_54dbc58112bfc6 125-131,136-141
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -285,6 +316,81 @@ widget_service/cloud/services/template_generation/resources/source/providers/wea
         "glm-5.3-flash": {
           "additions": 733,
           "deletions": 49
+        }
+      }
+    },
+    "s_52a59f8672dc51": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_ff861a07-de55-47bf-8e42-d6ffb845e63e",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 533,
+      "total_deletions": 527,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_060fa732e12bc7": "glm-5.3-flash",
+        "t_0680a0d3caa6b4": "glm-5.3-flash",
+        "t_06e8252ed6f543": "glm-5.3-flash",
+        "t_0db7ba516b0487": "glm-5.3-flash",
+        "t_0edc4c0fb02a3e": "glm-5.3-flash",
+        "t_16e05732cdc025": "glm-5.3-flash",
+        "t_17dfada07eaceb": "glm-5.3-flash",
+        "t_1ae354b07d797d": "glm-5.3-flash",
+        "t_1b9e33bf563856": "glm-5.3-flash",
+        "t_1d6bb02d600c54": "glm-5.3-flash",
+        "t_2329a54a3c4b56": "glm-5.3-flash",
+        "t_237b57e1248d11": "glm-5.3-flash",
+        "t_23ced04de37cc5": "glm-5.3-flash",
+        "t_261d7bb919a68f": "glm-5.3-flash",
+        "t_29fd0ca31d7211": "glm-5.3-flash",
+        "t_2bd6997dea3d00": "glm-5.3-flash",
+        "t_2c40d9994e0b2e": "glm-5.3-flash",
+        "t_2cb9042df81db8": "glm-5.3-flash",
+        "t_321de81ba188bd": "glm-5.3-flash",
+        "t_33ab284fac0007": "glm-5.3-flash",
+        "t_351df3081c43fd": "glm-5.3-flash",
+        "t_40c0eed27ed2a6": "glm-5.3-flash",
+        "t_47a91304a1e347": "glm-5.3-flash",
+        "t_47dde7529c3cd1": "glm-5.3-flash",
+        "t_4bedd2215d83b2": "glm-5.3-flash",
+        "t_4fa60240851819": "glm-5.3-flash",
+        "t_54bbed2ebfa18e": "glm-5.3-flash",
+        "t_54dbc58112bfc6": "glm-5.3-flash",
+        "t_679d6d0eb420c6": "glm-5.3-flash",
+        "t_6b89eda3ae55dd": "glm-5.3-flash",
+        "t_753f9d4179eaed": "glm-5.3-flash",
+        "t_778f02404e8ffb": "glm-5.3-flash",
+        "t_7d04f26723c4d0": "glm-5.3-flash",
+        "t_7d39e6d907e537": "glm-5.3-flash",
+        "t_7fbe39e840280d": "glm-5.3-flash",
+        "t_847e50cfb84704": "glm-5.3-flash",
+        "t_8956ac02ff1f22": "glm-5.3-flash",
+        "t_8f5dfdf2ca37f9": "glm-5.3-flash",
+        "t_9850dc91d02070": "glm-5.3-flash",
+        "t_9d35721f1b5e99": "glm-5.3-flash",
+        "t_a0e8fa055de121": "glm-5.3-flash",
+        "t_a1cc863936bb67": "glm-5.3-flash",
+        "t_aa977f171bbba2": "glm-5.3-flash",
+        "t_b506170069fb7e": "glm-5.3-flash",
+        "t_ba01db6253b8ec": "glm-5.3-flash",
+        "t_c0c3e328df52fe": "glm-5.3-flash",
+        "t_c59ad5daa2f9bd": "glm-5.3-flash",
+        "t_c9166d6aadea3c": "glm-5.3-flash",
+        "t_ca527756f09dad": "glm-5.3-flash",
+        "t_d1b7ce6c13fc8c": "glm-5.3-flash",
+        "t_d4e6e2c50b4edd": "glm-5.3-flash",
+        "t_d66230dbdfa741": "glm-5.3-flash",
+        "t_dbffdd0644512d": "glm-5.3-flash",
+        "t_ebc83792795a9b": "glm-5.3-flash",
+        "t_f77b7d9cb6a389": "glm-5.3-flash",
+        "t_fa7e5e85799e82": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 533,
+          "deletions": 527
         }
       }
     },
