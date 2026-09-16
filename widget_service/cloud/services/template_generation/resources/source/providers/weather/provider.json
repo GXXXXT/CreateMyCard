@@ -362,30 +362,6 @@
       "optionalData": []
     },
     {
-      "templateId": "WeatherOverviewCyclingRainFull@1",
-      "businessId": "WeatherOverview",
-      "capabilityId": "ViewWeather",
-      "description": "骑行风雨 Full，左侧水滴进度环、右侧降水概率，底部展示风向与风力等级。",
-      "entry": "templates/weather-overview.cardtpl",
-      "primaryData": [
-        "/daily/0/rainProbabilityPercent"
-      ],
-      "secondaryData": [
-        "/current/windLevel"
-      ],
-      "optionalData": ["/current/windDirection"],
-      "assetParameterSemanticTags": {
-        "rainIcon": [
-          "weather",
-          "water",
-          "rain"
-        ],
-        "windIcon": [
-          "wind"
-        ]
-      }
-    },
-    {
       "templateId": "WeatherOverviewDailyCompareFull@1",
       "businessId": "WeatherOverview",
       "capabilityId": "ViewWeather",

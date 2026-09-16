@@ -397,25 +397,6 @@
           "earphone-case"
         ]
       }
-    },
-    {
-      "templateId": "BluetoothDeviceOverviewConnectionBatteryCompact@1",
-      "businessId": "BluetoothDeviceOverview",
-      "capabilityId": "GetEarphoneInfo",
-      "description": "耳机连接与仓电量 Compact，主行展示耳机仓电量，次行展示连接状态，可选耳机仓图标。",
-      "entry": "templates/bluetooth-device-overview.cardtpl",
-      "primaryData": [
-        "/batteryLevel"
-      ],
-      "secondaryData": [
-        "/isConnected"
-      ],
-      "optionalData": [],
-      "assetParameterSemanticTags": {
-        "caseIcon": [
-          "earphone-case"
-        ]
-      }
     }
   ],
   "compatibility": {

@@ -90,8 +90,6 @@ _ASSET_SEMANTIC_TERMS = {
     "pulse": ("pulse", "bpm", "脉搏", "心率"),
     "call": ("call", "phone", "电话", "拨打"),
     "weather": ("weather", "天气"),
-    "water": ("water", "drop", "水滴", "湿度", "饮水", "降雨"),
-    "rain": ("rain", "降雨", "下雨", "降水", "雨滴"),
     "weather-condition": ("晴天", "天气降雨", "台风", "大风提醒"),
     "weather-temperature-indicator": (
         "weather_thermometer", "天气温度", "当前气温", "温度计", "温度指标", "温差变化", "冷热趋势",
@@ -99,7 +97,6 @@ _ASSET_SEMANTIC_TERMS = {
     "weather-indicator": (
         "晴天", "天气降雨", "台风", "大风提醒", "体感温度", "天气温度", "当前气温",
     ),
-    "wind": ("wind", "风速", "风向", "风力", "大风"),
     "sleep": ("sleep", "睡眠", "月亮"),
     "alert": ("alert", "warning", "预警", "警告"),
     "product": ("product", "earphone", "headphone", "耳机"),
