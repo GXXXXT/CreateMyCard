@@ -172,7 +172,11 @@ def _capability_covers(
             generic_fields.update(slot.field_bindings.values())
         for slot in available:
             fields = set(slot.covered_explicit_fields)
-            if missing[0] not in fields or slot.business_id in business_ids:
+            if missing[0] not in fields:
+                continue
+            if slot.business_id in business_ids and not _may_pair_with_selected(
+                selected, slot
+            ):
                 continue
             if slot.field_bindings and covered.intersection(fields):
                 continue
@@ -182,6 +186,32 @@ def _capability_covers(
 
     extend((), frozenset())
     return tuple(results.values())
+
+
+def _may_pair_with_selected(
+    selected: tuple[TemplatePlanBusinessSlot, ...],
+    slot: TemplatePlanBusinessSlot,
+) -> bool:
+    """单业务 Full + Compact 拆槽：同一业务允许恰好占两个宽窄槽位。
+
+    仅当该业务已选中恰好一个非 Generic 槽位，且新槽位与其构成
+    Full + Compact 互补对时放行；第三个同业务槽位仍被拒绝，
+    双 Hero、双 Full 等混拼依旧不成立。
+    """
+    if slot.field_bindings:
+        return False
+    kind = provider_template_layout_kind(slot.template_id)
+    if kind not in {"Full", "Compact"}:
+        return False
+    same_business = [
+        item
+        for item in selected
+        if item.business_id == slot.business_id and not item.field_bindings
+    ]
+    if len(same_business) != 1:
+        return False
+    other_kind = provider_template_layout_kind(same_business[0].template_id)
+    return other_kind in {"Full", "Compact"} and other_kind != kind
 
 
 def _generic_field_options(

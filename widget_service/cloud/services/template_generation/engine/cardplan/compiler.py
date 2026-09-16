@@ -87,7 +87,9 @@ _CONTAINERS = _STANDARD_CONTAINERS | UX_LAYOUT_COMPONENT_IDS
 _SINGLE_TEMPLATE_CONDITIONS = frozenset(
     {"IfParam", "IfMissingParam", "IfBind", "IfMissingBind"}
 )
-_GROUPED_TEMPLATE_CONDITIONS = frozenset({"IfAllBind", "IfAnyMissingBind"})
+_GROUPED_TEMPLATE_CONDITIONS = frozenset(
+    {"IfAllBind", "IfAnyMissingBind", "IfAnyBind", "IfAllMissingBind"}
+)
 _TEMPLATE_CONDITIONS = _SINGLE_TEMPLATE_CONDITIONS | _GROUPED_TEMPLATE_CONDITIONS
 _UX_ACTION_COMPONENTS = frozenset(
     {"PillAction", "CompactAction", "IconAction", "LargeIconAction", "ActionTile"}
@@ -1126,6 +1128,16 @@ def _wrap_action_template(
         "LargeIconAction",
     } and not isinstance(icon, str):
         raise TerselConversionError(f"{action_component} requires an approved icon.")
+    if wire_id == "CompactAction@1":
+        expected_subtitle = binding.display_subtitle
+        actual_subtitle = params.get("subtitle")
+        if expected_subtitle:
+            if actual_subtitle != expected_subtitle:
+                raise TerselConversionError(
+                    "CompactAction subtitle/actionId pair is not approved."
+                )
+        elif actual_subtitle is not None:
+            raise TerselConversionError("CompactAction subtitle is not approved.")
     bound_root, action_ids = _bind_template_actions(root, contract)
     if action_ids != (action_id,):
         raise TerselConversionError(
@@ -4677,8 +4689,15 @@ def _template_condition_should_render(
 ) -> bool:
     if node.component in _GROUPED_TEMPLATE_CONDITIONS:
         binding_names = _template_condition_binding_names(node)
+        any_present = any(name in bindings for name in binding_names)
         all_present = all(name in bindings for name in binding_names)
-        return all_present if node.component == "IfAllBind" else not all_present
+        if node.component == "IfAllBind":
+            return all_present
+        if node.component == "IfAnyBind":
+            return any_present
+        if node.component == "IfAnyMissingBind":
+            return not all_present
+        return not any_present
     guard_name = node.values[0].value
     if not isinstance(guard_name, str):
         raise TerselConversionError("Template conditional guard must be a string.")
@@ -4689,15 +4708,15 @@ def _template_condition_should_render(
     return present if node.component in {"IfParam", "IfBind"} else not present
 
 
-def _template_condition_binding_names(node: TemplateNode) -> tuple[str, str]:
+def _template_condition_binding_names(node: TemplateNode) -> tuple[str, ...]:
     if len(node.values) != 1 or node.values[0].kind != "array":
         raise TerselConversionError(
-            "Template grouped conditional requires two binding names."
+            "Template grouped conditional requires a binding name array."
         )
     items = node.values[0].items
-    if len(items) != 2:
+    if len(items) < 2:
         raise TerselConversionError(
-            "Template grouped conditional requires two binding names."
+            "Template grouped conditional requires at least two binding names."
         )
     binding_names: list[str] = []
     for item in items:
@@ -4706,7 +4725,7 @@ def _template_condition_binding_names(node: TemplateNode) -> tuple[str, str]:
                 "Template grouped conditional binding must be a string."
             )
         binding_names.append(item.value)
-    return binding_names[0], binding_names[1]
+    return tuple(binding_names)
 
 
 def _template_child_slot_index(node: TemplateNode) -> int | None:
@@ -9119,6 +9138,8 @@ def _lower_action_template_tree(
         children = tuple(apply_foreground(child, preserve_here) for child in current.children)
         styled = Nested2Node(current.component_type, current.values, children)
         if current.component_type == "Text":
+            if preserve_here:
+                return styled
             return _merge_node_options(styled, {"fontColor": foreground})
         if current.component_type == "Image":
             _validate_image_color_options(options, preserve_original=preserve_here)

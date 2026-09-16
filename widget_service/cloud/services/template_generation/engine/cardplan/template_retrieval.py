@@ -562,10 +562,20 @@ def retrieve_template_variants(
             required_groups,
         )
     else:
-        candidates = tuple(
-            _candidate_with_complete_field_coverage(candidate, required_groups)
+        # 2x4 only (TaskSpec size is Literal["2x2", "2x4"]).  One business slot
+        # may split into a Full + Compact pair whose union of field bindings
+        # covers every demanded group; the health specialized-primary path keeps
+        # strict single-template semantics via allow_pair=False.
+        candidates_with_slots = [
+            _candidate_with_complete_field_coverage_or_pair(
+                candidate,
+                required_groups,
+                allow_pair=primary_health is None,
+            )
             for candidate in candidates
-        )
+        ]
+        candidates = tuple(candidate for candidate, _ in candidates_with_slots)
+        slot_groups_by_candidate = [slots for _, slots in candidates_with_slots]
         if prefer_meeting_entry:
             candidates = _prefer_eligible_template(candidates, meeting_template)
         prefer_case_settings = (
@@ -579,7 +589,17 @@ def retrieve_template_variants(
             )
         if action_count == 1:
             candidates = _prefer_half_compact_pair(candidates)
-        required_groups = [candidate.available_template_ids for candidate in candidates]
+        required_groups = []
+        for candidate, slots in zip(candidates, slot_groups_by_candidate):
+            if slots is not None:
+                # Split candidate: the Full and Compact halves each become one
+                # slot group so downstream layout selection sees two positions.
+                # Post-split pref narrowing (_prefer_eligible_template) cannot
+                # orphan a half today (pref ids are Hero-kind); if it ever did,
+                # the second-layer exact-slot filter fails loudly.
+                required_groups.extend(slots)
+            else:
+                required_groups.append(candidate.available_template_ids)
         if repeated_generic_compact_slots and primary_health is not None:
             primary_group = next(
                 (
@@ -967,6 +987,67 @@ def _candidate_with_complete_field_coverage(
         if template_id in complete_ids
     )
     return candidate.model_copy(update={"available_template_ids": template_ids})
+
+
+def _candidate_with_complete_field_coverage_or_pair(
+    candidate: TemplateComponentCandidate,
+    required_groups: list[tuple[str, ...]],
+    *,
+    allow_pair: bool,
+) -> tuple[TemplateComponentCandidate, tuple[tuple[str, ...], ...] | None]:
+    """Cover one slot with a single template, or split it into a Full+Compact pair.
+
+    Returns ``(narrowed_candidate, None)`` when one template covers every
+    demanded group, or ``(split_candidate, (full_ids, compact_ids))`` when no
+    single template does but a Full + Compact pair's union of field bindings
+    does. ``provider_template_layout_kind`` maps ``Wide*`` ids to their own
+    kinds, so only natively 2x2-sized shapes enter the pair.
+    """
+    candidate_ids = set(candidate.available_template_ids)
+    component_groups = [
+        set(group).intersection(candidate_ids)
+        for group in required_groups
+        if set(group).intersection(candidate_ids)
+    ]
+    complete_ids = set.intersection(*component_groups) if component_groups else candidate_ids
+    if not complete_ids:
+        if not allow_pair:
+            raise TemplateRetrievalMiss(
+                f"template candidates cannot cover one {candidate.component_id} slot"
+            )
+        full_ids = sorted(
+            template_id
+            for template_id in candidate.available_template_ids
+            if provider_template_layout_kind(template_id) == "Full"
+        )
+        compact_ids = sorted(
+            template_id
+            for template_id in candidate.available_template_ids
+            if provider_template_layout_kind(template_id) == "Compact"
+        )
+        pair_ids = set(full_ids) | set(compact_ids)
+        if (
+            not full_ids
+            or not compact_ids
+            or not component_groups
+            or not all(group.intersection(pair_ids) for group in component_groups)
+        ):
+            raise TemplateRetrievalMiss(
+                f"template candidates cannot cover one {candidate.component_id} slot"
+            )
+        slots = (tuple(full_ids), tuple(compact_ids))
+        return (
+            candidate.model_copy(
+                update={"available_template_ids": tuple(sorted(pair_ids))}
+            ),
+            slots,
+        )
+    template_ids = tuple(
+        template_id
+        for template_id in candidate.available_template_ids
+        if template_id in complete_ids
+    )
+    return candidate.model_copy(update={"available_template_ids": template_ids}), None
 
 
 def _component_templates_for_capability(

@@ -143,6 +143,7 @@ _SAMPLE_BY_BUSINESS_BINDING: dict[tuple[str, str], Any] = {
     ("CalendarOverview", "date"): "8月19日",
     ("CalendarOverview", "eventCount"): 1,
     ("CalendarOverview", "location"): "深圳市龙岗区五和大道",
+    ("CalendarOverview", "reminder"): "15",
     ("CalendarOverview", "start"): "14:00",
     ("CalendarOverview", "startDate"): "8月19日",
     ("CalendarOverview", "title"): "UI需求评审会",

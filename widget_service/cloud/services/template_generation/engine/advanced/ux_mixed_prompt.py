@@ -739,14 +739,18 @@ def _selected_action_candidates(
     contract: HybridBodyContract,
 ) -> tuple[dict[str, str], ...]:
     selected_ids = set(contract.content_action_ids)
-    return tuple(
-        {
+    entries: list[dict[str, str]] = []
+    for action in contract.action_bindings:
+        if action.action_id not in selected_ids:
+            continue
+        entry = {
             "actionId": action.action_id,
             "label": action.display_label,
         }
-        for action in contract.action_bindings
-        if action.action_id in selected_ids
-    )
+        if action.display_subtitle:
+            entry["subtitle"] = action.display_subtitle
+        entries.append(entry)
+    return tuple(entries)
 
 
 def _asset_prompt_candidates(
@@ -916,22 +920,38 @@ def _layout_output_option(
     }
 
 
+# 候选动作可携带 subtitle 等附加信息，但输出语法只允许模板签名内的 Props。
+_ACTION_TEMPLATE_ALLOWED_PROPS: dict[str, tuple[str, ...]] = {
+    "PillAction@1": ("actionId", "label"),
+    "PlaylistCompactAction@1": ("actionId", "label"),
+    "CompactAction@1": ("actionId", "label", "subtitle", "prominent"),
+    "IconAction@1": ("actionId",),
+    "LargeIconAction@1": ("actionId",),
+}
+
+
 def _action_output_syntax(
     action_template_id: str,
     action: dict[str, str],
 ) -> str:
+    allowed_props = _ACTION_TEMPLATE_ALLOWED_PROPS.get(action_template_id)
+    filtered = (
+        {key: action[key] for key in allowed_props if key in action}
+        if allowed_props is not None
+        else action
+    )
     if action_template_id in {_COMPACT_ACTION_TEMPLATE_ID, "PlaylistCompactAction@1"}:
         props = {
-            **action,
+            **filtered,
             "icon": "<one semantically matching trustedAssetSource>",
         }
     elif action_template_id in {_ICON_ACTION_TEMPLATE_ID, _LARGE_ICON_ACTION_TEMPLATE_ID}:
         props = {
-            "actionId": action["actionId"],
+            "actionId": filtered["actionId"],
             "icon": "<one semantically matching trustedAssetSource>",
         }
     else:
-        props = action
+        props = filtered
     return (
         f'Template("{action_template_id}",'
         + json.dumps(props, ensure_ascii=False, separators=(",", ":"))
@@ -1221,9 +1241,20 @@ def _second_layer_layout_selection(
         if (component_count, action_count) == (1, 0):
             layout_id, kinds, actions = "WideFullOnlyLayout", ("WideFull",), ()
         elif (component_count, action_count) == (1, 1):
-            layout_id, kinds, actions = (
-                "WideSingleFocusLayout", ("WideHero",), (_PILL_ACTION_TEMPLATE_ID,)
-            )
+            if (
+                len(group_kinds) >= 2
+                and "Full" in group_kinds[0]
+                and "Compact" in group_kinds[1]
+            ):
+                layout_id, kinds, actions = (
+                    "WideFullTwoCompactLayout",
+                    ("Full", "Compact"),
+                    (_COMPACT_ACTION_TEMPLATE_ID,),
+                )
+            else:
+                layout_id, kinds, actions = (
+                    "WideSingleFocusLayout", ("WideHero",), (_PILL_ACTION_TEMPLATE_ID,)
+                )
         elif (component_count, action_count) == (1, 2):
             layout_id, kinds, actions = (
                 "WideFullTwoCompactLayout", ("Full",), (_COMPACT_ACTION_TEMPLATE_ID,)
@@ -1392,32 +1423,54 @@ def _filter_second_layer_template_candidates(
 ]:
     """Filter first-layer candidates by layout without inspecting business data."""
     if exact_slots:
-        if len(layout_kinds) != len(candidates_by_component):
-            raise ValueError("Layout slot count does not match Advanced Scope components")
-        filtered = {
-            component_id: tuple(
-                template_id
-                for template_id in template_ids
-                if provider_template_layout_kind(template_id) == layout_kind
+        if len(layout_kinds) == len(candidates_by_component):
+            filtered = {
+                component_id: tuple(
+                    template_id
+                    for template_id in template_ids
+                    if provider_template_layout_kind(template_id) == layout_kind
+                )
+                for (component_id, template_ids), layout_kind in zip(
+                    candidates_by_component.items(), layout_kinds, strict=True
+                )
+            }
+            if any(not template_ids for template_ids in filtered.values()):
+                raise ValueError(
+                    "First-layer Template candidates have no complete layout-slot coverage"
+                )
+            allowed_ids = {item for values in filtered.values() for item in values}
+            groups = required_template_groups or tuple(filtered.values())
+            filtered_groups = tuple(
+                tuple(item for item in group if item in allowed_ids) for group in groups
             )
-            for (component_id, template_ids), layout_kind in zip(
-                candidates_by_component.items(), layout_kinds, strict=True
-            )
-        }
-        if any(not template_ids for template_ids in filtered.values()):
-            raise ValueError(
-                "First-layer Template candidates have no complete layout-slot coverage"
-            )
-        allowed_ids = {item for values in filtered.values() for item in values}
-        groups = required_template_groups or tuple(filtered.values())
-        filtered_groups = tuple(
-            tuple(item for item in group if item in allowed_ids) for group in groups
-        )
-        if any(not group for group in filtered_groups):
-            raise ValueError(
-                "First-layer Template candidates have no complete layout-slot coverage"
-            )
-        return filtered, filtered_groups, layout_kinds
+            if any(not group for group in filtered_groups):
+                raise ValueError(
+                    "First-layer Template candidates have no complete layout-slot coverage"
+                )
+            return filtered, filtered_groups, layout_kinds
+        if (
+            len(required_template_groups) == len(layout_kinds)
+            and len(layout_kinds) > len(candidates_by_component)
+        ):
+            # Split-slot composition (one component, e.g. a Full + Compact
+            # pair): every slot group must contain a template of its slot kind
+            # among that component's candidates.
+            allowed_ids = {
+                item for values in candidates_by_component.values() for item in values
+            }
+            filtered_groups = []
+            for group, layout_kind in zip(required_template_groups, layout_kinds):
+                group_ids = tuple(item for item in group if item in allowed_ids)
+                if not any(
+                    provider_template_layout_kind(item) == layout_kind
+                    for item in group_ids
+                ):
+                    raise ValueError(
+                        "First-layer Template candidates have no complete layout-slot coverage"
+                    )
+                filtered_groups.append(group_ids)
+            return dict(candidates_by_component), tuple(filtered_groups), layout_kinds
+        raise ValueError("Layout slot count does not match Advanced Scope components")
     viable_layout_kind_values: list[str] = []
     for layout_kind in layout_kinds:
         has_complete_coverage = _layout_kind_has_complete_coverage(
