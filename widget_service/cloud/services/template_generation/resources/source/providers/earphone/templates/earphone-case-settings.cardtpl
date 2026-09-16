@@ -1,12 +1,11 @@
 #Template BluetoothDeviceOverviewCaseSettingsHero@1(props: {})
 data = { chargingStatus: $path("/chargingStatusDesc") }
 Column({"_advancedComponent": "BluetoothDeviceOverview", "width": "matchParent", "height": "matchParent",
-  "justifyContent": "start", "alignItems": "start", "itemMargin": 14},
+  "justifyContent": "start", "alignItems": "start", "itemMargin": 4},
   Text("耳机仓", {"height": 16, "fontSize": 12, "fontWeight": 400,
     "fontColor": $theme('supportContentColor'), "maxLines": 1}),
-  Stack({"width": "matchParent", "height": 44, "alignContent": "centerStart"},
-    Text(data.chargingStatus, {"width": "matchParent", "fontSize": 20, "fontWeight": 700,
-      "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"})
-  )
+  Text(data.chargingStatus, {"width": "matchParent", "height": 24,
+    "fontSize": 18, "fontWeight": 700, "fontColor": $theme('primaryColor'),
+    "maxLines": 1, "textOverflow": "ellipsis"})
 )
 #End

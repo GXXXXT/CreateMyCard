@@ -20,7 +20,7 @@
     },
     {
       "templateId": "LargeIconAction@1",
-      "description": "64x64 大型图标动作模板，由第二层通过 actionId 和 icon Props 填充展示内容。",
+      "description": "59x59 大型图标动作模板，适配300x150横版槽位，由第二层通过 actionId 和 icon Props 填充展示内容。",
       "entry": "templates/action.cardtpl"
     },
     {
