@@ -1,0 +1,232 @@
+widget_service/cloud/services/template_generation/tests/test_template_retrieval.py
+  s_e369308494531a::t_47c42a6df49353 1894
+widget_service/cloud/services/template_generation/docs/provider-template-capability-checklist.md
+  s_e369308494531a::t_8227320ef4f952 7,37,43,65,84,86-88,216,233-235
+widget_service/cloud/services/template_generation/tests/test_template_preview_dataset.py
+  s_e369308494531a::t_8227320ef4f952 19,25-26,28,31-33
+widget_service/cloud/services/template_generation/resources/source/providers/weather/templates/weather-overview.cardtpl
+  s_e369308494531a::t_04dcec73d60227 2580-2873
+  h_22e274a52827b7 2579
+widget_service/cloud/services/template_generation/resources/source/providers/weather/provider.json
+  s_e369308494531a::t_e05d6229660bc6 589-644
+widget_service/cloud/services/template_generation/resources/source/providers/battery/templates/battery-overview.cardtpl
+  h_22e274a52827b7 1400,1402-1403,1409,1430,1433-1446,1448-1458,1465,1469-1528
+  s_e369308494531a::t_e455060f2aad7b 196,1388,1554,1580,1592
+  s_74ed4c8297adc3::t_e2b77c64c167dd 1577,1590,1639
+  s_e369308494531a::t_e966d40e5f2e36 1628
+  s_e369308494531a::t_6c54a95f6c78fb 175-195,197-302,1366-1387,1389-1399,1401,1404-1408,1410-1429,1431-1432,1447,1459-1464,1466-1468,1529-1553,1555-1576,1578-1579,1581-1589,1591,1593-1627,1629-1638,1640-1679
+widget_service/cloud/services/template_generation/resources/source/providers/battery/provider.json
+  s_e369308494531a::t_e966d40e5f2e36 124-148
+  s_e369308494531a::t_27685040237eb9 270-283
+  s_e369308494531a::t_e05d6229660bc6 123,269,284-289,353-376,378-394
+  s_d309be85e7ec8b::t_ba41ad30ce52e1 377
+widget_service/cloud/services/task_spec_builder.py
+  s_e369308494531a::t_dd19a626d53230 117,121
+widget_service/cloud/services/template_generation/engine/advanced/ux_mixed_prompt.py
+  s_d309be85e7ec8b::t_b3d41660782086 114-121,130-131
+widget_service/cloud/services/template_generation/engine/cardplan/wide_template_planner.py
+  s_e369308494531a::t_a721079079be26 47
+widget_service/cloud/services/template_generation/tests/test_template_generation.py
+  s_e369308494531a::t_8227320ef4f952 2948-2949,2965,3188
+  s_e369308494531a::t_787e001369da61 7074-7079,7082,7091
+  s_e369308494531a::t_a29fcff6b9c6c4 3181,3186-3187,3206-3214,5645-5647,7046-7050
+  s_d309be85e7ec8b::t_0effc5a8cd3db9 286
+  s_e369308494531a::t_e05d6229660bc6 7101
+widget_service/cloud/services/template_generation/engine/cardplan/compiler.py
+  s_e369308494531a::t_942185ec648c7f 1140-1142,1145
+widget_service/cloud/services/template_generation/resources/source/providers/layout/templates/layout.cardtpl
+  s_e369308494531a::t_d3e659480843cf 223-225,227,231,233,237,240
+  s_e369308494531a::t_e966d40e5f2e36 226,228,232,235-236,238-239,241
+  s_e369308494531a::t_33f37faef15b8f 229,234,242-243
+widget_service/cloud/services/template_generation/docs/provider-template-contract.md
+  s_e369308494531a::t_8227320ef4f952 508,510
+widget_service/cloud/services/template_generation/docs/support-template-action-policy.md
+  s_e369308494531a::t_5289253aa734a9 29
+widget_service/cloud/services/template_generation/engine/cardplan/prompt.py
+  h_22e274a52827b7 1116
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/first-layer.md
+  h_22e274a52827b7 25-26
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/second-layer.md
+  h_22e274a52827b7 14-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.1",
+  "base_commit_sha": "37527c06756272b59c5f0fca61d7a67a95faf879",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_74ed4c8297adc3": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_124fdc49-555f-40c6-9e71-e4bde938d235",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 1,
+      "total_deletions": 1,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_e2b77c64c167dd": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 1,
+          "deletions": 1
+        }
+      }
+    },
+    "s_772e1642396b76": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0467e-0bb4-7843-9c0b-c5d30652632f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yan_shuifeng <yanshuifeng@huawei.com>",
+      "total_additions": 0,
+      "total_deletions": 798,
+      "overridden_lines": 0
+    },
+    "s_d309be85e7ec8b": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_6e8a79a7-2c50-49b7-82b8-701e9ca1a445",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 14,
+      "total_deletions": 5,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_0c7f287a88592d": "glm-5.3-flash",
+        "t_0effc5a8cd3db9": "glm-5.3-flash",
+        "t_34edf70cdd3109": "glm-5.3-flash",
+        "t_b3d41660782086": "glm-5.3-flash",
+        "t_ba41ad30ce52e1": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 14,
+          "deletions": 5
+        }
+      }
+    },
+    "s_e369308494531a": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_7c08e185-b635-4e5e-bd2c-423a0a0a40d0",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 4563,
+      "total_deletions": 908,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_00b8fe79b27e8a": "glm-5.3-flash",
+        "t_018e122f09cbe1": "glm-5.3-flash",
+        "t_03484cef8fb542": "glm-5.3-flash",
+        "t_04dcec73d60227": "glm-5.3-flash",
+        "t_0689324cb210f0": "glm-5.3-flash",
+        "t_0fce26eae4b407": "glm-5.3-flash",
+        "t_1453e51a593d68": "glm-5.3-flash",
+        "t_18c5edb644fb33": "glm-5.3-flash",
+        "t_1e3f4240f5023e": "glm-5.3-flash",
+        "t_1ff6acff446426": "glm-5.3-flash",
+        "t_20d5a9be69fe11": "glm-5.3-flash",
+        "t_23013da847215a": "glm-5.3-flash",
+        "t_237e0b42d358c2": "glm-5.3-flash",
+        "t_242697dcaa3cb4": "glm-5.3-flash",
+        "t_27685040237eb9": "glm-5.3-flash",
+        "t_28d19991e90293": "glm-5.3-flash",
+        "t_2995456af00c3d": "glm-5.3-flash",
+        "t_29ab5e24ab3cc7": "glm-5.3-flash",
+        "t_2f428e7f35ea7a": "glm-5.3-flash",
+        "t_2f6a474ac6f2b3": "glm-5.3-flash",
+        "t_31f13f1a1c1359": "glm-5.3-flash",
+        "t_3227112d1d995c": "glm-5.3-flash",
+        "t_33f37faef15b8f": "glm-5.3-flash",
+        "t_3529bfcc4269f3": "glm-5.3-flash",
+        "t_35aa8bd706b4d0": "glm-5.3-flash",
+        "t_373c6975fe7d8c": "glm-5.3-flash",
+        "t_398aec34beec51": "glm-5.3-flash",
+        "t_39aba8a072f048": "glm-5.3-flash",
+        "t_39da35a0c0dffa": "glm-5.3-flash",
+        "t_3d6bfe256d63d3": "glm-5.3-flash",
+        "t_405f17ed99ddfe": "glm-5.3-flash",
+        "t_40ff5ec07477d3": "glm-5.3-flash",
+        "t_42a4ae5dcaf776": "glm-5.3-flash",
+        "t_432510c32b312e": "glm-5.3-flash",
+        "t_47c42a6df49353": "glm-5.3-flash",
+        "t_507bffa399019f": "glm-5.3-flash",
+        "t_516fcc7183808d": "glm-5.3-flash",
+        "t_524af71c43f4a5": "glm-5.3-flash",
+        "t_5289253aa734a9": "glm-5.3-flash",
+        "t_5e70f27c58ca10": "glm-5.3-flash",
+        "t_601b513d31ff77": "glm-5.3-flash",
+        "t_6184dd8a073a73": "glm-5.3-flash",
+        "t_61a4d4af1467a1": "glm-5.3-flash",
+        "t_62871a2f33a933": "glm-5.3-flash",
+        "t_64e402c09e0e0b": "glm-5.3-flash",
+        "t_6a2b0a37485031": "glm-5.3-flash",
+        "t_6e044883446f4e": "glm-5.3-flash",
+        "t_7494b6736d358c": "glm-5.3-flash",
+        "t_787e001369da61": "glm-5.3-flash",
+        "t_7bcaf0dd45be42": "glm-5.3-flash",
+        "t_8227320ef4f952": "glm-5.3-flash",
+        "t_8b32b741f78515": "glm-5.3-flash",
+        "t_922c98f2c13988": "glm-5.3-flash",
+        "t_93f6287da54bf2": "glm-5.3-flash",
+        "t_942185ec648c7f": "glm-5.3-flash",
+        "t_97a3569896ef54": "glm-5.3-flash",
+        "t_9cfa7d7a8528bc": "glm-5.3-flash",
+        "t_9f7dec107c2de9": "glm-5.3-flash",
+        "t_a24a2a0edd6f8c": "glm-5.3-flash",
+        "t_a29fcff6b9c6c4": "glm-5.3-flash",
+        "t_a52157d3a75160": "glm-5.3-flash",
+        "t_a721079079be26": "glm-5.3-flash",
+        "t_a8e49eca4e25e5": "glm-5.3-flash",
+        "t_aa5e8ee3b8a065": "glm-5.3-flash",
+        "t_aa92a544446b35": "glm-5.3-flash",
+        "t_ab461b4cc1fa0b": "glm-5.3-flash",
+        "t_afa49333e1015d": "glm-5.3-flash",
+        "t_b06887aa47b6a7": "glm-5.3-flash",
+        "t_b0f0e47480578f": "glm-5.3-flash",
+        "t_b66977fd7b3867": "glm-5.3-flash",
+        "t_b709ce80a8fd25": "glm-5.3-flash",
+        "t_b7cf8c9d6fc8fe": "glm-5.3-flash",
+        "t_c98d1f853a8ca9": "glm-5.3-flash",
+        "t_c99725881b15a9": "glm-5.3-flash",
+        "t_c9ea81d7c8b54d": "glm-5.3-flash",
+        "t_cca6b43d52ee92": "glm-5.3-flash",
+        "t_cfd2b7e9d335b8": "glm-5.3-flash",
+        "t_d2db79c42e0385": "glm-5.3-flash",
+        "t_d3e659480843cf": "glm-5.3-flash",
+        "t_d53b208b727155": "glm-5.3-flash",
+        "t_da83f40fd8afd9": "glm-5.3-flash",
+        "t_dd19a626d53230": "glm-5.3-flash",
+        "t_e05d6229660bc6": "glm-5.3-flash",
+        "t_e403b23eb3386d": "glm-5.3-flash",
+        "t_e455060f2aad7b": "glm-5.3-flash",
+        "t_e511ea9e4cda8e": "glm-5.3-flash",
+        "t_e6c4901f0d6dd4": "glm-5.3-flash",
+        "t_e966d40e5f2e36": "glm-5.3-flash",
+        "t_ee227a7c38495b": "glm-5.3-flash",
+        "t_ef72d36c4aa594": "glm-5.3-flash",
+        "t_f36237b0c02e80": "glm-5.3-flash",
+        "t_f4efef8cc9f471": "glm-5.3-flash",
+        "t_fe2ad58cabb526": "glm-5.3-flash",
+        "t_ff857eb0186b21": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 4563,
+          "deletions": 908
+        }
+      }
+    }
+  }
+}
