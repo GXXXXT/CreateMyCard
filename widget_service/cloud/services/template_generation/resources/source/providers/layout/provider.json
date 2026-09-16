@@ -45,7 +45,7 @@
     },
     {
       "templateId": "WideTwoFullLayout@1",
-      "description": "2x4 左右双业务布局，左右各承载一个无 Action 的 Full 业务模板，并由布局统一提供支撑背板。",
+      "description": "2x4 左右双业务布局，左右各承载一个 Full 业务模板并由布局统一提供支撑背板；不接受独立 Action child，允许其中一个 Full 通过 actionId 内嵌自身可信业务动作。",
       "entry": "templates/layout.cardtpl"
     },
     {
@@ -340,7 +340,7 @@
     },
     {
       "name": "WideTwoFullLayout",
-      "description": "仅用于 2x4；左右各承载一个 Full 业务 child，由布局为两个槽位统一提供支撑背板，不接受 Action。",
+      "description": "仅用于 2x4；左右各承载一个 Full 业务 child，由布局为两个槽位统一提供支撑背板；不接受独立 Action child，允许一个 Full 内嵌自身可信业务动作。",
       "supportedCardSizes": [
         "2x4"
       ],

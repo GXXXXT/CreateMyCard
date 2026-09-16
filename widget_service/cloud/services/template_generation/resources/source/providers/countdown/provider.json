@@ -92,7 +92,7 @@
       "optionalData": [],
       "assetParameterSemanticTags": {
         "countdownIcon": [
-          "time"
+          "timer"
         ]
       }
     },

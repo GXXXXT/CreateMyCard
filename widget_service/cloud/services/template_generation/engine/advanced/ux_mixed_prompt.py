@@ -9,6 +9,9 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from models.generation import TaskSpec
+from services.template_generation.engine.cardplan.business_actions import (
+    supports_business_action,
+)
 from services.template_generation.engine.cardplan.generated.prompts import (
     UX_MIXED_SYSTEM_PROMPT_KERNEL,
 )
@@ -22,6 +25,7 @@ from services.template_generation.engine.cardplan.models import (
 )
 from services.template_generation.engine.cardplan.prompt import (
     action_binding_ids,
+    action_bindings,
     build_hybrid_prompt,
     build_template_prompt_contracts,
 )
@@ -60,6 +64,24 @@ _ICON_ACTION_TEMPLATE_ID = "IconAction@1"
 _LARGE_ICON_ACTION_TEMPLATE_ID = "LargeIconAction@1"
 _TWO_FOCUS_LAYOUT_IDS = frozenset(
     {"WideTwoFocusLayout", "WideTwoFocusActionLayout", "WideTwoFocusTwoActionLayout"}
+)
+_RIGHT_FULL_WEATHER_TEMPLATE_IDS = frozenset(
+    {
+        "WeatherOverviewDestinationDayFull@1",
+        "WeatherOverviewThreeDayForecastFull@1",
+    }
+)
+_LEFT_COUNTDOWN_HERO_TEMPLATE_IDS = frozenset(
+    {
+        "CountdownOverviewDepartureHero@1",
+        "CountdownOverviewEventHero@1",
+    }
+)
+_WIDE_TWO_FULL_COUNTDOWN_TEMPLATE_IDS = frozenset(
+    {
+        "CountdownOverviewTargetDetailFull@1",
+        "ScheduleOverviewEventCountTwoEventsFull@1",
+    }
 )
 
 
@@ -425,7 +447,9 @@ def build_ux_mixed_prompt(
             )),
             # 原子计划已校验操作归属，内置按钮不占布局根的 Action 槽位。
             "content_action_ids": (
-                selected_action_ids if template_plans else base.contract.content_action_ids
+                selected_action_ids
+                if template_plans or layout_selection.embeds_support_actions
+                else base.contract.content_action_ids
             ),
             "required_template_groups": effective_required_template_groups,
             "allowed_template_ids": tuple(
@@ -808,7 +832,8 @@ def _output_grammar(
         "layoutOptions": layout_options,
         "businessChildren": business_children,
         "childOrder": (
-            "Support businessChildren only; selected actions appear once in Support actionId props"
+            "businessChildren only; each selected action appears once in one eligible "
+            "business actionId prop"
             if embeds_support_actions
             else (
                 "position 0 HeroTitle, position 1 HeroContent, position 2 PillAction"
@@ -1268,7 +1293,18 @@ def _second_layer_layout_selection(
                 "WideFourCompactLayout", ("Compact",) * 4, ()
             )
         elif (component_count, action_count) == (2, 1):
-            if has_half(0) and "Compact" in group_kinds[1]:
+            if _wide_two_full_can_embed_action(
+                required_template_groups,
+                task_spec,
+                registry,
+            ):
+                selection = _SecondLayerLayoutSelection(
+                    layout_ids=("WideTwoFullLayout",),
+                    layout_kinds=("Full",),
+                    embeds_support_actions=True,
+                    business_layout_kinds_by_position=("Full", "Full"),
+                )
+            elif has_half(0) and "Compact" in group_kinds[1]:
                 selection = _SecondLayerLayoutSelection(
                     layout_ids=("WideHalfTwoCompactLayout",),
                     layout_kinds=("WideHalf",),
@@ -1300,15 +1336,17 @@ def _second_layer_layout_selection(
                     and "Hero" in group_kinds[0]
                     and "Hero" in group_kinds[1]
                 )
+                layout_ids = (
+                    ("WideTwoFocusActionLayout",)
+                    if hero_pair
+                    else (
+                        ("WideHeroActionFullLayout",)
+                        if _requires_right_full_weather_layout(required_template_groups)
+                        else ("WideFullHeroActionLayout", "WideHeroActionFullLayout")
+                    )
+                )
                 selection = _SecondLayerLayoutSelection(
-                    layout_ids=(
-                        ("WideTwoFocusActionLayout",)
-                        if hero_pair
-                        else (
-                            "WideFullHeroActionLayout",
-                            "WideHeroActionFullLayout",
-                        )
-                    ),
+                    layout_ids=layout_ids,
                     layout_kinds=("Full", "Full") if not hero_pair else ("Hero",),
                     action_template_ids=(_PILL_ACTION_TEMPLATE_ID,),
                     business_layout_kinds_by_position=("Full", "Hero")
@@ -1377,6 +1415,54 @@ def _has_semantic_action_icon(task_spec: TaskSpec) -> bool:
         if any(keyword in normalized for keyword in keywords):
             return True
     return False
+
+
+def _wide_two_full_can_embed_action(
+    required_template_groups: tuple[tuple[str, ...], ...],
+    task_spec: TaskSpec,
+    registry: CardPlanRegistry,
+) -> bool:
+    if len(required_template_groups) != 2:
+        return False
+    selected_template_ids = {
+        template_id for group in required_template_groups for template_id in group
+    }
+    if not _WIDE_TWO_FULL_COUNTDOWN_TEMPLATE_IDS.issubset(selected_template_ids):
+        return False
+    actions = action_bindings(task_spec)
+    if len(actions) != 1:
+        return False
+    action = actions[0]
+    owner_count = 0
+    for group in required_template_groups:
+        if not group or any(
+            provider_template_layout_kind(template_id) != "Full"
+            for template_id in group
+        ):
+            return False
+        if any(
+            supports_business_action(
+                registry.require_template(template_id),
+                action,
+                task_spec.size,
+            )
+            for template_id in group
+        ):
+            owner_count += 1
+    return owner_count == 1
+
+
+def _requires_right_full_weather_layout(
+    required_template_groups: tuple[tuple[str, ...], ...],
+) -> bool:
+    if len(required_template_groups) != 2:
+        return False
+    full_group, hero_group = required_template_groups
+    return (
+        bool(_RIGHT_FULL_WEATHER_TEMPLATE_IDS.intersection(full_group))
+        and len(hero_group) == 1
+        and hero_group[0] in _LEFT_COUNTDOWN_HERO_TEMPLATE_IDS
+    )
 
 
 def _filter_second_layer_template_candidates(

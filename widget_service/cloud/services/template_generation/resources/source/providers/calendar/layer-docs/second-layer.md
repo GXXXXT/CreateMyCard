@@ -51,15 +51,20 @@
     `calendarIcon` 与 `headerLabel`。
   - `ScheduleOverviewEventCountDetailsHero@1`：近期日程清点 Hero；展示日程总数及首项日程的标题、
     开始时间和备注，不接收展示 Prop。
+  - `ScheduleOverviewEventCountTwoEventsFull@1`：双日程清点 Full；展示日程总数，以及前两项日程各自的
+    标题和开始时间，五个展示字段必须全部可用；可接收可信 `headerLabel`，以及
+    `event.viewCalendarEvent` 的 `actionId`，并仅将动作绑定到第一条日程。`entityId` 仍是事件参数，
+    不作为展示字段或模板 Prop。
   - `ScheduleOverviewEventCountDetailsFull@1`：近期日程清点 Full；展示日程总数及首项日程的标题、
     开始时间和备注；可选 `calendarIcon` 与 `headerLabel`。
   - `ScheduleOverviewTimezoneAllDayFull@1`：时区全天日程 Full；展示标题、全天状态、时区和地点；可选
     `calendarIcon` 与 `headerLabel`；全天文案由端侧 `Expr(...)` 按运行时布尔值计算。
-- Hero 只用于 `HeroActionLayout@1` 加一个 `PillAction@1`；Full 只用于 `SingleFocusLayout@1`，
-  或在存在语义匹配图标素材时用于 `FullIconActionLayout@1` 加一个 `IconAction@1`。WideFull 当前只作
-  `2x4` 预留。
+- Hero 只用于 `HeroActionLayout@1` 加一个 `PillAction@1`；Full 可用于 `SingleFocusLayout@1`、
+  `WideTwoFullLayout@1`，或在存在语义匹配图标素材时用于 `FullIconActionLayout@1` 加一个
+  `IconAction@1`。WideFull 当前只作 `2x4` 预留。
 - HeroContent 必须位于 HeroTitle 之后，且布局第三个直接 child 必须是一个 `PillAction@1`；不得交换
-  两个业务位置或在业务模板内嵌 Action。
+  两个业务位置。除明确声明 `supportedEventIds` 与可选 `actionId` 的模板外，不得在业务模板内嵌 Action；
+  `ScheduleOverviewEventCountTwoEventsFull@1` 消费动作时不得再为同一事件生成独立 Action child。
 - `headerLabel` 只能逐字复用 `cardComposition.businessTitleCandidate`，没有可信标题时省略。
 - 已有 Provider 全局路径的值必须由模板 `data` 绑定；Props 只能使用本轮 Prompt 下发的可信文本或素材，
   不得输出数据路径。

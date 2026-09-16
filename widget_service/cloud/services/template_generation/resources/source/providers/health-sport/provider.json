@@ -75,6 +75,21 @@
       ]
     },
     {
+      "templateId": "ActivityOverviewTrainingSummaryFull@1",
+      "businessId": "ActivityOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "备赛或训练综合 Full 摘要，以每日步数为主视觉，并展示最近一次运动时长和运动平均心率；适合与目标日倒计时 Compact、锻炼页 Compact Action 组成 2x4 卡片。",
+      "optionalData": [],
+      "entry": "templates/activity-overview.cardtpl",
+      "primaryData": [
+        "/dailySteps"
+      ],
+      "secondaryData": [
+        "/exerciseDurationText",
+        "/exerciseHeartRateAvg"
+      ]
+    },
+    {
       "templateId": "ActivityOverviewWideFull@1",
       "businessId": "ActivityOverview",
       "capabilityId": "GetHealthAndSportSummary",

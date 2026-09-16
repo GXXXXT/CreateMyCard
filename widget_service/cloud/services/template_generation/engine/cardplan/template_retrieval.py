@@ -23,6 +23,9 @@ from services.template_generation.engine.advanced.models import (
     TemplateRouteSelection,
 )
 
+from .business_actions import supports_business_action
+from .models import ActionBinding
+from .prompt import action_bindings
 from .provider_bundle import provider_template_layout_kind
 from .registry import CardPlanRegistry
 from .retrieval_index import FieldToken, TemplateVariantSearchRecord
@@ -32,6 +35,54 @@ _GENERIC_SCALAR_TYPES = frozenset({"string", "integer", "number", "boolean"})
 _TEMPLATE_QUERY_DISCRIMINATORS = {
     "WeatherOverviewAlertFull@1": frozenset({"/current/alertLevel"}),
 }
+_COUNTDOWN_TARGET_DETAIL_FULL_TEMPLATE_ID = "CountdownOverviewTargetDetailFull@1"
+_COUNTDOWN_EVENT_HERO_TEMPLATE_ID = "CountdownOverviewEventHero@1"
+_COUNTDOWN_DEPARTURE_HERO_TEMPLATE_ID = "CountdownOverviewDepartureHero@1"
+_WIDE_COUNTDOWN_DUAL_BUSINESS_ANCHOR_TEMPLATE_IDS = frozenset(
+    {
+        "ActivityOverviewTrainingSummaryFull@1",
+        "ScheduleOverviewEventCountTwoEventsFull@1",
+        "WeatherOverviewDestinationDayFull@1",
+        "WeatherOverviewThreeDayForecastFull@1",
+    }
+)
+_WIDE_COUNTDOWN_SEMANTIC_PARTNER_TEMPLATE_IDS = frozenset(
+    {
+        "ScheduleOverviewEventCountTwoEventsFull@1",
+        "WeatherOverviewDestinationDayFull@1",
+        "WeatherOverviewThreeDayForecastFull@1",
+    }
+)
+_COUNTDOWN_EVENT_QUERY_TERMS = (
+    "元旦",
+    "春节",
+    "清明",
+    "劳动节",
+    "端午",
+    "中秋",
+    "国庆",
+    "节日",
+    "festival",
+    "holiday",
+)
+_COUNTDOWN_DEPARTURE_QUERY_TERMS = (
+    "出发",
+    "启程",
+    "返乡",
+    "回家",
+    "回老家",
+    "旅行",
+    "旅游",
+    "探亲",
+    "departure",
+    "depart",
+    "travel",
+    "trip",
+)
+_EXPLICIT_TARGET_DATE_PATTERN = re.compile(
+    r"(?:\d{4}\s*[年/-]\s*)?\d{1,2}\s*[月/-]\s*\d{1,2}\s*[日号]?",
+    re.IGNORECASE,
+)
 
 
 class TemplateRetrievalMiss(ValueError):
@@ -562,24 +613,39 @@ def retrieve_template_variants(
             required_groups,
         )
     else:
-        candidates = tuple(
-            _candidate_with_complete_field_coverage(candidate, required_groups)
-            for candidate in candidates
-        )
-        if prefer_meeting_entry:
-            candidates = _prefer_eligible_template(candidates, meeting_template)
-        prefer_case_settings = (
+        use_countdown_dual_business_policy = (
             len(candidates) == 2
-            and action_count == 2
-            and "event.open.settings.bluetooth" in query.action_ids
+            and action_count == 1
+            and _has_wide_countdown_dual_business_anchor(candidates)
         )
-        if prefer_case_settings:
-            candidates = _prefer_eligible_template(
-                candidates, "BluetoothDeviceOverviewCaseSettingsHero@1"
+        if use_countdown_dual_business_policy:
+            candidates, required_groups = _apply_2x4_dual_business_action_policy(
+                candidates,
+                required_groups,
+                action=_selected_action_binding(query, task_spec),
+                registry=registry,
+                prefer_compact=_has_health_business(candidates),
+                task_spec=task_spec,
             )
-        if action_count == 1:
-            candidates = _prefer_half_compact_pair(candidates)
-        required_groups = [candidate.available_template_ids for candidate in candidates]
+        else:
+            candidates = tuple(
+                _candidate_with_complete_field_coverage(candidate, required_groups)
+                for candidate in candidates
+            )
+            if prefer_meeting_entry:
+                candidates = _prefer_eligible_template(candidates, meeting_template)
+            prefer_case_settings = (
+                len(candidates) == 2
+                and action_count == 2
+                and "event.open.settings.bluetooth" in query.action_ids
+            )
+            if prefer_case_settings:
+                candidates = _prefer_eligible_template(
+                    candidates, "BluetoothDeviceOverviewCaseSettingsHero@1"
+                )
+            if action_count == 1:
+                candidates = _prefer_half_compact_pair(candidates)
+            required_groups = [candidate.available_template_ids for candidate in candidates]
         if repeated_generic_compact_slots and primary_health is not None:
             primary_group = next(
                 (
@@ -856,6 +922,227 @@ def _apply_2x2_dual_business_policy(
     )
 
 
+def _apply_2x4_dual_business_action_policy(
+    candidates: tuple[TemplateComponentCandidate, ...],
+    required_groups: list[tuple[str, ...]],
+    *,
+    action: ActionBinding | None,
+    registry: CardPlanRegistry,
+    prefer_compact: bool,
+    task_spec: TaskSpec,
+) -> tuple[tuple[TemplateComponentCandidate, ...], list[tuple[str, ...]]]:
+    """Choose an ordered, fully covered two-business shape for one Action."""
+    candidate_pairs = ((0, 1), (1, 0))
+    if action is not None:
+        embedded_options: list[
+            tuple[
+                int,
+                tuple[
+                    tuple[TemplateComponentCandidate, ...],
+                    list[tuple[str, ...]],
+                ],
+            ]
+        ] = []
+        for first_index, second_index in candidate_pairs:
+            resolved = _complete_positional_candidates(
+                candidates,
+                required_groups,
+                first_index,
+                "Full",
+                second_index,
+                "Full",
+            )
+            if resolved is None:
+                continue
+            embedded = _with_embedded_business_action(resolved, action, registry)
+            if embedded is not None:
+                action_owner_index, candidate_selection = embedded
+                candidate_selection = _with_2x4_countdown_semantic_preference(
+                    candidate_selection,
+                    task_spec,
+                )
+                embedded_options.append((action_owner_index, candidate_selection))
+        if embedded_options:
+            embedded_options.sort(key=lambda item: item[0] != 1)
+            return embedded_options[0][1]
+    if prefer_compact:
+        for primary_role, secondary_role in (("Full", "Compact"), ("Hero", "Compact")):
+            for primary_index, secondary_index in candidate_pairs:
+                resolved = _complete_positional_candidates(
+                    candidates,
+                    required_groups,
+                    primary_index,
+                    primary_role,
+                    secondary_index,
+                    secondary_role,
+                )
+                if resolved is not None:
+                    return _with_2x4_countdown_semantic_preference(resolved, task_spec)
+    for full_index, hero_index in candidate_pairs:
+        resolved = _complete_positional_candidates(
+            candidates,
+            required_groups,
+            full_index,
+            "Full",
+            hero_index,
+            "Hero",
+        )
+        if resolved is not None:
+            return _with_2x4_countdown_semantic_preference(resolved, task_spec)
+    raise TemplateRetrievalMiss(
+        "2x4 dual-business Action layout has no complete Full+Compact or Full+Hero coverage"
+    )
+
+
+def _with_2x4_countdown_semantic_preference(
+    resolved: tuple[tuple[TemplateComponentCandidate, ...], list[tuple[str, ...]]],
+    task_spec: TaskSpec,
+) -> tuple[tuple[TemplateComponentCandidate, ...], list[tuple[str, ...]]]:
+    """Narrow only semantically distinct countdown variants in the dual-business route."""
+    candidates, _ = resolved
+    if not any(
+        _WIDE_COUNTDOWN_SEMANTIC_PARTNER_TEMPLATE_IDS.intersection(
+            candidate.available_template_ids
+        )
+        for candidate in candidates
+        if candidate.component_id != "CountdownOverview"
+    ):
+        return resolved
+    narrowed: list[TemplateComponentCandidate] = []
+    for candidate in candidates:
+        template_id = _preferred_2x4_countdown_template_id(
+            candidate.available_template_ids,
+            task_spec.userQuery,
+        )
+        if template_id is not None:
+            candidate = candidate.model_copy(
+                update={"available_template_ids": (template_id,)}
+            )
+        narrowed.append(candidate)
+    ordered = tuple(narrowed)
+    return ordered, [candidate.available_template_ids for candidate in ordered]
+
+
+def _preferred_2x4_countdown_template_id(
+    template_ids: tuple[str, ...],
+    user_query: str,
+) -> str | None:
+    available = set(template_ids)
+    normalized_query = user_query.casefold()
+    if (
+        _COUNTDOWN_TARGET_DETAIL_FULL_TEMPLATE_ID in available
+        and _EXPLICIT_TARGET_DATE_PATTERN.search(normalized_query) is not None
+    ):
+        return _COUNTDOWN_TARGET_DETAIL_FULL_TEMPLATE_ID
+    if (
+        _COUNTDOWN_EVENT_HERO_TEMPLATE_ID in available
+        and any(term in normalized_query for term in _COUNTDOWN_EVENT_QUERY_TERMS)
+    ):
+        return _COUNTDOWN_EVENT_HERO_TEMPLATE_ID
+    if (
+        _COUNTDOWN_DEPARTURE_HERO_TEMPLATE_ID in available
+        and any(term in normalized_query for term in _COUNTDOWN_DEPARTURE_QUERY_TERMS)
+    ):
+        return _COUNTDOWN_DEPARTURE_HERO_TEMPLATE_ID
+    return None
+
+
+def _has_health_business(
+    candidates: tuple[TemplateComponentCandidate, ...],
+) -> bool:
+    health_business_ids = {
+        "ActivityOverview",
+        "GenericMetricOverview",
+        "HeartRateOverview",
+        "SleepOverview",
+        "WorkoutOverview",
+    }
+    return any(candidate.component_id in health_business_ids for candidate in candidates)
+
+
+def _has_wide_countdown_dual_business_anchor(
+    candidates: tuple[TemplateComponentCandidate, ...],
+) -> bool:
+    """Limit the legacy dual-business policy to the four migrated countdown designs."""
+    has_countdown = any(
+        candidate.component_id == "CountdownOverview" for candidate in candidates
+    )
+    has_anchor = any(
+        _WIDE_COUNTDOWN_DUAL_BUSINESS_ANCHOR_TEMPLATE_IDS.intersection(
+            candidate.available_template_ids
+        )
+        for candidate in candidates
+    )
+    return has_countdown and has_anchor
+
+
+def _with_embedded_business_action(
+    resolved: tuple[tuple[TemplateComponentCandidate, ...], list[tuple[str, ...]]],
+    action: ActionBinding,
+    registry: CardPlanRegistry,
+) -> tuple[
+    int,
+    tuple[tuple[TemplateComponentCandidate, ...], list[tuple[str, ...]]],
+] | None:
+    candidates, _ = resolved
+    action_owner_indexes: list[int] = []
+    filtered_candidates: list[TemplateComponentCandidate] = []
+    for index, candidate in enumerate(candidates):
+        action_template_ids = tuple(
+            template_id
+            for template_id in candidate.available_template_ids
+            if supports_business_action(
+                registry.require_template(template_id),
+                action,
+                "2x4",
+            )
+        )
+        if action_template_ids:
+            action_owner_indexes.append(index)
+            candidate = candidate.model_copy(
+                update={"available_template_ids": action_template_ids}
+            )
+        filtered_candidates.append(candidate)
+    if len(action_owner_indexes) != 1:
+        return None
+    ordered = tuple(filtered_candidates)
+    selection = ordered, [candidate.available_template_ids for candidate in ordered]
+    return action_owner_indexes[0], selection
+
+
+def _selected_action_binding(
+    query: TemplateRetrievalQuery,
+    task_spec: TaskSpec,
+) -> ActionBinding | None:
+    selected_event_ids = set(query.action_ids)
+    selected = tuple(
+        binding
+        for binding in action_bindings(task_spec)
+        if binding.event_id in selected_event_ids
+    )
+    return selected[0] if len(selected) == 1 else None
+
+
+def _complete_positional_candidates(
+    candidates: tuple[TemplateComponentCandidate, ...],
+    required_groups: list[tuple[str, ...]],
+    first_index: int,
+    first_role: str,
+    second_index: int,
+    second_role: str,
+) -> tuple[tuple[TemplateComponentCandidate, ...], list[tuple[str, ...]]] | None:
+    first = _candidate_with_optional_layout_suffix(candidates[first_index], first_role)
+    second = _candidate_with_optional_layout_suffix(candidates[second_index], second_role)
+    if first is None or second is None:
+        return None
+    try:
+        first = _candidate_with_complete_field_coverage(first, required_groups)
+        second = _candidate_with_complete_field_coverage(second, required_groups)
+    except TemplateRetrievalMiss:
+        return None
+    return (first, second), [first.available_template_ids, second.available_template_ids]
+
+
 def _candidate_with_optional_layout_suffix(
     candidate: TemplateComponentCandidate,
     layout_suffix: str,
@@ -940,9 +1227,8 @@ def _require_single_template_coverage(
 
 
 def _template_has_layout_suffix(template_id: str, layout_suffix: str) -> bool:
-    """Match the declared business-template layout before its version suffix."""
-    template_name, separator, version = template_id.rpartition("@")
-    return bool(separator and version and template_name.endswith(layout_suffix))
+    """Match the Provider-declared layout kind without conflating WideFull and Full."""
+    return provider_template_layout_kind(template_id) == layout_suffix
 
 
 def _candidate_with_complete_field_coverage(

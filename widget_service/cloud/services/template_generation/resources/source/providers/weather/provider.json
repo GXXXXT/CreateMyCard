@@ -393,6 +393,48 @@
       "optionalData": []
     },
     {
+      "templateId": "WeatherOverviewThreeDayForecastFull@1",
+      "businessId": "WeatherOverview",
+      "capabilityId": "ViewWeather",
+      "description": "三日天气预报 Full，按设计稿以三个单行条目展示 daily[0..2] 的日期、天气现象和温度范围；星期与降雨概率保留为该场景的检索特征，不额外挤占可视行。适合与倒计时 Hero 及天气详情操作组成 2x4 卡片。",
+      "entry": "templates/weather-overview.cardtpl",
+      "primaryData": [
+        "/daily/0/condition",
+        "/daily/1/condition",
+        "/daily/2/condition"
+      ],
+      "secondaryData": [
+        "/daily/0/date",
+        "/daily/0/weekday",
+        "/daily/0/temperatureRangeText",
+        "/daily/0/rainProbabilityPercent",
+        "/daily/1/date",
+        "/daily/1/weekday",
+        "/daily/1/temperatureRangeText",
+        "/daily/1/rainProbabilityPercent",
+        "/daily/2/date",
+        "/daily/2/weekday",
+        "/daily/2/temperatureRangeText",
+        "/daily/2/rainProbabilityPercent"
+      ],
+      "optionalData": []
+    },
+    {
+      "templateId": "WeatherOverviewDestinationDayFull@1",
+      "businessId": "WeatherOverview",
+      "capabilityId": "ViewWeather",
+      "description": "目的地出发日天气 Full，展示 daily[3] 的温度范围、降雨概率和空气质量，可补充可信目的地与目标日期；适合与出发倒计时 Hero 及操作组成 2x4 卡片。",
+      "entry": "templates/weather-overview.cardtpl",
+      "primaryData": [
+        "/daily/3/temperatureRangeText"
+      ],
+      "secondaryData": [
+        "/daily/3/rainProbabilityPercent",
+        "/daily/3/airQuality"
+      ],
+      "optionalData": []
+    },
+    {
       "templateId": "WeatherOverviewWideFull@1",
       "businessId": "WeatherOverview",
       "capabilityId": "ViewWeather",

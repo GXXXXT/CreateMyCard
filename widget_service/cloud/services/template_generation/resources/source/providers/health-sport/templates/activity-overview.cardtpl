@@ -425,6 +425,132 @@ Column(
 )
 #End
 
+#Template ActivityOverviewTrainingSummaryFull@1(props: { title?: string })
+data = {
+    steps: $path("/dailySteps"),
+    duration: $path("/exerciseDurationText"),
+    averageHeartRate: $path("/exerciseHeartRateAvg")
+}
+
+Column(
+  {
+    "_advancedComponent": "ActivityOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 0,
+    "justifyContent": "start",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  #if props.title
+    Text(
+      props.title,
+      {
+        "width": "matchParent",
+        "height": 16,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    )
+  #else
+    Text(
+      "运动健康",
+      {
+        "width": "matchParent",
+        "height": 16,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    )
+  #endif
+  Row(
+    {
+      "width": "matchParent",
+      "height": 40,
+      "margin": {"top": 4},
+      "itemMargin": 4,
+      "justifyContent": "start",
+      "alignItems": "bottom",
+      "constraintSize": {"minWidth": 0, "minHeight": 0}
+    },
+    Text(
+      data.steps,
+      {
+        "fontSize": 38,
+        "fontWeight": 700,
+        "fontColor": $theme('primaryColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "constraintSize": {"minWidth": 0, "minHeight": 0}
+      }
+    ),
+    Text(
+      "步",
+      {
+        "height": 16,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "fontColor": $theme('supportContentColor'),
+        "maxLines": 1,
+        "flexShrink": 0
+      }
+    )
+  ),
+  Text(
+    "今日步数",
+    {
+      "width": "matchParent",
+      "height": 16,
+      "fontSize": 12,
+      "fontWeight": 400,
+      "fontColor": $theme('supportContentColor'),
+      "maxLines": 1,
+      "textOverflow": "ellipsis",
+      "constraintSize": {"minWidth": 0, "minHeight": 0}
+    }
+  ),
+  Text(
+    Expr("最近运动时长 " + data.duration),
+    {
+      "width": "matchParent",
+      "height": 16,
+      "margin": {"top": 24},
+      "fontSize": 14,
+      "minFontSize": 12,
+      "fontWeight": 400,
+      "fontColor": $theme('supportContentColor'),
+      "maxLines": 1,
+      "textOverflow": "ellipsis",
+      "constraintSize": {"minWidth": 0, "minHeight": 0}
+    }
+  ),
+  Text(
+    Expr("平均心率 " + data.averageHeartRate + "次/分钟"),
+    {
+      "width": "matchParent",
+      "height": 16,
+      "margin": {"top": 4},
+      "fontSize": 14,
+      "minFontSize": 12,
+      "fontWeight": 400,
+      "fontColor": $theme('supportContentColor'),
+      "maxLines": 1,
+      "textOverflow": "ellipsis",
+      "constraintSize": {"minWidth": 0, "minHeight": 0}
+    }
+  )
+)
+#End
+
 #Template ActivityOverviewWideFull@1(props: { stepsIcon?: asset, caloriesIcon?: asset, distanceIcon?: asset })
 data = {
     steps: $path("/dailySteps"),

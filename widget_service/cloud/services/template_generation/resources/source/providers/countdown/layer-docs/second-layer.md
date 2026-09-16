@@ -7,7 +7,8 @@
   `IconAction@1`。
 - `CountdownOverviewTargetDetailFull@1` 使用透明的自适应内容布局展示 `/countdownDays`，可传入本轮可信
   `title` 和 `targetDate`；用于 `SingleFocusLayout@1` 时直接填充 2x2 安全内容区，用于 2x4 的
-  `WideTwoFullLayout@1` 半宽 Full 槽时，支撑背板、圆角和内边距由父布局统一提供。
+  `WideTwoFullLayout@1` 半宽 Full 槽时，支撑背板、圆角和内边距由父布局统一提供。用户明确给出目标日
+  以及事件标题并要求同时展示时，优先于只显示天数的 `CountdownOverviewFull@1`。
 - `CountdownOverviewWideFull@1` 用于完整宽屏或 Full 组合布局；`CountdownOverviewWideHero@1`
   用于 WideHero + PillAction；`CountdownOverviewWideHalf@1` 用于对应半高组合布局。
 - `CountdownOverviewHero@1` 展示同一份 `/countdownDays`，将单位“天”放在数字右侧，可传入本轮可信
@@ -16,6 +17,9 @@
   只用于节日或重要事件倒计时，操作仍由布局中的 Action 模板承载。
 - `CountdownOverviewDepartureHero@1` 左对齐展示可信 `title` 和 `/countdownDays`，固定使用
   “天后出发”；只有用户需求明确包含旅行、返乡或其它出发语义时才选择，操作仍由 Action 模板承载。
+- EventHero 与 DepartureHero 都符合时，明确命名的节日或重要事件优先 EventHero；例如“国庆返乡”
+  以国庆为倒计时目标时显示“天”。DepartureHero 只用于倒计时目标本身是出发日、且没有命名节日或
+  其它重要事件目标的场景，例如普通探亲或旅行出发。
 - `CountdownOverviewTargetCompact@1` 使用当前 Compact 槽位的自适应蒙版，展示 `/countdownDays`
   和“距离目标日还有”；用于目标日、比赛或赛事倒计时。可选 `countdownIcon` 必须是本轮实际候选中具有计时语义
   的素材，没有匹配素材时省略，不能擅自使用日历或其它未批准资源。
