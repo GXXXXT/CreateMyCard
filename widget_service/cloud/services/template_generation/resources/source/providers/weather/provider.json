@@ -396,7 +396,7 @@
       "templateId": "WeatherOverviewThreeDayForecastFull@1",
       "businessId": "WeatherOverview",
       "capabilityId": "ViewWeather",
-      "description": "三日天气预报 Full，按设计稿以三个单行条目展示 daily[0..2] 的日期、天气现象和温度范围；星期与降雨概率保留为该场景的检索特征，不额外挤占可视行。适合与倒计时 Hero 及天气详情操作组成 2x4 卡片。",
+      "description": "三日天气预报 Full，按三个双行条目展示 daily[0..2] 每天的完整日期、星期、天气现象、降雨概率和完整温度范围。适合与倒计时 Hero 及天气详情操作组成 2x4 卡片。",
       "entry": "templates/weather-overview.cardtpl",
       "primaryData": [
         "/daily/0/condition",

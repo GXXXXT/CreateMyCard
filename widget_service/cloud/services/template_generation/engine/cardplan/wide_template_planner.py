@@ -10,7 +10,7 @@ from models.generation import TaskSpec
 
 from .business_actions import matches_business_data, supports_business_action
 from .models import ActionBinding, TemplatePlanActionAssignment, TemplatePlanBusinessSlot
-from .prompt import action_bindings
+from .prompt import _asset_semantic_tags, _parameter_value_kind, action_bindings
 from .provider_bundle import provider_template_layout_kind
 from .registry import CardPlanRegistry
 from .template_retrieval import (
@@ -20,6 +20,12 @@ from .template_retrieval import (
 )
 
 _GENERIC_BUSINESS = "GenericMetricOverview"
+_CALENDAR_COUNTDOWN_FULL_IDS = frozenset(
+    {
+        "CountdownOverviewTargetDetailFull@1",
+        "ScheduleOverviewEventCountTwoEventsFull@1",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -103,12 +109,18 @@ def wide_plan_compositions(
         for layout in _WIDE_LAYOUTS:
             if len(layout.roles) != len(slots):
                 continue
-            embedded = layout.layout_id == "WideFullOnlyLayout" and len(actions) == 1
+            embedded = len(actions) == 1 and (
+                layout.layout_id == "WideFullOnlyLayout"
+                or (
+                    layout.layout_id == "WideTwoFullLayout"
+                    and {slot.template_id for slot in slots} == _CALENDAR_COUNTDOWN_FULL_IDS
+                )
+            )
             if not embedded and len(layout.action_templates) != len(actions):
                 continue
             for ordered in _ordered_slots(slots, layout.roles):
                 for assignments in _action_assignments(
-                    layout, ordered, actions, registry, embedded
+                    layout, ordered, actions, registry, task, embedded
                 ):
                     yield WidePlanComposition(f"{layout.layout_id}@1", ordered, assignments)
 
@@ -174,9 +186,7 @@ def _capability_covers(
             fields = set(slot.covered_explicit_fields)
             if missing[0] not in fields:
                 continue
-            if slot.business_id in business_ids and not _may_pair_with_selected(
-                selected, slot
-            ):
+            if slot.business_id in business_ids and not _may_pair_with_selected(selected, slot):
                 continue
             if slot.field_bindings and covered.intersection(fields):
                 continue
@@ -256,18 +266,25 @@ def _action_assignments(
     slots: tuple[TemplatePlanBusinessSlot, ...],
     actions: tuple[ActionBinding, ...],
     registry: CardPlanRegistry,
+    task: TaskSpec,
     embedded: bool,
 ) -> Iterator[tuple[TemplatePlanActionAssignment, ...]]:
     if embedded:
-        definition = registry.require_template(slots[0].template_id)
-        if supports_business_action(definition, actions[0], "2x4"):
-            yield (
-                TemplatePlanActionAssignment(
-                    actionId=actions[0].action_id,
-                    consumer="business-template",
-                    businessPosition=0,
-                ),
-            )
+        for slot in slots:
+            definition = registry.require_template(slot.template_id)
+            if supports_business_action(definition, actions[0], "2x4"):
+                yield (
+                    TemplatePlanActionAssignment(
+                        actionId=actions[0].action_id,
+                        consumer="business-template",
+                        businessPosition=slot.position,
+                    ),
+                )
+        return
+    if any(
+        not _action_template_has_complete_signature(f"{template}@1", task, registry)
+        for template in layout.action_templates
+    ):
         return
     owners = {
         action.action_id: _action_owner_positions(action, slots, registry) for action in actions
@@ -278,6 +295,10 @@ def _action_assignments(
             ordered, layout.action_templates, layout.action_owners, strict=True
         ):
             positions = owners.get(action.action_id, ())
+            # Only the migrated weather/countdown pair permits either mirrored
+            # layout: the visual Action slot may differ from its data owner.
+            if _is_weather_countdown_action_layout(layout, slots):
+                owner = None
             if owner is not None and owner not in positions:
                 break
             position = owner
@@ -296,6 +317,48 @@ def _action_assignments(
         # 共享操作区保持输入事件顺序；只有成对按钮需要按业务重排。
         if all(owner is None for owner in layout.action_owners):
             break
+
+
+def _action_template_has_complete_signature(
+    template_id: str,
+    task: TaskSpec,
+    registry: CardPlanRegistry,
+) -> bool:
+    """Exclude plans whose root Action cannot receive its required trusted asset."""
+    definition = registry.require_template(template_id)
+    assets = tuple(
+        asset
+        for asset in task.assetCandidates
+        if isinstance(asset, dict) and isinstance(asset.get("src"), str) and asset["src"]
+    )
+    for variant in definition.variants:
+        properties = variant.parameters_schema.get("properties", {})
+        for name in variant.parameters_schema.get("required", ()):
+            if _parameter_value_kind(name, properties.get(name, {})) != "asset-source":
+                continue
+            required_tags = set(definition.asset_parameter_semantic_tags.get(name, ()))
+            if not any(required_tags.issubset(_asset_semantic_tags(asset)) for asset in assets):
+                break
+        else:
+            return True
+    return False
+
+
+def _is_weather_countdown_action_layout(
+    layout: WideLayoutOption,
+    slots: tuple[TemplatePlanBusinessSlot, ...],
+) -> bool:
+    return (
+        layout.layout_id in {"WideFullHeroActionLayout", "WideHeroActionFullLayout"}
+        and len(slots) == 2
+        and slots[0].template_id
+        in {
+            "WeatherOverviewThreeDayForecastFull@1",
+            "WeatherOverviewDestinationDayFull@1",
+        }
+        and slots[1].template_id
+        in {"CountdownOverviewEventHero@1", "CountdownOverviewDepartureHero@1"}
+    )
 
 
 def _action_owner_positions(

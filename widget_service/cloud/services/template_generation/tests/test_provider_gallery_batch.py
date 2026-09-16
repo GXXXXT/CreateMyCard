@@ -210,7 +210,7 @@ def test_gallery_inputs_cover_all_provider_business_scenarios(tmp_path: Path) ->
     # newer upstream generator (shuifeng/codex/fix-provider-gallery-validation)
     # targets a far-ahead mainline with templates this branch does not carry.
     # Numbers below are pinned to what the current tree actually derives.
-    assert len(all_cases) == 143
+    assert len(all_cases) == 144
     assert {case.appearanceId for case in all_cases} == {"fusion"}
     assert {case.prdVer for case in all_cases} == {FUSION_PRD_VERSION}
     for case in all_cases:
@@ -300,7 +300,7 @@ def test_gallery_inputs_cover_all_provider_business_scenarios(tmp_path: Path) ->
             if case.targetTemplateId:
                 targeted_cases.append(case)
     # NOTE(gallery-counts): see test_gallery_inputs_cover_all_provider_business_scenarios.
-    assert len(targeted_cases) == 141
+    assert len(targeted_cases) == 143
     battery_full_ids = {
         case.targetTemplateId
         for case in targeted_cases
@@ -564,10 +564,10 @@ async def test_gallery_dry_run_emits_missing_and_not_generated_results(
     summary = await runner.run(input_root, output_root, dry_run=True)
 
     # NOTE(gallery-counts): see test_gallery_inputs_cover_all_provider_business_scenarios.
-    assert summary.total == 143
+    assert summary.total == 144
     assert summary.failed == 0
-    assert summary.missing == 11
-    assert summary.not_generated == 132
+    assert summary.missing == 10
+    assert summary.not_generated == 134
     assert service.requests == []
     reloaded = load_gallery_input_manifest(input_root)
     assert len(reloaded.providers) == 10

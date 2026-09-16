@@ -283,7 +283,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         if path.is_dir()
     }
 
-    assert len(registry.provider_template_ids) == 172
+    assert len(registry.provider_template_ids) == 175
     assert {
         "ActivityOverviewFull@1",
         "AppUsageOverviewFull@1",
@@ -1052,7 +1052,7 @@ def test_business_groups_are_derived_from_provider_templates() -> None:
     assert provider_layout_components == set(registry.ux_layout_components)
     assert len(registry.ux_business_component_provider_ids) == 12
     calendar = registry.require_ux_business_component("CalendarOverview")
-    assert len(calendar.local_template_ids) == 25
+    assert len(calendar.local_template_ids) == 26
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
     assert not any(
         template_id.startswith("DateOverview")
@@ -3088,13 +3088,15 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
     registry = get_cardplan_registry()
     calendar = registry.require_ux_business_component("CalendarOverview")
 
-    assert len(calendar.local_template_ids) == 25
+    assert len(calendar.local_template_ids) == 26
     assert "ScheduleOverviewHeroContent@1" in calendar.local_template_ids
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
     assert "ScheduleOverviewTimeSupport@1" in calendar.local_template_ids
-    assert not any(
-        template_id.endswith("Compact@1") for template_id in calendar.local_template_ids
-    )
+    assert [
+        template_id
+        for template_id in calendar.local_template_ids
+        if template_id.endswith("Compact@1")
+    ] == ["ScheduleOverviewReminderCompact@1"]
 
     date_full = registry.require_template("ScheduleOverviewDateFull@1")
     assert date_full.primary_data == (

@@ -323,6 +323,9 @@ def test_generic_metric_rejects_missing_or_ambiguous_binding_root(roots):
 
 def test_four_actions_are_limited_to_supported_wide_layouts():
     task = _weather_battery_task(False)
+    task.assetCandidates = [
+        {"src": "resources/base/media/heart_fill.svg", "description": "动作图标"}
+    ]
     ids = (
         "event.open.weather",
         "event.open.settings.battery",

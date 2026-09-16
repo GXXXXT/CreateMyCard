@@ -41,7 +41,8 @@
   - `WeatherOverviewFeelsLikeWindSupport@1`：左侧两行展示体感温度和风力等级，右侧固定 24vp 温度计图标（`temperatureIcon`）。
   - `WeatherOverviewDailySummaryFull@1`：日期天气摘要 Full，展示城市、日期、星期、温度范围、降雨概率和空气质量。
   - `WeatherOverviewThreeDayForecastFull@1`：三日天气 Full，按顺序完整展示 `daily[0..2]` 每天的
-    日期、星期、天气现象、温度范围和降雨概率；可传入可信 `location` 作为标题前缀。
+    日期、星期、天气现象、降雨概率和温度范围；每天固定两行，上行是完整日期与星期，下行是天气、
+    降雨概率和完整温度范围，不得裁掉低温；可传入可信 `location` 作为标题前缀。
   - `WeatherOverviewDestinationDayFull@1`：目的地出发日天气 Full，展示 `daily[3]` 的温度范围、
     降雨概率和空气质量；可传入可信 `location` 和 `targetDate`。
 - 所有天气模板的 `location` 仅作城市显示兜底：只能使用本轮 `trustedStringLiterals` 下发的

@@ -2580,13 +2580,19 @@ Column(
 #Template WeatherOverviewThreeDayForecastFull@1(props: { location?: string })
 data = {
     firstDate: $path("/daily/0/date"),
+    firstWeekday: $path("/daily/0/weekday"),
     firstCondition: $path("/daily/0/condition"),
+    firstRainProbability: $path("/daily/0/rainProbabilityPercent"),
     firstTemperatureRange: $path("/daily/0/temperatureRangeText"),
     secondDate: $path("/daily/1/date"),
+    secondWeekday: $path("/daily/1/weekday"),
     secondCondition: $path("/daily/1/condition"),
+    secondRainProbability: $path("/daily/1/rainProbabilityPercent"),
     secondTemperatureRange: $path("/daily/1/temperatureRangeText"),
     thirdDate: $path("/daily/2/date"),
+    thirdWeekday: $path("/daily/2/weekday"),
     thirdCondition: $path("/daily/2/condition"),
+    thirdRainProbability: $path("/daily/2/rainProbabilityPercent"),
     thirdTemperatureRange: $path("/daily/2/temperatureRangeText")
 }
 
@@ -2599,7 +2605,7 @@ Column(
     "justifyContent": "start",
     "alignItems": "start",
     "clip": true,
-    "constraintSize": { "minWidth": 0, "minHeight": 0, "maxHeight": 103 }
+    "constraintSize": { "minWidth": 0, "minHeight": 0, "maxHeight": 102 }
   },
   Row(
     {
@@ -2637,96 +2643,147 @@ Column(
       }
     )
   ),
-  Row(
+  Column(
     {
       "width": "matchParent",
-      "height": 16,
-      "margin": { "top": 15 },
+      "height": 24,
+      "margin": { "top": 5 },
       "itemMargin": 0,
-      "justifyContent": "spaceBetween",
-      "alignItems": "center",
-      "clip": true,
-      "constraintSize": { "minWidth": 0, "minHeight": 0 }
+      "justifyContent": "start",
+      "alignItems": "start"
     },
-    Stack(
-      { "width": 31, "height": 16, "alignContent": "topEnd", "clip": true, "flexShrink": 0 },
+    Row(
+      {
+        "width": "matchParent",
+        "height": 12,
+        "itemMargin": 0,
+        "justifyContent": "spaceBetween",
+        "alignItems": "center"
+      },
       Text(
         data.firstDate,
-        { "width": 80, "height": 16, "fontSize": 11, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "clip", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
+        { "width": 64, "height": 12, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
+      ),
+      Text(
+        data.firstWeekday,
+        { "width": 40, "height": 12, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
       )
     ),
     Row(
-      { "width": 62, "height": 16, "itemMargin": 0, "justifyContent": "end", "alignItems": "center", "clip": true, "flexShrink": 0 },
-      Text(data.firstCondition, { "width": 24, "height": 16, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "clip" }),
-      Text("｜", { "width": 12, "height": 16, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "textAlign": "center", "maxLines": 1, "textOverflow": "clip" }),
-      Stack(
-        { "width": 26, "height": 16, "alignContent": "topEnd", "clip": true, "flexShrink": 0 },
-        Text(
-          data.firstTemperatureRange,
-          { "width": 80, "height": 16, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "clip", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
-        )
+      {
+        "width": "matchParent",
+        "height": 12,
+        "itemMargin": 0,
+        "justifyContent": "spaceBetween",
+        "alignItems": "center"
+      },
+      Text(
+        data.firstCondition,
+        { "width": 32, "height": 12, "fontSize": 10, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
+      ),
+      Text(
+        data.firstRainProbability,
+        { "width": 24, "height": 12, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
+      ),
+      Text(
+        data.firstTemperatureRange,
+        { "width": 54, "height": 12, "fontSize": 10, "fontWeight": 500, "fontColor": $theme('primaryColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
       )
     )
   ),
-  Row(
+  Column(
     {
       "width": "matchParent",
-      "height": 16,
-      "margin": { "top": 12 },
+      "height": 24,
+      "margin": { "top": 4 },
       "itemMargin": 0,
-      "justifyContent": "spaceBetween",
-      "alignItems": "center",
-      "clip": true,
-      "constraintSize": { "minWidth": 0, "minHeight": 0 }
+      "justifyContent": "start",
+      "alignItems": "start"
     },
-    Stack(
-      { "width": 31, "height": 16, "alignContent": "topEnd", "clip": true, "flexShrink": 0 },
+    Row(
+      {
+        "width": "matchParent",
+        "height": 12,
+        "itemMargin": 0,
+        "justifyContent": "spaceBetween",
+        "alignItems": "center"
+      },
       Text(
         data.secondDate,
-        { "width": 80, "height": 16, "fontSize": 11, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "clip", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
+        { "width": 64, "height": 12, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
+      ),
+      Text(
+        data.secondWeekday,
+        { "width": 40, "height": 12, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
       )
     ),
     Row(
-      { "width": 62, "height": 16, "itemMargin": 0, "justifyContent": "end", "alignItems": "center", "clip": true, "flexShrink": 0 },
-      Text(data.secondCondition, { "width": 24, "height": 16, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "clip" }),
-      Text("｜", { "width": 12, "height": 16, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "textAlign": "center", "maxLines": 1, "textOverflow": "clip" }),
-      Stack(
-        { "width": 26, "height": 16, "alignContent": "topEnd", "clip": true, "flexShrink": 0 },
-        Text(
-          data.secondTemperatureRange,
-          { "width": 80, "height": 16, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "clip", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
-        )
+      {
+        "width": "matchParent",
+        "height": 12,
+        "itemMargin": 0,
+        "justifyContent": "spaceBetween",
+        "alignItems": "center"
+      },
+      Text(
+        data.secondCondition,
+        { "width": 32, "height": 12, "fontSize": 10, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
+      ),
+      Text(
+        data.secondRainProbability,
+        { "width": 24, "height": 12, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
+      ),
+      Text(
+        data.secondTemperatureRange,
+        { "width": 54, "height": 12, "fontSize": 10, "fontWeight": 500, "fontColor": $theme('primaryColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
       )
     )
   ),
-  Row(
+  Column(
     {
       "width": "matchParent",
-      "height": 16,
-      "margin": { "top": 11 },
+      "height": 24,
+      "margin": { "top": 5 },
       "itemMargin": 0,
-      "justifyContent": "spaceBetween",
-      "alignItems": "center",
-      "clip": true,
-      "constraintSize": { "minWidth": 0, "minHeight": 0 }
+      "justifyContent": "start",
+      "alignItems": "start"
     },
-    Stack(
-      { "width": 31, "height": 16, "alignContent": "topEnd", "clip": true, "flexShrink": 0 },
+    Row(
+      {
+        "width": "matchParent",
+        "height": 12,
+        "itemMargin": 0,
+        "justifyContent": "spaceBetween",
+        "alignItems": "center"
+      },
       Text(
         data.thirdDate,
-        { "width": 80, "height": 16, "fontSize": 11, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "clip", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
+        { "width": 64, "height": 12, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
+      ),
+      Text(
+        data.thirdWeekday,
+        { "width": 40, "height": 12, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
       )
     ),
     Row(
-      { "width": 62, "height": 16, "itemMargin": 0, "justifyContent": "end", "alignItems": "center", "clip": true, "flexShrink": 0 },
-      Text(data.thirdCondition, { "width": 24, "height": 16, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "clip" }),
-      Text("｜", { "width": 12, "height": 16, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "textAlign": "center", "maxLines": 1, "textOverflow": "clip" }),
-      Stack(
-        { "width": 26, "height": 16, "alignContent": "topEnd", "clip": true, "flexShrink": 0 },
-        Text(
-          data.thirdTemperatureRange,
-          { "width": 80, "height": 16, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "clip", "constraintSize": { "minWidth": 0, "minHeight": 0 } }
-        )
+      {
+        "width": "matchParent",
+        "height": 12,
+        "itemMargin": 0,
+        "justifyContent": "spaceBetween",
+        "alignItems": "center"
+      },
+      Text(
+        data.thirdCondition,
+        { "width": 32, "height": 12, "fontSize": 10, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
+      ),
+      Text(
+        data.thirdRainProbability,
+        { "width": 24, "height": 12, "fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
+      ),
+      Text(
+        data.thirdTemperatureRange,
+        { "width": 54, "height": 12, "fontSize": 10, "fontWeight": 500, "fontColor": $theme('primaryColor'), "textAlign": "end", "maxLines": 1, "textOverflow": "ellipsis", "flexShrink": 0 }
       )
     )
   )

@@ -32,9 +32,16 @@ from services.template_generation.engine.cardplan.registry import (
     CardPlanRegistry,
     get_cardplan_registry,
 )
+from services.template_generation.engine.cardplan.template_plan_planner import (
+    plan_template_candidates,
+    planner_component_candidates,
+    planner_required_template_groups,
+    planner_scope,
+)
 from services.template_generation.engine.cardplan.template_retrieval import (
     TemplateRetrievalQuery,
-    retrieve_template_variants,
+    TemplateSearchIntent,
+    search_template_variants,
 )
 
 _CALENDAR_FULL = "ScheduleOverviewEventCountTwoEventsFull@1"
@@ -114,11 +121,7 @@ def _calendar_action(event_index: int) -> EventAction:
         args={
             "intentName": "ViewCalendarEvent",
             "params": {
-                "entityId": (
-                    "{{ ${/data/calendar/events/"
-                    f"{event_index}/entityId"
-                    "} }}"
-                )
+                "entityId": (f"{{{{ ${{/data/calendar/events/{event_index}/entityId}} }}}}")
             },
         },
     )
@@ -339,7 +342,7 @@ def _health_countdown_case() -> _WideCase:
                 "src": _RUN_ICON,
                 "description": "跑步和锻炼入口图标",
                 "sceneTags": ["running", "health"],
-            }
+            },
         ],
         dataModelSchema={
             "data": {
@@ -365,12 +368,24 @@ def _health_countdown_case() -> _WideCase:
 
 def _route(case: _WideCase) -> _RoutedCase:
     registry = get_cardplan_registry()
-    selection = retrieve_template_variants(
-        case.query,
+    intent = TemplateSearchIntent(
+        requiredOutputFieldsByCapability=case.query.required_output_fields_by_capability,
+        action=case.query.action_ids,
+    )
+    search_result = search_template_variants(
+        intent,
         case.task_spec,
         registry,
         case.bindings,
         case.card_spec,
+    )
+    plans = plan_template_candidates(intent, search_result, case.task_spec, registry)
+    selection = TemplateRouteSelection(
+        scope=planner_scope(plans),
+        componentCandidates=planner_component_candidates(plans),
+        actionIds=intent.action_ids,
+        requiredTemplateGroups=planner_required_template_groups(plans),
+        requiredOutputFieldsByCapability=intent.required_output_fields_by_capability,
     )
     projection = build_ux_mixed_prompt(
         task_spec=case.task_spec,
@@ -378,6 +393,7 @@ def _route(case: _WideCase) -> _RoutedCase:
         scope=selection.scope,
         component_candidates=selection.component_candidates,
         required_template_groups=selection.required_template_groups,
+        template_plans=plans,
         registry=registry,
     )
     return _RoutedCase(registry, selection, projection)
@@ -407,9 +423,7 @@ def _compile(
         source,
         task_spec=case.task_spec,
         contract=routed.projection.contract,
-        protocol_profile=A2UIProtocolRegistry(
-            A2UI_FORM_PROTOCOL_PROFILE_ID
-        ).get_profile(),
+        protocol_profile=A2UIProtocolRegistry(A2UI_FORM_PROTOCOL_PROFILE_ID).get_profile(),
         registry=routed.registry,
         business_title=title,
         card_spec=case.card_spec,
@@ -462,8 +476,7 @@ def test_q068_routes_two_fulls_and_embeds_the_calendar_action() -> None:
     assert countdown_group == (_COUNTDOWN_DETAIL_FULL,)
     assert selection.component_candidates[0].available_template_ids == countdown_group
     assert all(
-        provider_template_layout_kind(template_id) == "Full"
-        for template_id in countdown_group
+        provider_template_layout_kind(template_id) == "Full" for template_id in countdown_group
     )
     assert calendar_group == (_CALENDAR_FULL,)
     assert routed.projection.allowed_layout_ids == ("WideTwoFullLayout",)
@@ -524,9 +537,7 @@ def test_q068_routes_two_fulls_and_embeds_the_calendar_action() -> None:
     for component in _a2ui_components(compilation):
         styles = component.get("styles")
         if component.get("component") == "Column" and isinstance(styles, dict):
-            is_event_text_stack = (
-                styles.get("height") == 34 and component.get("itemMargin") == 0
-            )
+            is_event_text_stack = styles.get("height") == 34 and component.get("itemMargin") == 0
             if is_event_text_stack and len(component.get("children", ())) == 2:
                 event_text_columns.append(component)
         if component.get("component") != "Divider":
@@ -575,8 +586,7 @@ def test_weather_full_and_countdown_hero_keep_the_action_at_the_layout_root(
     assert selection.component_candidates[0].available_template_ids == weather_group
     assert selection.component_candidates[1].available_template_ids == countdown_group
     assert all(
-        provider_template_layout_kind(template_id) == "Hero"
-        for template_id in countdown_group
+        provider_template_layout_kind(template_id) == "Hero" for template_id in countdown_group
     )
     assert routed.projection.allowed_layout_ids == ("WideHeroActionFullLayout",)
     assert "PillAction@1" in routed.projection.contract.allowed_template_ids
@@ -603,8 +613,7 @@ def test_weather_full_and_countdown_hero_keep_the_action_at_the_layout_root(
     assert hero_action_column.get("itemMargin") == 8
     hero_slot = components_by_id[hero_action_column["children"][0]]
     action_slot = components_by_id[hero_action_column["children"][1]]
-    assert hero_slot["styles"].get("layoutWeight") == 1
-    assert "height" not in hero_slot["styles"]
+    assert hero_slot["styles"].get("height") == 82
     assert action_slot["styles"].get("height") == 36
     target_hero_height = _TARGET_BODY_HEIGHT - 8 - 36
     assert target_hero_height == 82
@@ -638,48 +647,40 @@ def test_weather_full_and_countdown_hero_keep_the_action_at_the_layout_root(
         content = component.get("content")
         if isinstance(content, str) and "/daily/" in content:
             daily_summaries.append(content)
-    daily_rows = [
-        component
-        for component in components
-        if component.get("component") == "Row"
-        and component.get("styles", {}).get("height") == 16
-        and component.get("styles", {}).get("justifyContent") == "spaceBetween"
-    ]
-    trailing_value_stacks = [
-        component
-        for component in components
-        if component.get("component") == "Stack"
-        and component.get("styles", {}).get("alignContent") == "topEnd"
-        and component.get("styles", {}).get("clip") is True
-    ]
-    separators = [
-        component
-        for component in components
-        if component.get("component") == "Text" and component.get("content") == "｜"
-    ]
-    assert len(daily_summaries) == 9
-    assert len(daily_rows) == 3
+    assert len(daily_summaries) == 15
     weather_rows = [components_by_id[item] for item in weather_root["children"]]
-    row_heights = [row["styles"].get("height", 0) for row in weather_rows]
-    top_margins = [
-        row["styles"].get("margin", {}).get("top", 0) for row in weather_rows
+    assert len(weather_rows) == 4
+    assert [row["styles"].get("height") for row in weather_rows] == [16, 24, 24, 24]
+    total_height = sum(row["styles"].get("height", 0) for row in weather_rows)
+    total_height += sum(row["styles"].get("margin", {}).get("top", 0) for row in weather_rows)
+    assert total_height <= _TARGET_MASK_CONTENT_HEIGHT
+    assert weather_root["styles"].get("constraintSize", {}).get("maxHeight") <= 102
+    for day_group in weather_rows[1:]:
+        detail_rows = [components_by_id[item] for item in day_group["children"]]
+        assert len(detail_rows) == 2
+        assert all(row["styles"].get("height") == 12 for row in detail_rows)
+        assert all(row["styles"].get("width") == "matchParent" for row in detail_rows)
+    temperature_texts = [
+        component
+        for component in components
+        if component.get("component") == "Text"
+        and isinstance(component.get("content"), str)
+        and "temperatureRangeText" in component["content"]
     ]
-    assert row_heights == [16, 16, 16, 16]
-    assert sum(row_heights) + sum(top_margins) <= _TARGET_MASK_CONTENT_HEIGHT
-    assert weather_root["styles"].get("constraintSize", {}).get("maxHeight") == 103
-    assert sum(item["styles"].get("width") == 31 for item in trailing_value_stacks) == 3
-    assert sum(item["styles"].get("width") == 26 for item in trailing_value_stacks) == 3
-    assert len(separators) == 3
-    assert all(item["styles"].get("width") == 12 for item in separators)
-    assert all(item["styles"].get("textAlign") == "center" for item in separators)
-    assert "降雨 " not in component_source
-    assert '"left":-' not in component_source
+    assert len(temperature_texts) == 3
+    assert all(item["styles"].get("width", 0) >= 50 for item in temperature_texts)
+    assert not any(
+        item.get("component") == "Stack"
+        and item.get("styles", {}).get("width") == 26
+        and item.get("styles", {}).get("clip") is True
+        for item in components
+    )
     for day_index in range(3):
         assert f"/daily/{day_index}/date" in component_source
+        assert f"/daily/{day_index}/weekday" in component_source
         assert f"/daily/{day_index}/condition" in component_source
+        assert f"/daily/{day_index}/rainProbabilityPercent" in component_source
         assert f"/daily/{day_index}/temperatureRangeText" in component_source
-        assert f"/daily/{day_index}/weekday" not in component_source
-        assert f"/daily/{day_index}/rainProbabilityPercent" not in component_source
 
 
 def test_generic_weather_countdown_keeps_both_mirrored_layouts() -> None:
@@ -724,7 +725,7 @@ def test_q084_routes_health_full_countdown_compact_and_compact_action() -> None:
 
     action = _only_action(routed.projection)
     source = (
-        'Template("WideFullTwoCompactLayout@1",{},'
+        'Template("WideFullTwoCompactLayout@1",{"compactRows":true},'
         f'Template("{_HEALTH_FULL}",{{}}),'
         f'Template("{_COUNTDOWN_COMPACT}",'
         f'{{"countdownIcon":"{_COUNTDOWN_ICON}"}}),'
@@ -741,12 +742,11 @@ def test_q084_routes_health_full_countdown_compact_and_compact_action() -> None:
     layout_root = components_by_id["template_root"]
     health_slot = components_by_id[layout_root["children"][0]]
     compact_column = components_by_id[layout_root["children"][1]]
-    assert compact_column.get("itemMargin") == 8
+    assert compact_column.get("itemMargin") == 12
     compact_slots = [components_by_id[item] for item in compact_column["children"]]
     assert len(compact_slots) == 2
-    assert all(slot["styles"].get("layoutWeight") == 1 for slot in compact_slots)
-    assert all("height" not in slot["styles"] for slot in compact_slots)
-    assert (_TARGET_BODY_HEIGHT - 8) // 2 == 59
+    assert all(slot["styles"].get("height") == 57 for slot in compact_slots)
+    assert 57 * 2 + 12 == _TARGET_BODY_HEIGHT
 
     health_root = components_by_id[health_slot["children"][0]]
     assert health_root["styles"].get("justifyContent") == "spaceBetween"

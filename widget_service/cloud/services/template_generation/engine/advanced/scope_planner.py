@@ -945,8 +945,7 @@ def resolve_scope_layout_ids(
             <= layout.max_children_by_size[task_spec.size]
         ):
             continue
-        business_action_layouts = {"TwoSupportLayout", "WideTwoFullLayout"}
-        direct_action_count = 0 if layout_id in business_action_layouts else action_count
+        direct_action_count = 0 if layout_id == "TwoSupportLayout" else action_count
         if direct_action_count < layout.min_action_children_by_size[task_spec.size]:
             continue
         if direct_action_count > layout.max_action_children_by_size[task_spec.size]:
