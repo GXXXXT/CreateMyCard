@@ -80,7 +80,6 @@ from .models import (
 )
 from .parser import ParsedCall, parse_hybrid_card, parse_ux_layout_card
 from .provider_bundle import provider_template_family_identity, provider_template_layout_kind
-from .q83_ux import adapt_wide_three_mask_ux
 from .registry import CardPlanRegistry
 
 _STANDARD_CONTAINERS = frozenset({"Row", "Column", "List", "Stack"})
@@ -489,13 +488,6 @@ def compile_ux_layout_card(
     )
     root = _apply_theme_content_color(root, contract, registry)
     root = _strip_advanced_component_markers(root)
-    root = adapt_wide_three_mask_ux(
-        root,
-        size=task_spec.size,
-        template_ids=tuple(state.template_ids),
-        app_version=task_spec.appVersion,
-        enable_background=registry.enable_fusion_ball,
-    )
     count, depth = _shape(root)
     if count > contract.limits.max_expanded_components:
         raise TerselConversionError("Hybrid expanded component budget exceeded.")
@@ -1237,13 +1229,6 @@ def _validate_provider_template_state(
                 raise TerselConversionError(
                     "Bluetooth Provider Template variant does not match "
                     "the trusted connection state."
-                )
-            return
-        if variant_name == "connectionBatteryCompact":
-            if facts.is_connected is None or facts.case_battery_level is None:
-                raise TerselConversionError(
-                    "Bluetooth Provider Template variant does not match "
-                    "the trusted connection and case battery state."
                 )
             return
         if variant_name == "earbudsSupport":

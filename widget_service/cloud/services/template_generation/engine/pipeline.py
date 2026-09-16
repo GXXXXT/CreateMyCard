@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import inspect
-import json
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
@@ -39,10 +38,6 @@ from services.template_generation.engine.cardplan.compiler import compile_ux_lay
 from services.template_generation.engine.cardplan.models import (
     CARDTPL_SOURCE_FORMATS,
     TemplatePlan,
-)
-from services.template_generation.engine.cardplan.prompt import (
-    _asset_semantic_tags,
-    action_bindings,
 )
 from services.template_generation.engine.cardplan.registry import (
     CardPlanRegistry,
@@ -99,7 +94,6 @@ async def generate_template_a2ui(
     trusted_template_candidate_ids: tuple[str, ...] = (),
     trusted_template_action_ids: tuple[str, ...] = (),
     trusted_template_sample_overrides: dict[str, Any] | None = None,
-    deterministic_plan: bool = False,
 ) -> TemplateEngineOutput:
     """先做 LLM 全量覆盖判断，再用受信模板确定性展开为 A2UI。"""
     logger.info(
@@ -139,47 +133,7 @@ async def generate_template_a2ui(
 
     try:
         template_plans: tuple[TemplatePlan, ...] = ()
-        if deterministic_plan:
-            intent = _deterministic_search_intent(
-                selected_task_spec,
-                coverage_bindings,
-            )
-            intent = restrict_search_intent_to_preferred_templates(
-                intent,
-                registry,
-                trusted_template_candidate_ids,
-            )
-            intent = _restrict_template_intent_actions(
-                intent,
-                trusted_template_action_ids,
-                selected_task_spec,
-            )
-            search_result = search_template_variants(
-                intent,
-                selected_task_spec,
-                registry,
-                coverage_bindings,
-                card_spec,
-                preferred_template_ids=trusted_template_candidate_ids,
-            )
-            template_plans = plan_template_candidates(
-                intent,
-                search_result,
-                selected_task_spec,
-                registry,
-            )
-            selection = TemplateRouteSelection(
-                scope=planner_scope(template_plans),
-                componentCandidates=planner_component_candidates(template_plans),
-                actionIds=intent.action_ids,
-                requiredTemplateGroups=planner_required_template_groups(template_plans),
-            )
-            logger.info(
-                f"{_MODULE} deterministic_template_retrieval matched=True "
-                f"business_candidate_count={len(search_result.business_candidates)} "
-                f"plan_count={len(template_plans)}"
-            )
-        elif controls.first_layer_component_selector == "llm":
+        if controls.first_layer_component_selector == "llm":
             selection = await plan_template_route_with_llm(
                 selected_task_spec,
                 data_shape,
@@ -262,7 +216,6 @@ async def generate_template_a2ui(
             template_plans=template_plans,
             registry=registry,
             model_client=model_client,
-            deterministic_plan=deterministic_plan,
         )
     except TemplateGenerationError:
         raise
@@ -288,17 +241,9 @@ def _with_trusted_sample_overrides(
         current: Any = schema
         for raw_part in pointer.removeprefix("/").split("/"):
             part = raw_part.replace("~1", "/").replace("~0", "~")
-            if isinstance(current, dict) and part in current:
-                current = current[part]
-                continue
-            if isinstance(current, list) and part.isdigit():
-                index = int(part)
-                if index < len(current):
-                    current = current[index]
-                    continue
-            else:
+            if not isinstance(current, dict) or part not in current:
                 raise ValueError(f"trusted sample override path is unavailable: {pointer}")
-            raise ValueError(f"trusted sample override path is unavailable: {pointer}")
+            current = current[part]
         if not isinstance(current, dict) or "sampleValue" not in current:
             raise ValueError(f"trusted sample override target is not a field: {pointer}")
         if sample_value is None or not isinstance(sample_value, (str, int, float, bool)):
@@ -336,152 +281,6 @@ def _task_spec_log_summary(task_spec: TaskSpec) -> dict[str, Any]:
     }
 
 
-def _deterministic_search_intent(
-    task_spec: TaskSpec,
-    coverage_bindings: tuple[CandidateDataBinding, ...],
-) -> TemplateSearchIntent:
-    """Build an exact template search contract from validated request candidates."""
-    fields_by_capability: dict[str, set[str]] = {}
-    for binding in coverage_bindings:
-        fields_by_capability.setdefault(binding.capabilityId, set()).update(
-            binding.candidateOutputFields
-        )
-    return TemplateSearchIntent(
-        requiredOutputFieldsByCapability={
-            capability_id: tuple(sorted(fields))
-            for capability_id, fields in fields_by_capability.items()
-        },
-        action=tuple(event.id for event in task_spec.eventCandidates if event.id),
-    )
-
-
-def _matching_asset_source(
-    task_spec: TaskSpec,
-    required_tags: tuple[str, ...],
-) -> str | None:
-    required = set(required_tags)
-    for asset in task_spec.assetCandidates:
-        source = asset.get("src") if isinstance(asset, dict) else None
-        if not isinstance(source, str) or not source:
-            continue
-        if required.issubset(set(_asset_semantic_tags(asset))):
-            return source
-    return None
-
-
-def _business_template_props(
-    template_id: str,
-    capability_id: str,
-    task_spec: TaskSpec,
-    card_spec: dict[str, Any],
-    registry: CardPlanRegistry,
-) -> dict[str, Any]:
-    definition = registry.require_template(template_id)
-    variant = definition.variants[0]
-    properties = variant.parameters_schema.get("properties", {})
-    props: dict[str, Any] = {}
-    for name, required_tags in definition.asset_parameter_semantic_tags.items():
-        if name not in properties:
-            continue
-        source = _matching_asset_source(task_spec, required_tags)
-        if source is not None:
-            props[name] = source
-    if "location" in properties:
-        for binding in card_spec.get("dataBindings", []):
-            if not isinstance(binding, dict) or binding.get("capabilityId") != capability_id:
-                continue
-            arguments = binding.get("arguments")
-            if not isinstance(arguments, dict):
-                continue
-            location = arguments.get("districtName") or arguments.get("prefectureName")
-            if isinstance(location, str) and location.strip():
-                props["location"] = location.strip()
-                break
-    return props
-
-
-def _action_icon_source(task_spec: TaskSpec, event_id: str) -> str | None:
-    desired_tags = {
-        token
-        for token in event_id.casefold().replace("-", ".").split(".")
-        if token not in {"event", "open", "settings", "details"}
-    }
-    ranked: list[tuple[int, int, str]] = []
-    for index, asset in enumerate(task_spec.assetCandidates):
-        source = asset.get("src") if isinstance(asset, dict) else None
-        if not isinstance(source, str) or not source:
-            continue
-        score = len(desired_tags.intersection(_asset_semantic_tags(asset)))
-        ranked.append((score, -index, source))
-    if not ranked:
-        return None
-    return max(ranked)[2]
-
-
-def _deterministic_plan_source(
-    plan: TemplatePlan,
-    task_spec: TaskSpec,
-    card_spec: dict[str, Any],
-    registry: CardPlanRegistry,
-) -> str:
-    """Serialize one validated atomic Template Plan without an extra model round-trip."""
-    embedded_actions = {
-        item.business_position: item.action_id
-        for item in plan.action_assignments
-        if item.consumer == "business-template"
-    }
-    children: list[str] = []
-    for slot in plan.business_slots:
-        props = _business_template_props(
-            slot.template_id,
-            slot.capability_id,
-            task_spec,
-            card_spec,
-            registry,
-        )
-        props.update(slot.field_bindings)
-        action_id = embedded_actions.get(slot.position)
-        if action_id is not None:
-            props["actionId"] = action_id
-        children.append(
-            f'Template("{slot.template_id}",{json.dumps(props, ensure_ascii=False)})'
-        )
-
-    bindings_by_id = {item.action_id: item for item in action_bindings(task_spec)}
-    for assignment in plan.action_assignments:
-        if assignment.consumer != "root-action":
-            continue
-        binding = bindings_by_id.get(assignment.action_id)
-        if binding is None:
-            raise TemplateGenerationError("Template Plan references an unavailable Action")
-        props = {
-            "actionId": binding.action_id,
-            "label": binding.display_label,
-        }
-        if assignment.action_template_id is None:
-            raise TemplateGenerationError("Template Plan root Action has no template")
-        action_definition = registry.require_template(assignment.action_template_id)
-        properties = action_definition.variants[0].parameters_schema.get("properties", {})
-        if "icon" in properties:
-            icon = _action_icon_source(task_spec, binding.event_id)
-            if icon is not None:
-                props["icon"] = icon
-        if (
-            "showFavoriteSubtitle" in properties
-            and binding.event_id == "event.open.music.favorite"
-        ):
-            props["showFavoriteSubtitle"] = True
-        children.append(
-            f'Template("{assignment.action_template_id}",'
-            f'{json.dumps(props, ensure_ascii=False)})'
-        )
-    return (
-        f'Template("{plan.layout_template_id}",{{}},'
-        + ",".join(children)
-        + ");"
-    )
-
-
 def _prompt_size_summary(messages: list[dict[str, str]]) -> dict[str, int]:
     system_chars = sum(
         len(item["content"])
@@ -513,7 +312,6 @@ async def _generate_selected_templates(
     registry: CardPlanRegistry,
     model_client: Any,
     template_plans: tuple[TemplatePlan, ...] = (),
-    deterministic_plan: bool = False,
 ) -> TemplateEngineOutput:
     generic_paths: list[str] = []
     for plan in template_plans:
@@ -554,20 +352,8 @@ async def _generate_selected_templates(
     messages = projection.messages
     repair_count = 0
     while True:
-        if deterministic_plan and template_plans:
-            raw_output = _deterministic_plan_source(
-                template_plans[0],
-                projected_task_spec,
-                card_spec,
-                registry,
-            )
-        else:
-            phase = (
-                "advanced-mixed-body"
-                if repair_count == 0
-                else "advanced-mixed-body-repair"
-            )
-            raw_output = await _generate_hybrid_body(model_client, messages, phase=phase)
+        phase = "advanced-mixed-body" if repair_count == 0 else "advanced-mixed-body-repair"
+        raw_output = await _generate_hybrid_body(model_client, messages, phase=phase)
         try:
             framed_output, _ = frame_ux_layout_root_children(
                 raw_output,
@@ -593,10 +379,6 @@ async def _generate_selected_templates(
             )
             if repair_count >= _MAX_BODY_REPAIRS:
                 raise TemplateGenerationError("template body validation failed") from exc
-            if deterministic_plan and template_plans:
-                raise TemplateGenerationError(
-                    "deterministic template plan failed validation"
-                ) from exc
             repair_count += 1
             messages = build_ux_mixed_validation_retry_prompt(
                 projection.messages,

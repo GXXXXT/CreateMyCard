@@ -283,7 +283,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         if path.is_dir()
     }
 
-    assert len(registry.provider_template_ids) == 166
+    assert len(registry.provider_template_ids) == 164
     assert {
         "ActivityOverviewFull@1",
         "AppUsageOverviewFull@1",
@@ -296,7 +296,6 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "BatteryOverviewChargingRingHero@1",
         "BatteryOverviewHealthLevelHero@1",
         "BluetoothDeviceOverviewConnectionSupport@1",
-        "BluetoothDeviceOverviewConnectionBatteryCompact@1",
         "BluetoothDeviceOverviewEarbudPairFull@1",
         "BluetoothDeviceOverviewEarbudsFull@1",
         "BluetoothDeviceOverviewEarphoneCaseHero@1",
@@ -341,7 +340,6 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "WeatherOverviewDailyDateFull@1",
         "WeatherOverviewDailyHealthFull@1",
         "WeatherOverviewDailyRainFull@1",
-        "WeatherOverviewCyclingRainFull@1",
         "WeatherOverviewDualCityFull@1",
         "WeatherOverviewFull@1",
         "WeatherOverviewHero@1",
@@ -2832,7 +2830,6 @@ def test_business_artwork_and_monochrome_icons_keep_explicit_color_policies() ->
         ("BluetoothDeviceOverviewTripleBatteryWideHalf@1", "deviceIcon"),
         ("BluetoothDeviceOverviewTripleBatteryWideHalf@1", "leftEarIcon"),
         ("BluetoothDeviceOverviewTripleBatteryWideHalf@1", "rightEarIcon"),
-        ("BluetoothDeviceOverviewConnectionBatteryCompact@1", "caseIcon"),
         ("HeartRateOverviewIconCompact@1", "sourceIcon"),
         ("HeartRateOverviewIconHero@1", "sourceIcon"),
         ("HeartRateOverviewUpdatedIconHero@1", "sourceIcon"),
@@ -6879,59 +6876,6 @@ async def test_template_facade_returns_only_compact_source_dsl_string(monkeypatc
 
 
 @pytest.mark.asyncio
-async def test_template_facade_deterministic_plan_does_not_require_model_runtime(
-    monkeypatch,
-):
-    class Output:
-        a2ui = _minimal_template_a2ui()
-        template_ids = ("WeatherOverviewFull@1",)
-        expanded_component_count = 3
-
-    async def generate(
-        _task_spec: TaskSpec,
-        _card_spec: dict,
-        _bindings: tuple[CandidateDataBinding, ...],
-        model_client: Any,
-        *,
-        enable_fusion_ball: bool,
-        deterministic_plan: bool,
-    ) -> Output:
-        assert model_client is None
-        assert enable_fusion_ball is False
-        assert deterministic_plan is True
-        return Output()
-
-    def fail_model_client(*_args: Any) -> Any:
-        raise AssertionError("deterministic template routing must not create a model client")
-
-    monkeypatch.setattr(facade, "create_template_model_client", fail_model_client)
-    monkeypatch.setattr(facade, "generate_template_engine_a2ui", generate)
-
-    result = await facade.request_template_source_dsl(
-        _weather_task_spec(),
-        _weather_card_spec(),
-        (),
-        processor_kind=DslProcessorKind.DESIGN_COMPACT,
-        protocol_profile=A2UIProtocolRegistry(
-            A2UI_FORM_PROTOCOL_PROFILE_ID
-        ).get_profile(),
-        model_runtime=None,
-        model_request_context=ModelRequestContext(
-            session_id="session",
-            interaction_id="interaction",
-            device_id="device",
-            country_code="CN",
-            app_version=_TEST_APP_VERSION,
-            app_name="CreateMyCard",
-        ),
-        enable_fusion_ball=False,
-        deterministic_plan=True,
-    )
-
-    assert isinstance(result, str)
-
-
-@pytest.mark.asyncio
 async def test_template_facade_preserves_effective_bindings(monkeypatch):
     observed_fields: list[str] = []
 
@@ -7586,243 +7530,6 @@ async def test_q043_care_weather_compiles_with_phone_action() -> None:
     assert "${/data/weather/current/uvIndex}" in output.a2ui
     assert "${/data/weather/current/airQuality}" in output.a2ui
     assert "CallPhone" in output.a2ui
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("include_wind_direction", [False, True])
-@pytest.mark.parametrize("enable_background", [False, True])
-async def test_q083_weather_earphone_uses_three_mask_wide_template(
-    include_wind_direction: bool, enable_background: bool, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from config.config import get_settings
-
-    monkeypatch.setattr(get_settings(), "CONFIG", {"fusion_ball_min_prd_version": "11.7.5.206"})
-
-    class NoModelCalls:
-        async def generate_json(self, *_args: Any, **_kwargs: Any) -> dict[str, Any]:
-            pytest.fail("deterministic Q083 must not call the retrieval model")
-
-        async def generate(self, *_args: Any, **_kwargs: Any) -> str:
-            pytest.fail("deterministic Q083 must not call the composition model")
-
-    def field(value: Any, field_type: str) -> dict[str, Any]:
-        return {
-            "type": field_type,
-            "description": "trusted provider field",
-            "sampleValue": value,
-        }
-
-    task_spec = TaskSpec(
-        userQuery="显示杭州当天风力、下雨概率、耳机连接和仓电量，并打开收藏歌单",
-        size="2x4",
-        appVersion="11.7.5.208",
-        eventCandidates=[
-            EventAction(
-                id="event.open.music.favorite",
-                call="clickToDeeplink",
-                args={
-                    "intentName": "Music",
-                    "uri": "hwmusic://favoriteSong",
-                },
-            )
-        ],
-        assetCandidates=[
-            {
-                "src": "resources/base/media/icon_weather_wind.svg",
-                "description": (
-                    "风力图标，主体为水滴状轮廓并带波浪气流；"
-                    "适用：风速、风向、风力等级。"
-                ),
-                "sceneTags": [],
-            },
-            {
-                "src": "resources/base/media/drop_1.svg",
-                "description": "双水滴实心图标，适用：湿度数据展示、饮水提醒、天气降雨信息。",
-            },
-            {
-                "src": "resources/base/media/earphone_case_16644.svg",
-                "description": "耳机充电盒图标",
-                "sceneTags": ["device", "audio"],
-            },
-            {
-                "src": "resources/base/media/music_fill.svg",
-                "description": "音乐歌单图标",
-                "sceneTags": ["music", "media"],
-            },
-        ],
-        dataModelSchema={
-            "data": {
-                "weather": {
-                    "current": {
-                        "windLevel": field(2, "integer"),
-                        "windDirection": field("东风", "string"),
-                    },
-                    "daily": [
-                        {"rainProbabilityPercent": field("65%", "string")}
-                    ],
-                },
-                "earphone": {
-                    "isConnected": field(False, "boolean"),
-                    "batteryLevel": field(76, "integer"),
-                },
-            }
-        },
-    )
-    bindings = (
-        CandidateDataBinding(
-            capabilityId="ViewWeather",
-            arguments={"prefectureName": "杭州市", "forecastDays": 1},
-            writeResultTo="/data/weather",
-            candidateOutputFields=[
-                "/current/windLevel",
-                "/current/windDirection",
-                "/daily/0/rainProbabilityPercent",
-            ],
-        ),
-        CandidateDataBinding(
-            capabilityId="GetEarphoneInfo",
-            arguments={},
-            writeResultTo="/data/earphone",
-            candidateOutputFields=["/isConnected", "/batteryLevel"],
-        ),
-    )
-    if not include_wind_direction:
-        task_spec.dataModelSchema["data"]["weather"]["current"].pop("windDirection")
-        bindings[0].candidateOutputFields.remove("/current/windDirection")
-    card_spec = {
-        "title": "骑行听歌",
-        "description": "风雨耳机和歌单",
-        "suggestSize": "2x4",
-        "dataBindings": [
-            {
-                "capabilityId": binding.capabilityId,
-                "arguments": binding.arguments,
-                "writeResultTo": binding.writeResultTo,
-            }
-            for binding in bindings
-        ],
-    }
-
-    output = await generate_template_a2ui(
-        task_spec,
-        card_spec,
-        bindings,
-        NoModelCalls(),
-        deterministic_plan=True,
-        enable_fusion_ball=enable_background,
-        trusted_template_candidate_ids=(
-            "WeatherOverviewCyclingRainFull@1",
-            "BluetoothDeviceOverviewConnectionBatteryCompact@1",
-        ),
-    )
-
-    assert output.template_ids == (
-        "WeatherOverviewCyclingRainFull@1",
-        "BluetoothDeviceOverviewConnectionBatteryCompact@1",
-        "CompactAction@1",
-        "WideFullTwoCompactLayout@1",
-    )
-    assert "${/data/weather/daily/0/rainProbabilityPercent}" in output.a2ui
-    assert "${/data/weather/current/windLevel}" in output.a2ui
-    assert "${/data/earphone/isConnected}" in output.a2ui
-    assert "${/data/earphone/batteryLevel}" in output.a2ui
-    assert ("${/data/weather/current/windDirection}" in output.a2ui) is include_wind_direction
-    assert "resources/base/media/icon_weather_wind.svg" not in output.a2ui
-    assert "resources/base/media/drop_1.svg" in output.a2ui
-    assert "resources/base/media/earphone_case_16644.svg" in output.a2ui
-    assert "resources/base/media/music_fill.svg" in output.a2ui
-    assert "播放我的收藏" in output.a2ui
-    assert '"width":140.8' in output.a2ui.replace(" ", "")
-    assert "杭州天气" in output.a2ui
-    messages = [json.loads(line) for line in output.a2ui.splitlines()]
-    components = messages[1]["updateComponents"]["components"]
-    wind_text = next(
-        item for item in components
-        if "${/data/weather/current/windLevel}" in str(item.get("content", ""))
-    )
-    assert "东风" not in str(wind_text.get("content", ""))
-    if include_wind_direction:
-        assert "? ${/data/weather/current/windDirection} : ''" in wind_text.get("content", "")
-    right_top = next(
-        component
-        for component in components
-        if component.get("styles", {}).get("height") == 60.8
-        and component.get("styles", {}).get("padding")
-        == {"left": 8.533333, "top": 6.4, "right": 8.533333, "bottom": 7.466667}
-        and not component.get("onClick")
-    )
-    right_bottom = next(
-        component
-        for component in components
-        if component.get("onClick")
-    )
-    assert right_bottom["styles"]["backgroundColor"] == right_top["styles"][
-        "backgroundColor"
-    ]
-    assert right_bottom["styles"]["borderRadius"] == 12.8
-    assert right_bottom["styles"]["clip"] is True
-    rain_ring = next(item for item in components if item.get("component") == "Progress")
-    assert rain_ring.get("value") == {
-        "call": "toProgressPercent",
-        "args": {"value": "{{ ${/data/weather/daily/0/rainProbabilityPercent} }}"},
-    }
-    assert rain_ring["styles"]["width"] == 46.933333
-    assert rain_ring["styles"]["height"] == 46.933333
-    ring_stack = next(item for item in components if rain_ring["id"] in item.get("children", []))
-    assert len(ring_stack["children"]) == 2
-    rain_row = next(item for item in components if ring_stack["id"] in item.get("children", []))
-    assert rain_row["component"] == "Row"
-    assert rain_row["styles"]["height"] == 46.933333
-    assert rain_row["itemMargin"] == 8.533333
-    weather_column = next(
-        item for item in components if rain_row.get("id") in item.get("children", [])
-    )
-    assert weather_column.get("itemMargin") == 0
-    for source in ("earphone_case_16644.svg", "music_fill.svg"):
-        icon = next(item for item in components if source in str(item.get("src", "")))
-        assert icon["styles"]["width"] == icon["styles"]["height"] == 25.6
-    ids = {item.get("id") for item in components}
-    assert ("fusionBallBackground" in ids) is enable_background
-    assert len(ids) == len(components)
-    root = next(item for item in components if item.get("id") == "root")
-    assert root.get("styles", {}).get("borderRadius") == 18
-    ring_icon = next(item for item in components if "drop_1.svg" in str(item.get("src", "")))
-    assert ring_icon.get("styles", {}).get("width") == pytest.approx(20 * 16 / 15)
-
-
-
-def test_trusted_sample_overrides_support_array_paths() -> None:
-    task_spec = TaskSpec(
-        userQuery="降雨概率",
-        size="2x4",
-        dataModelSchema={
-            "data": {
-                "weather": {
-                    "daily": [
-                        {
-                            "rainProbabilityPercent": {
-                                "type": "string",
-                                "description": "降雨概率",
-                                "sampleValue": "20%",
-                            }
-                        }
-                    ]
-                }
-            }
-        },
-    )
-
-    updated = template_pipeline_module._with_trusted_sample_overrides(
-        task_spec,
-        {"/data/weather/daily/0/rainProbabilityPercent": "65%"},
-    )
-
-    assert (
-        updated.dataModelSchema["data"]["weather"]["daily"][0][
-            "rainProbabilityPercent"
-        ]["sampleValue"]
-        == "65%"
-    )
 
 
 @pytest.mark.asyncio
