@@ -365,6 +365,43 @@ def test_checked_in_layout_templates_use_concrete_container_blueprints() -> None
             assert root.spread_children
 
 
+def test_wide_two_full_layout_owns_support_surface_for_each_slot() -> None:
+    root = get_cardplan_registry().require_template(
+        "WideTwoFullLayout@1"
+    ).variants[0].root
+
+    assert len(root.children) == 2
+    for slot_index, surface in enumerate(root.children):
+        surface_options = surface.values[0].properties
+        background = surface_options["backgroundColor"]
+        assert surface.component == "Column"
+        assert surface_options["layoutWeight"].value == 1
+        assert surface_options["height"].value == "matchParent"
+        assert background.kind == "theme"
+        assert background.name == "supportContentStyle.backgroundColor"
+        assert surface_options["borderRadius"].value == 16
+
+        assert len(surface.children) == 1
+        content = surface.children[0]
+        content_options = content.values[0].properties
+        assert content.component == "Column"
+        assert content_options["width"].value == "matchParent"
+        assert content_options["height"].value == "matchParent"
+        assert content_options["padding"].value == 12
+        assert _layout_child_slot_indexes(content) == [slot_index]
+
+
+def test_countdown_target_detail_full_delegates_surface_to_layout() -> None:
+    root = get_cardplan_registry().require_template(
+        "CountdownOverviewTargetDetailFull@1"
+    ).variants[0].root
+    options = root.values[0].properties
+
+    assert options["width"].value == "matchParent"
+    assert options["height"].value == "matchParent"
+    assert {"padding", "backgroundColor", "borderRadius"}.isdisjoint(options)
+
+
 def test_hero_title_content_layout_keeps_flexible_business_heights() -> None:
     root = get_cardplan_registry().require_template(
         "HeroTitleContentActionLayout@1"

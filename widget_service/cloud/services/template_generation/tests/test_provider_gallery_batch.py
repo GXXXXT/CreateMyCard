@@ -210,7 +210,7 @@ def test_gallery_inputs_cover_all_provider_business_scenarios(tmp_path: Path) ->
     # newer upstream generator (shuifeng/codex/fix-provider-gallery-validation)
     # targets a far-ahead mainline with templates this branch does not carry.
     # Numbers below are pinned to what the current tree actually derives.
-    assert len(all_cases) == 136
+    assert len(all_cases) == 144
     assert {case.appearanceId for case in all_cases} == {"fusion"}
     assert {case.prdVer for case in all_cases} == {FUSION_PRD_VERSION}
     for case in all_cases:
@@ -300,7 +300,7 @@ def test_gallery_inputs_cover_all_provider_business_scenarios(tmp_path: Path) ->
             if case.targetTemplateId:
                 targeted_cases.append(case)
     # NOTE(gallery-counts): see test_gallery_inputs_cover_all_provider_business_scenarios.
-    assert len(targeted_cases) == 133
+    assert len(targeted_cases) == 143
     battery_full_ids = {
         case.targetTemplateId
         for case in targeted_cases
@@ -408,7 +408,8 @@ def test_gallery_inputs_mark_missing_layout_families(tmp_path: Path) -> None:
         "CountdownOverview",
         "single-two-actions",
     )
-    assert countdown_compact.missingReason == "缺失 Compact 模板"
+    assert countdown_compact.targetTemplateId == "CountdownOverviewTargetCompact@1"
+    assert countdown_compact.missingReason == ""
     calendar_hero_ids = set()
     for provider in manifest.providers:
         for case in provider.cases:
@@ -469,23 +470,34 @@ async def test_gallery_runner_calls_public_service_and_groups_a2ui_by_provider(
     )
 
     assert not stale_output.exists()
-    assert summary.total == 3
-    assert summary.success == 2
+    assert summary.total == 6
+    assert summary.success == 6
     assert summary.failed == 0
-    assert summary.missing == 1
-    assert len(service.requests) == 2
-    assert service.prd_versions.count(FUSION_PRD_VERSION) == 2
+    assert summary.missing == 0
+    assert len(service.requests) == 6
+    assert service.prd_versions.count(FUSION_PRD_VERSION) == 6
     assert all(service.template_candidate_ids)
     assert all(isinstance(item, dict) for item in service.template_sample_overrides)
-    assert sorted(len(item) for item in service.template_action_ids) == [0, 1]
-    assert sorted(len(request.candidateEventCandidates or []) for request in service.requests) == [
+    assert sorted(len(item) for item in service.template_action_ids) == [
+        0,
         0,
         1,
+        1,
+        1,
+        2,
+    ]
+    assert sorted(len(request.candidateEventCandidates or []) for request in service.requests) == [
+        0,
+        0,
+        1,
+        1,
+        1,
+        2,
     ]
     output_manifest = json.loads(summary.manifest_path.read_text(encoding="utf-8"))
     assert len(output_manifest["providers"]) == 1
     cases = output_manifest["providers"][0]["cases"]
-    assert {case["status"] for case in cases} == {"missing", "success"}
+    assert {case["status"] for case in cases} == {"success"}
     assert {case["appearanceId"] for case in cases} == {"fusion"}
     for case in cases:
         if case["status"] != "success":
@@ -552,10 +564,10 @@ async def test_gallery_dry_run_emits_missing_and_not_generated_results(
     summary = await runner.run(input_root, output_root, dry_run=True)
 
     # NOTE(gallery-counts): see test_gallery_inputs_cover_all_provider_business_scenarios.
-    assert summary.total == 136
+    assert summary.total == 144
     assert summary.failed == 0
-    assert summary.missing == 12
-    assert summary.not_generated == 124
+    assert summary.missing == 10
+    assert summary.not_generated == 134
     assert service.requests == []
     reloaded = load_gallery_input_manifest(input_root)
     assert len(reloaded.providers) == 10

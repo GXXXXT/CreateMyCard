@@ -438,7 +438,11 @@ def compile_ux_layout_card(
             embedded_action_count += sum(
                 item.consumer == "business-template" for item in plan.action_assignments
             )
-    if layout_id != "TwoSupportLayout" and len(state.action_occurrences) != embedded_action_count:
+    business_action_layouts = {"TwoSupportLayout", "WideTwoFullLayout"}
+    if (
+        layout_id not in business_action_layouts
+        and len(state.action_occurrences) != embedded_action_count
+    ):
         raise TerselConversionError(
             "UX Layout Actions must use the dedicated Action nodes."
         )

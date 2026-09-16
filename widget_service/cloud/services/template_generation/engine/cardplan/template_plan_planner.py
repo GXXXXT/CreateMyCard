@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from itertools import permutations, product
 
@@ -33,6 +34,33 @@ from .wide_template_planner import wide_plan_compositions
 _MAX_PLANS = 3
 _PILL_ACTION_TEMPLATE_ID = "PillAction@1"
 _ICON_ACTION_TEMPLATE_ID = "IconAction@1"
+_COUNTDOWN_DATE_PATTERN = re.compile(r"(?:\d{4}\s*[年/-]\s*)?\d{1,2}\s*[月/-]\s*\d{1,2}\s*[日号]?")
+_COUNTDOWN_HOLIDAY_TERMS = (
+    "元旦",
+    "春节",
+    "清明",
+    "劳动节",
+    "端午",
+    "中秋",
+    "国庆",
+    "节日",
+    "festival",
+    "holiday",
+)
+_COUNTDOWN_DEPARTURE_TERMS = (
+    "出发",
+    "启程",
+    "返乡",
+    "回家",
+    "回老家",
+    "旅行",
+    "旅游",
+    "探亲",
+    "departure",
+    "depart",
+    "travel",
+    "trip",
+)
 _THEME_TERMS_BY_BUSINESS = {
     "ActivityOverview": ("sport", "activity", "运动", "步数"),
     "AppUsageOverview": ("app", "usage", "digital", "应用", "时长"),
@@ -75,8 +103,10 @@ def plan_template_candidates(
     if task_spec.size == "2x4":
         for composition in wide_plan_compositions(intent, search_result, task_spec, registry):
             plan = _make_plan(
-                composition.layout_template_id, composition.slots,
-                composition.assignments, registry,
+                composition.layout_template_id,
+                composition.slots,
+                composition.assignments,
+                registry,
             )
             if plan is not None:
                 score = _wide_plan_score(plan, intent, registry)
@@ -107,6 +137,16 @@ def plan_template_candidates(
             sequence += 1
     if not drafts:
         raise TemplateRetrievalMiss("Search candidates cannot form a supported atomic plan")
+
+    # These four designs encode more than generic Full/Hero/Compact roles. Keep
+    # their semantic preference local to the exact business/template pairing;
+    # other wide plans retain the ordinary coverage-based ordering.
+    if task_spec.size == "2x4":
+        preferred = [
+            draft for draft in drafts if _is_preferred_countdown_plan(draft.plan, intent, task_spec)
+        ]
+        if preferred:
+            drafts = preferred
 
     if len(requested_capabilities) == 1:
         focus = intent.primary_output_field_by_capability.get(requested_capabilities[0])
@@ -154,6 +194,63 @@ def planner_scope(plans: tuple[TemplatePlan, ...]) -> AdvancedScopeBrief:
 
 def _plan_business_ids(plan: TemplatePlan) -> set[str]:
     return {slot.business_id for slot in plan.business_slots}
+
+
+def _is_preferred_countdown_plan(
+    plan: TemplatePlan,
+    intent: TemplateSearchIntent,
+    task_spec: TaskSpec,
+) -> bool:
+    if (
+        len(intent.required_output_fields_by_capability) != 2
+        or len(intent.action_ids) != 1
+        or len(plan.business_slots) != 2
+        or len(plan.action_assignments) != 1
+    ):
+        return False
+    template_ids = tuple(slot.template_id for slot in plan.business_slots)
+    assignment = plan.action_assignments[0]
+    query = task_spec.userQuery.casefold()
+    if template_ids == (
+        "CountdownOverviewTargetDetailFull@1",
+        "ScheduleOverviewEventCountTwoEventsFull@1",
+    ):
+        return (
+            plan.layout_template_id == "WideTwoFullLayout@1"
+            and assignment.consumer == "business-template"
+            and assignment.business_position == 1
+            and _COUNTDOWN_DATE_PATTERN.search(query) is not None
+        )
+    if template_ids == (
+        "WeatherOverviewThreeDayForecastFull@1",
+        "CountdownOverviewEventHero@1",
+    ):
+        return (
+            plan.layout_template_id == "WideHeroActionFullLayout@1"
+            and assignment.consumer == "root-action"
+            and assignment.action_template_id == _PILL_ACTION_TEMPLATE_ID
+            and any(term in query for term in _COUNTDOWN_HOLIDAY_TERMS)
+        )
+    if template_ids == (
+        "WeatherOverviewDestinationDayFull@1",
+        "CountdownOverviewDepartureHero@1",
+    ):
+        return (
+            plan.layout_template_id == "WideHeroActionFullLayout@1"
+            and assignment.consumer == "root-action"
+            and assignment.action_template_id == _PILL_ACTION_TEMPLATE_ID
+            and any(term in query for term in _COUNTDOWN_DEPARTURE_TERMS)
+        )
+    return (
+        template_ids
+        == (
+            "ActivityOverviewTrainingSummaryFull@1",
+            "CountdownOverviewTargetCompact@1",
+        )
+        and plan.layout_template_id == "WideFullTwoCompactLayout@1"
+        and assignment.consumer == "root-action"
+        and assignment.action_template_id == "CompactAction@1"
+    )
 
 
 def planner_component_candidates(
@@ -215,9 +312,7 @@ def _selected_action_ids(
         raise TemplateRetrievalMiss("Planner Action is outside TaskSpec.eventCandidates")
     selected_ids = set(intent.action_ids)
     return tuple(
-        action.action_id
-        for action in action_bindings(task_spec)
-        if action.event_id in selected_ids
+        action.action_id for action in action_bindings(task_spec) if action.event_id in selected_ids
     )
 
 
@@ -361,9 +456,7 @@ def _business_slot(
     candidate = next(item for item in group.candidates if item.template_id == template_id)
     focus = intent.primary_output_field_by_capability.get(group.capability_id)
     primary_matches = tuple(
-        path
-        for path in definition.primary_data
-        if path in group.explicit_fields or path == focus
+        path for path in definition.primary_data if path in group.explicit_fields or path == focus
     )
     return TemplatePlanBusinessSlot(
         position=position,
@@ -530,8 +623,10 @@ def _deduplicate_drafts(drafts: list[_PlanDraft]) -> list[_PlanDraft]:
         signature = (
             plan.theme_id,
             plan.layout_template_id,
-            tuple((slot.template_id, tuple(slot.field_bindings.items()))
-                  for slot in plan.business_slots),
+            tuple(
+                (slot.template_id, tuple(slot.field_bindings.items()))
+                for slot in plan.business_slots
+            ),
             tuple(
                 (
                     item.action_id,
@@ -577,6 +672,10 @@ def _wide_plan_score(
     actual_order = tuple(dict.fromkeys(slot.capability_id for slot in plan.business_slots))
     order_matches = int(actual_order == requested_order)
     return (
-        embedded_count, base[0], -generic_count, -len(plan.business_slots),
-        *base[1:], order_matches,
+        embedded_count,
+        base[0],
+        -generic_count,
+        -len(plan.business_slots),
+        *base[1:],
+        order_matches,
     )

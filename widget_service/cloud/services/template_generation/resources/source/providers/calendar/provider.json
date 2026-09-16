@@ -308,6 +308,24 @@
       "optionalData": []
     },
     {
+      "templateId": "ScheduleOverviewEventCountTwoEventsFull@1",
+      "supportedEventIds": ["event.viewCalendarEvent"],
+      "businessId": "CalendarOverview",
+      "capabilityId": "GetCalendarEvents",
+      "description": "双日程清点 Full，展示日程总数及前两项日程各自的标题和开始时间；可使用可信标题文案，并将查看首项日程详情动作绑定到第一条日程。",
+      "entry": "templates/schedule-overview.cardtpl",
+      "primaryData": [
+        "/eventCount",
+        "/events/0/title",
+        "/events/1/title"
+      ],
+      "secondaryData": [
+        "/events/0/dtStart",
+        "/events/1/dtStart"
+      ],
+      "optionalData": []
+    },
+    {
       "templateId": "ScheduleOverviewEventCountDetailsFull@1",
       "businessId": "CalendarOverview",
       "capabilityId": "GetCalendarEvents",
