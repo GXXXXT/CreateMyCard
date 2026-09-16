@@ -151,7 +151,9 @@ def expression_body(value: str) -> str:
     return stripped
 
 
-def expression_references(value: str) -> list[str]:
+def expression_references(value: Any) -> list[str]:
+    if not isinstance(value, str):
+        return []
     return INTERP_RE.findall(expression_body(value))
 
 

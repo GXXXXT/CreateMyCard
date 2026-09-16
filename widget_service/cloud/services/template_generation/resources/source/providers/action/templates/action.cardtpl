@@ -33,7 +33,7 @@ Stack({
 )
 #End
 
-#Template CompactAction@1(props: { actionId: string, label: string, icon: asset, prominent?: boolean })
+#Template CompactAction@1(props: { actionId: string, label: string, icon: asset, prominent?: boolean, showFavoriteSubtitle?: boolean })
 data = {
 }
 
@@ -78,16 +78,48 @@ Stack({
     "justifyContent": "spaceBetween",
     "alignItems": "center"
   },
-    Text(props.label, {
-      "layoutWeight": 1,
-      "height": 19,
-      "fontSize": 14,
-      "fontWeight": 700,
-      "fontColor": $theme('primaryColor'),
-      "maxLines": 1,
-      "textOverflow": "ellipsis",
-      "textAlign": "start"
-    }),
+    #if props.showFavoriteSubtitle
+      Column({
+        "layoutWeight": 1,
+        "height": 36,
+        "margin": {"top": 1},
+        "itemMargin": 2,
+        "justifyContent": "center",
+        "alignItems": "start"
+      },
+        Text(props.label, {
+          "width": "matchParent",
+          "height": 20,
+          "fontSize": 14,
+          "fontWeight": 700,
+          "fontColor": $theme('primaryColor'),
+          "maxLines": 1,
+          "textOverflow": "ellipsis",
+          "textAlign": "start"
+        }),
+        Text("播放我的收藏", {
+          "width": "matchParent",
+          "height": 14,
+          "fontSize": 10,
+          "fontWeight": 400,
+          "fontColor": $theme('supportContentColor'),
+          "maxLines": 1,
+          "textOverflow": "ellipsis",
+          "textAlign": "start"
+        })
+      ),
+    #else
+      Text(props.label, {
+        "layoutWeight": 1,
+        "height": 19,
+        "fontSize": 14,
+        "fontWeight": 700,
+        "fontColor": $theme('primaryColor'),
+        "maxLines": 1,
+        "textOverflow": "ellipsis",
+        "textAlign": "start"
+      }),
+    #endif
     Image(props.icon, {
       "width": 24,
       "height": 24,
