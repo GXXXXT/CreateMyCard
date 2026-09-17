@@ -2421,13 +2421,14 @@ def test_weather_battery_2x4_composes_two_focus_panels(
     by_id = {component.get("id"): component for component in components}
     root = by_id.get("root")
     assert isinstance(root, dict)
-    row = next(
-        by_id[child_id]
-        for child_id in root.get("children", [])
-        if by_id.get(child_id, {}).get("component") == "Row"
-        and len(by_id.get(child_id, {}).get("children", [])) == 2
-    )
-    row_children = row["children"]
+    assert root.get("children") == ["template_root"]
+    foreground = by_id.get("template_root")
+    assert isinstance(foreground, dict)
+    assert foreground.get("children") == ["__genui_render_component__root_1"]
+    row = by_id.get("__genui_render_component__root_1")
+    assert isinstance(row, dict)
+    assert row.get("component") == "Row"
+    row_children = row.get("children")
     assert isinstance(row_children, list) and len(row_children) == 2
 
     def descendant_ids(node_id: str) -> set[str]:

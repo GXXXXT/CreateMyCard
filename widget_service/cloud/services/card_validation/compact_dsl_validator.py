@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -17,6 +18,9 @@ from services.compact_dsl_a2ui_converter import (
     validate_card_header_layout,
 )
 
+from .context import ValidationContext
+
+_LOGGER = logging.getLogger(__name__)
 _EXPRESSION_PATTERN = re.compile(r"^\{\{\s*(?P<body>.*?)\s*\}\}$")
 _REFERENCE_PATTERN = re.compile(r"\$\{(?P<path>[^{}]*)\}")
 _NON_EMPTY_CONTAINER_TYPES = frozenset({"Row", "Column", "List", "Stack"})
@@ -105,12 +109,18 @@ def validate_compact_dsl(
         raise CompactDslValidationError([str(exc)]) from exc
 
     components = [row for row in rows if isinstance(row, ComponentRow)]
+    is_template = _has_template_root(components)
     data_rows = [row for row in rows if isinstance(row, DataRow)]
     binding_paths: list[str] = []
     visible_binding_paths: list[str] = []
     errors: list[str] = []
     _collect_component_contract_errors(components, task_spec, errors)
-    _collect_hero_value_errors(components, task_spec, errors)
+    if is_template:
+        _LOGGER.info(
+            "compact_validation_skipped reason=template_root rules=hero_value,layout_route"
+        )
+    else:
+        _collect_hero_value_errors(components, task_spec, errors)
     _collect_height_budget_errors(components, task_spec, card_spec, errors)
     for component in components:
         location = f"component {component.component_id}.props"
@@ -130,12 +140,13 @@ def validate_compact_dsl(
             [],
         )
 
-    _collect_layout_route_errors(
-        components,
-        task_spec,
-        visible_binding_paths,
-        errors,
-    )
+    if not is_template:
+        _collect_layout_route_errors(
+            components,
+            task_spec,
+            visible_binding_paths,
+            errors,
+        )
 
     data_model = build_compact_data_model(data_rows)
     _collect_data_context_errors(
@@ -150,6 +161,21 @@ def validate_compact_dsl(
 
     warnings = _unused_data_capability_warnings(binding_paths, card_spec)
     return CompactDslValidationResult(warnings=tuple(warnings))
+
+
+def _has_template_root(components: list[ComponentRow]) -> bool:
+    """将 Compact 的 ID/子节点投影到现有对比度豁免判定。"""
+    context = ValidationContext(root_id="root")
+    for component in components:
+        component_id = component.component_id
+        if component_id in context.components_by_id:
+            context.duplicate_component_ids.add(component_id)
+        context.components_by_id[component_id] = {
+            "id": component_id,
+            "children": list(component.children),
+        }
+    context.root_component = context.components_by_id.get("root")
+    return context.has_fusion_template_root()
 
 
 def _collect_hero_value_errors(

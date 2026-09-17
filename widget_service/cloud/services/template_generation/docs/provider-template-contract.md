@@ -403,8 +403,9 @@ Provider 模板作者侧声明，不进入最终 Tersel 语法。最终产物不
 `fusionBallStyle` 的 Theme 在首层 Prompt 构造前即从请求级 Registry 视图移除，检索、二层组合和编译也不能
 再查找或接受这些 Theme。
 
-模板 Search 当前整体不支持 `2x4`，此尺寸在任何首层 Prompt 或模型调用前直接判定模板不适用。Wide
-Provider 和 Layout 资源只作后续能力预留，当前不进入生产模板链。
+`2x4` 沿用 Search → Planner → FillData 的宽版规划链路，具体组合规则见
+[模板生成专项方案](template-generation-design.md#横版规划与字段填充)。内容根包装不改变布局准入规则，
+也不扩展融球背景的启用尺寸。
 
 融球背景由模板可信编译器展开为标准 Tersel 组件树，不属于业务 Provider，也不交给二层模型选择。每套融球 Theme
 在自身 `themes/<theme-id>/theme.json` 的 `fusionBallStyle` 中保存允许的 `businessIds` 以及大、中、小球真实
@@ -440,15 +441,18 @@ PillAction 模板使用 `$theme('actionStyle.backgroundColor')` 和 `$theme('act
 `__genui_render_component__template_root` 的标准 Stack，以启用端侧内容层防溢出能力；`root_1` 保持普通布局
 骨架 ID。A2UI-Compact 不声明 `FusionBall` 组件能力，任何残留均按不支持组件拒绝。
 
-非融球 `2x2` 固定布局模板使用
+非融球 `2x2`、`2x4` 固定布局模板使用
 `root → template_root → __genui_render_component__root_1`。防溢出标识直接放在原布局骨架
-（Column、Row 或 Stack）上，不额外插入防溢出 Stack，适用于单业务和双业务布局，不按主题筛选。
+（Column、Row 或 Stack）上，不额外插入防溢出 Stack，适用于单业务和多业务布局，不按主题筛选。
 根节点保留 Theme 原有背景，`padding` 调整为 `0`，原安全边距移动到 `template_root`，避免重复留白；
 骨架自身的布局属性、业务数据绑定及事件保持不变。融球结构不受此调整影响。
 自动生成的子节点 ID 使用去掉防溢出前缀后的骨架 ID 编号，显式子节点 ID 保持不变；防溢出标识不传播到
 文本、图标和业务容器。外层转换为 Stack 时移除 Column 专用的间距与对齐属性。
-不含单一布局骨架的旧 CardPlan shell、非 `2x2` 产物和独立模板预览不应用此包装；预览数据集仍为
-`root → template_root`，不以本规则开放生产 `2x4` 场景。公共校验根始终为 `root`。
+`2x4` 保留 300×150vp 画布及 276×126vp 内容预算，不改变业务、动作的尺寸、次序或绑定。
+融球启用范围仍限于既有 `2x2` 场景；选中融球 Theme 的 `2x4` 使用该 Theme 原有纯色或渐变背景，
+内容层同样使用上述非融球结构。
+不含单一布局骨架的旧 CardPlan shell 和独立模板预览不应用此包装；预览数据集仍为
+`root → template_root`。公共校验根始终为 `root`。
 `template_root` 是模板内容层的固定标识：公共根 `root` 的 `children` 数组直接引用该真实节点，
 且组件 ID 无重复时，即跳过整卡 quality 阶段，不再要求存在 `fusionBallBackground`。
 非融球、融球和预览使用同一规则；hard、semantic 和转换前校验不变。
@@ -458,8 +462,9 @@ PillAction 模板使用 `$theme('actionStyle.backgroundColor')` 和 `$theme('act
 ## 首层 Search、确定性检索与第二层 LLM 规则
 
 模板编译产物转为 A2UI-Compact 后，使用模板引擎的 `validate_compact_dsl_context` 检查组件树、
-数据绑定、数据类型、动作及素材。模型直出的 Design Compact DSL 使用其独立设计校验器，
-其中 W9 固定骨架和 18fp 文本限制不应反向改变已审核模板的布局及字号。
+数据绑定、数据类型、动作及素材。公共 Compact 校验沿用对比度校验的有效 `template_root` 判定，
+仅跳过 W9 固定骨架、大字号及其相邻标签限制；展示单位校验复用同一判定并跳过。
+其它检查、现有高度检查及单位后处理保持不变；无有效标记时执行原规则。
 
 当前默认配置 `firstLayerComponentSelector: "search"`。第一层模型不直接选择业务组件或模板，只输出
 `TemplateSearchIntent`，顶层字段为 `requiredOutputFieldsByCapability`、
