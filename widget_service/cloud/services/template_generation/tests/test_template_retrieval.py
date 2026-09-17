@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 
 from models.generation import CandidateDataBinding, EventAction, TaskSpec
-from services.card_validation.compact_dsl_validator import validate_compact_dsl
 from services.protocol_registry import A2UI_FORM_PROTOCOL_PROFILE_ID, A2UIProtocolRegistry
 from services.template_generation.engine.advanced.content_selectors import (
     apply_content_selectors,
@@ -37,6 +36,7 @@ from services.template_generation.engine.cardplan.template_retrieval import (
 )
 from services.template_generation.engine.compact_dsl_a2ui_converter import (
     convert_a2ui_to_compact_dsl,
+    validate_compact_dsl_context,
 )
 
 _WEATHER_FIELDS = (
@@ -2409,7 +2409,7 @@ def test_weather_battery_2x4_composes_two_focus_panels(
         enable_data_bindings=True,
     )
     compact_dsl = convert_a2ui_to_compact_dsl(compilation.a2ui, size=task.size)
-    validate_compact_dsl(
+    validate_compact_dsl_context(
         compact_dsl,
         task_spec=task.model_dump(mode="json"),
         card_spec=_weather_battery_card_spec(),
@@ -2592,7 +2592,7 @@ def test_earphone_battery_2x4_composes_two_focus_panels_with_two_actions() -> No
         enable_data_bindings=True,
     )
     compact_dsl = convert_a2ui_to_compact_dsl(compilation.a2ui, size=task.size)
-    validate_compact_dsl(
+    validate_compact_dsl_context(
         compact_dsl,
         task_spec=task.model_dump(mode="json"),
         card_spec=card_spec,
