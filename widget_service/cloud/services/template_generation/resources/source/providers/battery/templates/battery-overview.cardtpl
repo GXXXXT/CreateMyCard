@@ -838,7 +838,7 @@ Column(
     "_layoutActionBackgroundOpacity": 0.2,
     "width": "matchParent",
     "height": "matchParent",
-    "padding": {"left": 0, "top": 8, "right": 0, "bottom": 0},
+    "padding": {"left": 0, "top": 0, "right": 0, "bottom": 0},
     "itemMargin": 4,
     "justifyContent": "start",
     "alignItems": "center",
@@ -846,7 +846,7 @@ Column(
     "constraintSize": {"minWidth": 0, "minHeight": 0}
   },
   Stack(
-    {"width": 52, "height": 52, "alignContent": "center", "flexShrink": 0},
+    {"width": 44, "height": 44, "alignContent": "center", "flexShrink": 0},
     Progress(
       {
         "value": data.percent,
@@ -854,8 +854,8 @@ Column(
         "type": "ring",
         "color": $theme('progressColor'),
         "backgroundColor": $theme('progressBackgroundColor'),
-        "width": 52,
-        "height": 52,
+        "width": 44,
+        "height": 44,
         "strokeWidth": 6
       }
     ),
@@ -898,7 +898,7 @@ Column(
     data.chargingStatus,
     {
       "width": "matchParent",
-      "height": 28,
+      "height": 20,
       "fontSize": 14,
       "minFontSize": 12,
       "fontWeight": 500,

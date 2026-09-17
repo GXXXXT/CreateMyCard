@@ -126,159 +126,87 @@ data = {
 }
 
 Row(
+  {
+    "_advancedComponent": "ActivityOverview",
+    "width": "matchParent", "height": "matchParent", "itemMargin": 8,
+    "alignItems": "center", "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Column(
     {
-        "justifyContent": "spaceBetween",
-        "_advancedComponent": "ActivityOverview",
-        "width": "100%",
-        "height": "100%",
-        "itemMargin": 8,
-        "alignItems": "center"
+      "layoutWeight": 1, "height": "matchParent", "itemMargin": 4,
+      "justifyContent": "spaceBetween", "alignItems": "start",
+      "constraintSize": {"minWidth": 0, "minHeight": 0}
     },
-    Column(
+    Row(
+      {"width": "matchParent", "height": 16, "itemMargin": 4, "alignItems": "center"},
+      Text("今日活动", {
+        "fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'),
+        "layoutWeight": 1, "maxLines": 1, "textOverflow": "ellipsis"
+      }),
+      #if props.stepsIcon
+        Image(props.stepsIcon, {"width": 16, "height": 16, "objectFit": "contain"})
+      #endif
+    ),
+    Row(
+      {"width": "matchParent", "height": 36, "itemMargin": 2, "alignItems": "bottom"},
+      Text(data.steps, {
+        "fontSize": 30, "fontWeight": 700, "fontColor": $theme('primaryColor'),
+        "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0}
+      }),
+      Text("步", {"fontSize": 12, "fontColor": $theme('supportContentColor'), "maxLines": 1})
+    ),
+    Text(data.targetDate, {
+      "width": "matchParent", "height": 14, "fontSize": 10,
+      "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"
+    })
+  ),
+  Column(
+    {"layoutWeight": 1, "itemMargin": 6, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    #if data.calories
+      Row(
         {
-            "width": "matchParent",
-            "layoutWeight": 1,
-            "height": "matchParent",
-            "itemMargin": 8,
-            "justifyContent": "spaceBetween",
-            "alignItems": "start",
-            "clip": true,
-            "constraintSize": {"minWidth": 0, "minHeight": 0}
+          "width": "matchParent", "height": 38, "itemMargin": 4,
+          "padding": {"left": 8, "right": 8, "top": 4, "bottom": 4},
+          "backgroundColor": "#33FFFFFF", "borderRadius": 12, "alignItems": "center"
         },
         Column(
-            {"itemMargin":4,"width": "matchParent", "constraintSize": {"minWidth": 0, "minHeight": 0}},
-            Column(
-                {"itemMargin":4,"width": "matchParent", "height": 20},
-                Text(
-                    "今日活动",
-                    {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
-                )
-            ),
-            Column(
-                {"itemMargin":4,"width": "matchParent", "justifyContent": "start", "alignItems": "start", "clip": true},
-                Text(
-                    data.steps,
-                    {"fontSize": 30, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
-                ),
-                Text(
-                    "总步数",
-                    {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
-                )
-            )
+          {"layoutWeight": 1, "itemMargin": 0, "constraintSize": {"minWidth": 0}},
+          Text(data.calories, {
+            "height": 18, "fontSize": 14, "fontWeight": 700,
+            "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"
+          }),
+          Text("消耗热量", {
+            "height": 12, "fontSize": 10, "fontColor": $theme('supportContentColor'), "maxLines": 1
+          })
         ),
-        Text(
-            data.targetDate,
-            {"fontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1}
-        )
-    ),
-    Column(
+        #if props.caloriesIcon
+          Image(props.caloriesIcon, {"width": 24, "height": 24, "objectFit": "contain"})
+        #endif
+      )
+    #endif
+    #if data.distance
+      Row(
         {
-            "width": "matchParent",
-            "layoutWeight": 1,
-            "itemMargin": 8,
-            "clip": true,
-            "constraintSize": {"minWidth": 0, "minHeight": 0}
+          "width": "matchParent", "height": 38, "itemMargin": 4,
+          "padding": {"left": 8, "right": 8, "top": 4, "bottom": 4},
+          "backgroundColor": "#33FFFFFF", "borderRadius": 12, "alignItems": "center"
         },
-        #if props.stepsIcon
-          Column(
-              {"itemMargin":4,"width": "matchParent", "alignItems": "end", "height": 20},
-              Image(
-                  props.stepsIcon,
-                  {"width": 20, "height": 20, "objectFit": "contain", "flexShrink": 0}
-              )
-          )
+        Column(
+          {"layoutWeight": 1, "itemMargin": 0, "constraintSize": {"minWidth": 0}},
+          Text(data.distance, {
+            "height": 18, "fontSize": 14, "fontWeight": 700,
+            "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"
+          }),
+          Text("运动距离", {
+            "height": 12, "fontSize": 10, "fontColor": $theme('supportContentColor'), "maxLines": 1
+          })
+        ),
+        #if props.distanceIcon
+          Image(props.distanceIcon, {"width": 24, "height": 24, "objectFit": "contain"})
         #endif
-        #if data.calories
-          Row(
-              {
-                  "itemMargin": 4,
-                  "padding": {"top": 11, "bottom": 11, "left": 12, "right": 12},
-                  "width": "matchParent",
-                  "justifyContent": "spaceBetween",
-                  "alignItems": "center",
-                  "constraintSize": {"minWidth": 0, "minHeight": 0},
-                  "backgroundColor": "#33FFFFFF",
-                  "borderRadius": 16
-              },
-              Column(
-                  {
-                      "itemMargin": 4,
-                      "layoutWeight": 1,
-                      "width": "matchParent",
-                      "justifyContent": "center",
-                      "alignItems": "start",
-                      "clip": true
-                  },
-                  Row(
-                      {"width":"matchParent","itemMargin": 4, "justifyContent": "start", "alignItems": "bottom"},
-                      Text(
-                          data.calories,
-                          {"fontSize": 18, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
-                      ),
-                      Text(
-                          "千卡",
-                          {"fontWeight":500,"fontColor": $theme('supportContentColor'),"fontSize": 10, "maxLines": 1}
-                      )
-                  ),
-                  Text(
-                      "消耗热量",
-                      {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
-                  )
-              ),
-              #if props.caloriesIcon
-                Image(
-                    props.caloriesIcon,
-                    {"width": 24, "height": 24, "objectFit": "contain", "flexShrink": 0}
-                )
-              #endif
-          )
-        #endif
-        #if data.distance
-          Row(
-              {
-                  "itemMargin": 4,
-                  "padding": {"top": 11, "bottom": 11, "left": 12, "right": 12},
-                  "width": "matchParent",
-                  "justifyContent": "spaceBetween",
-                  "alignItems": "center",
-                  "constraintSize": {"minWidth": 0, "minHeight": 0},
-                  "backgroundColor": "#33FFFFFF",
-                  "borderRadius": 16
-              },
-              Column(
-                  {
-                      "itemMargin": 4,
-                      "layoutWeight": 1,
-                      "width": "matchParent",
-                      "justifyContent": "center",
-                      "alignItems": "start",
-                      "clip": true
-                  },
-                  Row(
-                      {"width":"matchParent","itemMargin": 4, "justifyContent": "start", "alignItems": "bottom"},
-                      Text(
-                          data.distance,
-                          {"fontSize": 18, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
-                      ),
-                      Text(
-                          "千里",
-                          {"fontWeight":500,"fontColor": $theme('supportContentColor'),"fontSize": 10, "maxLines": 1}
-                      )
-                  ),
-                  Text(
-                      "运动距离",
-                      {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
-                  )
-              ),
-              #if props.distanceIcon
-                Image(
-                    props.distanceIcon,
-                    {"width": 24, "height": 24, "objectFit": "contain", "flexShrink": 0}
-                )
-              #endif
-          )
-        #endif
-    )
+      )
+    #endif
+  )
 )
 #End
 
@@ -751,7 +679,7 @@ Row(
                 ),
                 Text(
                     "总步数",
-                    {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
+                    {"height": 14, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
                 )
             )
         ),
@@ -772,7 +700,8 @@ Row(
           Row(
               {
                   "itemMargin": 4,
-                  "padding": {"top": 11, "bottom": 11, "left": 12, "right": 12},
+                  "height": 56,
+                  "padding": {"top": 8, "bottom": 8, "left": 12, "right": 12},
                   "width": "matchParent",
                   "justifyContent": "spaceBetween",
                   "alignItems": "center",
@@ -793,16 +722,12 @@ Row(
                       {"width":"matchParent","itemMargin": 4, "justifyContent": "start", "alignItems": "bottom"},
                       Text(
                           data.calories,
-                          {"fontSize": 18, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
-                      ),
-                      Text(
-                          "千卡",
-                          {"fontWeight":500,"fontColor": $theme('supportContentColor'),"fontSize": 10, "maxLines": 1}
+                          {"height": 22, "fontSize": 18, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
                       )
                   ),
                   Text(
                       "消耗热量",
-                      {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
+                      {"height": 14, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
                   )
               ),
               #if props.caloriesIcon
@@ -817,7 +742,8 @@ Row(
           Row(
               {
                   "itemMargin": 4,
-                  "padding": {"top": 11, "bottom": 11, "left": 12, "right": 12},
+                  "height": 56,
+                  "padding": {"top": 8, "bottom": 8, "left": 12, "right": 12},
                   "width": "matchParent",
                   "justifyContent": "spaceBetween",
                   "alignItems": "center",
@@ -838,16 +764,12 @@ Row(
                       {"width":"matchParent","itemMargin": 4, "justifyContent": "start", "alignItems": "bottom"},
                       Text(
                           data.distance,
-                          {"fontSize": 18, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
-                      ),
-                      Text(
-                          "千里",
-                          {"fontWeight":500,"fontColor": $theme('supportContentColor'),"fontSize": 10, "maxLines": 1}
+                          {"height": 22, "fontSize": 18, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
                       )
                   ),
                   Text(
                       "运动距离",
-                      {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
+                      {"height": 14, "fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1}
                   )
               ),
               #if props.distanceIcon

@@ -23,19 +23,22 @@ Row(
       "alignItems": "start",
       "constraintSize": {"minWidth": 0, "minHeight": 0}
     },
-    Text(
-      "",
-      {
-        "fontSize": 14,
-        "fontWeight": 700,
-        "height": 19,
-        "fontColor": $theme('primaryColor'),
-        "maxLines": 1,
-        "textOverflow": "ellipsis",
-        "width": "matchParent",
-        "textAlign": "start",
-        "constraintSize": {"minWidth": 0, "minHeight": 0}
-      }
+    Row(
+      {"width": "matchParent", "height": 19},
+      Text(
+        "",
+        {
+          "fontSize": 14,
+          "fontWeight": 700,
+          "height": 19,
+          "fontColor": $theme('primaryColor'),
+          "maxLines": 1,
+          "textOverflow": "ellipsis",
+          "width": "matchParent",
+          "textAlign": "start",
+          "constraintSize": {"minWidth": 0, "minHeight": 0}
+        }
+      )
     ),
     Text(
       "",

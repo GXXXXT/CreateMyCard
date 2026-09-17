@@ -286,8 +286,8 @@ Row({
   Column({"layoutWeight": 1, "height": "matchParent"}, children[0]),
   Column({"layoutWeight": 1, "height": #Expr(props.compactRows ? 126 : "matchParent"),
     "itemMargin": #Expr(props.compactRows ? 12 : 8)},
-    Column({"width": "matchParent", "height": #Expr(props.compactRows ? 57 : 60)}, children[1]),
-    Column({"width": "matchParent", "height": #Expr(props.compactRows ? 57 : 60)}, children[2])
+    Column({"width": "matchParent", "height": #Expr(props.compactRows ? 57 : 59)}, children[1]),
+    Column({"width": "matchParent", "height": #Expr(props.compactRows ? 57 : 59)}, children[2])
   )
 )
 #End

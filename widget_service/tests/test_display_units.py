@@ -92,7 +92,7 @@ def _dsl(
     )
 
 
-def test_task_spec_builder_does_not_project_display_unit_metadata():
+def test_task_spec_builder_projects_display_unit_metadata():
     capability = _capability(unit_included=False)
     task_spec = TaskSpecBuilder().build(
         user_query="电量卡片",
@@ -109,11 +109,17 @@ def test_task_spec_builder_does_not_project_display_unit_metadata():
         asset_candidates=[],
     )
 
-    leaf = task_spec.dataModelSchema["data"]["battery"]["level"]
+    data = task_spec.dataModelSchema.get("data")
+    assert isinstance(data, dict)
+    battery = data.get("battery")
+    assert isinstance(battery, dict)
+    leaf = battery.get("level")
     assert leaf == {
         "type": "integer",
         "description": "测试电量字段",
         "sampleValue": 68,
+        "displayUnits": ["%"],
+        "unitIncluded": False,
     }
 
 
