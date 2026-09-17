@@ -462,16 +462,9 @@ PillAction 模板使用 `$theme('actionStyle.backgroundColor')` 和 `$theme('act
 ## 首层 Search、确定性检索与第二层 LLM 规则
 
 模板编译产物转为 A2UI-Compact 后，使用模板引擎的 `validate_compact_dsl_context` 检查组件树、
-数据绑定、数据类型、动作及素材。模型直出的 Design Compact DSL 使用其独立设计校验器，
-其中 W9 固定骨架和 18fp 文本限制不应反向改变已审核模板的布局及字号。
-服务以实际模板生成成功的内部状态选择模板 Processor；不能仅凭 `template_root` 判定来源。
-模型降级、模型修复输出恢复自由设计规则。模板同时执行共享的组件、绑定、首帧数据和高度预算检查，
-并在转换后继续单位后处理及 Artifact hard/semantic 校验。标准 A2UI 模板通过确定性 Compact 归档接受同一检查。
-高度预算从画布向 Row/Stack/Column 内容层传递，不能以增加包装层或 matchParent 隐藏固定高度溢出。
-
-通用健康指标由编译器消费字段的 `displayUnits` 与 `unitIncluded` 元数据。数值缺单位时追加第一个声明单位，
-已带单位时保留原绑定；结构化元数据优先于描述和样例类型，无元数据的历史输入保留描述解析兼容。
-单指标的数值及单位置于独立行，业务标题在该行之外；单位元数据不进入运行时 DataModel。
+数据绑定、数据类型、动作及素材。公共 Compact 校验沿用对比度校验的有效 `template_root` 判定，
+仅跳过 W9 固定骨架、大字号及其相邻标签限制；展示单位校验复用同一判定并跳过。
+其它检查、现有高度检查及单位后处理保持不变；无有效标记时执行原规则。
 
 当前默认配置 `firstLayerComponentSelector: "search"`。第一层模型不直接选择业务组件或模板，只输出
 `TemplateSearchIntent`，顶层字段为 `requiredOutputFieldsByCapability`、

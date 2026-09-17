@@ -64,7 +64,6 @@ class DslProcessingContext:
     design_profile_id: str | None = None
     data_capabilities: list = field(default_factory=list)
     event_candidates: list = field(default_factory=list)
-    source_kind: Literal["model", "template"] = "model"
 
 
 @dataclass(frozen=True)
@@ -114,10 +113,6 @@ class StandardA2UIProcessor:
         source_dsl: str,
         context: DslProcessingContext,
     ) -> DslProcessingResult:
-        if context.source_kind == "template":
-            from services.template_generation.processor import process_template_source
-
-            return process_template_source(source_dsl, context, compact=False)
         standard_dsl = repair_repeated_display_units(
             source_dsl,
             context.card_spec,
@@ -132,10 +127,6 @@ class DesignCompactProcessor:
         source_dsl: str,
         context: DslProcessingContext,
     ) -> DslProcessingResult:
-        if context.source_kind == "template":
-            from services.template_generation.processor import process_template_source
-
-            return process_template_source(source_dsl, context, compact=True)
         try:
             source_dsl = repair_compact_dsl_binding_paths(
                 source_dsl,

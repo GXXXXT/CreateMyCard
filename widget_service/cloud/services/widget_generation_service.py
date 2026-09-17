@@ -6,7 +6,6 @@ import json
 import time
 import uuid
 from collections.abc import Awaitable, Callable
-from dataclasses import replace
 
 from anyio import to_thread
 
@@ -592,12 +591,10 @@ class WidgetGenerationService:
         )
         latest_processing_result = DslProcessingResult(source_dsl="")
         source_generated_by_jsx = False
-        source_generated_by_template = False
 
         async def generate_source_dsl() -> str:
-            nonlocal source_generated_by_jsx, source_generated_by_template
+            nonlocal source_generated_by_jsx
             source_generated_by_jsx = False
-            source_generated_by_template = False
             if before_model_call is not None:
                 await before_model_call(card_spec.suggestSize)
             if template_source_generator is not None:
@@ -612,9 +609,7 @@ class WidgetGenerationService:
                         tuple(effective_bindings),
                     )
                     report_ops_metrics(body={"templateProposal": 1})
-                    generated_dsl = require_generated_dsl(result)
-                    source_generated_by_template = True
-                    return generated_dsl
+                    return require_generated_dsl(result)
                 except Exception as exc:
                     fallback = (
                         "jsx"
@@ -678,8 +673,6 @@ class WidgetGenerationService:
             from services.prompt_builder import PromptBuilder
 
             nonlocal model_call_phase, quality_repair_attempt_count
-            nonlocal source_generated_by_template
-            source_generated_by_template = False
             quality_repair_attempt_count += 1
             quality_error_payloads = [
                 item.to_prompt_payload() for item in latest_processing_result.errors
@@ -725,11 +718,7 @@ class WidgetGenerationService:
                     source_dsl=source_dsl, standard_dsl=source_dsl,
                 )
                 return []
-            source_context = replace(
-                processing_context,
-                source_kind="template" if source_generated_by_template else "model",
-            )
-            processing_result = processor.process(source_dsl, source_context)
+            processing_result = processor.process(source_dsl, processing_context)
             latest_processing_result = processing_result
             warnings = [
                 item.repair_message()

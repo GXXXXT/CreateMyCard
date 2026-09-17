@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
+import logging
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from services.compact_dsl_a2ui_converter import (
@@ -17,6 +18,9 @@ from services.compact_dsl_a2ui_converter import (
     validate_card_header_layout,
 )
 
+from .context import ValidationContext
+
+_LOGGER = logging.getLogger(__name__)
 _EXPRESSION_PATTERN = re.compile(r"^\{\{\s*(?P<body>.*?)\s*\}\}$")
 _REFERENCE_PATTERN = re.compile(r"\$\{(?P<path>[^{}]*)\}")
 _NON_EMPTY_CONTAINER_TYPES = frozenset({"Row", "Column", "List", "Stack"})
@@ -99,42 +103,23 @@ def validate_compact_dsl(
     card_spec: dict[str, Any],
 ) -> CompactDslValidationResult:
     """Validate expressions, first-frame data, and TaskSpec data boundaries."""
-    return _validate_compact_dsl(
-        compact_dsl, task_spec=task_spec, card_spec=card_spec, design_rules=True,
-    )
-
-
-def validate_compact_dsl_baseline(
-    compact_dsl: str,
-    *,
-    task_spec: dict[str, Any],
-    card_spec: dict[str, Any],
-) -> CompactDslValidationResult:
-    """模板与模型共享的组件、绑定、首帧数据及高度检查。"""
-    return _validate_compact_dsl(
-        compact_dsl, task_spec=task_spec, card_spec=card_spec, design_rules=False,
-    )
-
-
-def _validate_compact_dsl(
-    compact_dsl: str,
-    *,
-    task_spec: dict[str, Any],
-    card_spec: dict[str, Any],
-    design_rules: bool,
-) -> CompactDslValidationResult:
     try:
         rows = parse_compact_dsl_rows(compact_dsl)
     except CompactDslConversionError as exc:
         raise CompactDslValidationError([str(exc)]) from exc
 
     components = [row for row in rows if isinstance(row, ComponentRow)]
+    is_template = _has_template_root(components)
     data_rows = [row for row in rows if isinstance(row, DataRow)]
     binding_paths: list[str] = []
     visible_binding_paths: list[str] = []
     errors: list[str] = []
     _collect_component_contract_errors(components, task_spec, errors)
-    if design_rules:
+    if is_template:
+        _LOGGER.info(
+            "compact_validation_skipped reason=template_root rules=hero_value,layout_route"
+        )
+    else:
         _collect_hero_value_errors(components, task_spec, errors)
     _collect_height_budget_errors(components, task_spec, card_spec, errors)
     for component in components:
@@ -155,7 +140,7 @@ def _validate_compact_dsl(
             [],
         )
 
-    if design_rules:
+    if not is_template:
         _collect_layout_route_errors(
             components,
             task_spec,
@@ -176,6 +161,21 @@ def _validate_compact_dsl(
 
     warnings = _unused_data_capability_warnings(binding_paths, card_spec)
     return CompactDslValidationResult(warnings=tuple(warnings))
+
+
+def _has_template_root(components: list[ComponentRow]) -> bool:
+    """将 Compact 的 ID/子节点投影到现有对比度豁免判定。"""
+    context = ValidationContext(root_id="root")
+    for component in components:
+        component_id = component.component_id
+        if component_id in context.components_by_id:
+            context.duplicate_component_ids.add(component_id)
+        context.components_by_id[component_id] = {
+            "id": component_id,
+            "children": list(component.children),
+        }
+    context.root_component = context.components_by_id.get("root")
+    return context.has_fusion_template_root()
 
 
 def _collect_hero_value_errors(
@@ -357,14 +357,16 @@ def _collect_height_budget_errors(
 ) -> None:
     """Reject vertical layouts whose declared minimum height cannot fit."""
     components_by_id = {component.component_id: component for component in components}
-    budget = _HeightBudget(components_by_id, task_spec, card_spec)
     for component in components:
         if component.component_type not in {"Column", "List"}:
             continue
-        outer_height = budget.outer_height(component, set())
-        if outer_height is None:
+        available_height = _component_available_height(
+            component,
+            task_spec,
+            card_spec,
+        )
+        if available_height is None:
             continue
-        available_height = max(0.0, outer_height - _vertical_padding(component.props))
         required_height = _column_children_minimum_height(
             component,
             components_by_id,
@@ -380,74 +382,31 @@ def _collect_height_budget_errors(
         )
 
 
-def validate_compact_dsl_height(
-    compact_dsl: str,
-    *,
+def _component_available_height(
+    component: ComponentRow,
     task_spec: dict[str, Any],
     card_spec: dict[str, Any],
-) -> None:
-    """共享高度门禁，不附带自由设计的字体或布局形状要求。"""
-    try:
-        rows = parse_compact_dsl_rows(compact_dsl)
-    except CompactDslConversionError as exc:
-        raise CompactDslValidationError([str(exc)]) from exc
-    components = [row for row in rows if isinstance(row, ComponentRow)]
-    errors: list[str] = []
-    _collect_height_budget_errors(components, task_spec, card_spec, errors)
-    if errors:
-        raise CompactDslValidationError(errors)
+) -> float | None:
+    outer_height = _component_outer_height(component, task_spec, card_spec)
+    if outer_height is None:
+        return None
+    return max(0.0, outer_height - _vertical_padding(component.props))
 
 
-@dataclass
-class _HeightBudget:
-    components: dict[str, ComponentRow]
-    task_spec: dict[str, Any]
-    card_spec: dict[str, Any]
-    parents: dict[str, list[ComponentRow]] = field(default_factory=dict, init=False)
-
-    def __post_init__(self) -> None:
-        for component in self.components.values():
-            for child_id in component.children:
-                self.parents.setdefault(child_id, []).append(component)
-
-    def outer_height(self, component: ComponentRow, visiting: set[str]) -> float | None:
-        """计算可证明的高度上界；未知行高不推测，环引用留给结构校验。"""
-        height: float | None = None
-        if component.component_id not in visiting:
-            height = _non_negative_number(component.props.get("height"))
-            if component.component_id == "root":
-                size = self.card_spec.get("suggestSize") or self.task_spec.get("size")
-                if isinstance(size, str):
-                    height = _REFERENCE_CANVAS_HEIGHT.get(size, height)
-            else:
-                visiting.add(component.component_id)
-                parent_limit = self._parent_limit(component, visiting)
-                visiting.remove(component.component_id)
-                if parent_limit is not None:
-                    height = parent_limit if height is None else min(height, parent_limit)
-        return height
-
-    def _parent_limit(self, component: ComponentRow, visiting: set[str]) -> float | None:
-        limits: list[float] = []
-        for parent in self.parents.get(component.component_id, []):
-            if parent.component_type not in _NON_EMPTY_CONTAINER_TYPES:
-                continue
-            parent_height = self.outer_height(parent, visiting)
-            if parent_height is None:
-                continue
-            occupied = _vertical_padding(parent.props) + _vertical_margin(component.props)
-            if parent.component_type in {"Column", "List"}:
-                occupied += _vertical_gap(parent, len(parent.children))
-                for sibling_id in parent.children:
-                    if sibling_id == component.component_id:
-                        continue
-                    sibling = self.components.get(sibling_id)
-                    if sibling is not None:
-                        occupied += _minimum_outer_height(sibling, self.components, set())
-                        occupied += _vertical_margin(sibling.props)
-            limits.append(max(0.0, parent_height - occupied))
-        limit: float | None = min(limits) if limits else None
-        return limit
+def _component_outer_height(
+    component: ComponentRow,
+    task_spec: dict[str, Any],
+    card_spec: dict[str, Any],
+) -> float | None:
+    if component.component_id == "root":
+        size = card_spec.get("suggestSize")
+        if not isinstance(size, str) or not size:
+            size = task_spec.get("size")
+        if isinstance(size, str):
+            reference_height = _REFERENCE_CANVAS_HEIGHT.get(size)
+            if reference_height is not None:
+                return reference_height
+    return _non_negative_number(component.props.get("height"))
 
 
 def _column_children_minimum_height(

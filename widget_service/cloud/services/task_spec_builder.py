@@ -106,9 +106,6 @@ class TaskSpecBuilder:
                     "description": leaf["description"],
                     "sampleValue": sample_value,
                 }
-                for unit_field in ("displayUnits", "unitIncluded"):
-                    if unit_field in leaf:
-                        metadata[unit_field] = deepcopy(leaf[unit_field])
                 self._set_by_parts(data_model_schema, (*write_parts, *relative_parts), metadata)
             if generated_sample_count:
                 logger.warning(

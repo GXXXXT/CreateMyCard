@@ -4763,42 +4763,6 @@ def _template_spread_parent(root: TemplateNode) -> str | None:
     return matches[0] if matches else None
 
 
-def _generic_metric_display_value(
-    leaf: dict[str, Any],
-    absolute: str,
-    placeholder: str,
-) -> str:
-    """优先使用能力声明的单位；仅为历史输入保留描述解析兼容。"""
-    display_value = placeholder
-    unit: str | None = None
-    has_unit_metadata = "displayUnits" in leaf or "unitIncluded" in leaf
-    if has_unit_metadata:
-        units = leaf.get("displayUnits")
-        included = leaf.get("unitIncluded")
-        if not isinstance(units, list) or not units or not isinstance(included, bool):
-            raise TerselConversionError("Generic metric display unit metadata is invalid.")
-        for candidate in units:
-            if not isinstance(candidate, str) or not candidate.strip():
-                raise TerselConversionError(
-                    "Generic metric display units must be non-empty strings."
-                )
-        if not included:
-            unit = units[0].strip()
-    else:
-        sample = leaf.get("sampleValue")
-        description = leaf.get("description", "")
-        numeric_sample = isinstance(sample, (int, float)) and not isinstance(sample, bool)
-        if numeric_sample and isinstance(description, str):
-            unit_match = re.search(r"单位(?:为|是)[:：]?([^，。；,\s]+)", description)
-            if unit_match is not None:
-                unit = unit_match.group(1).strip("‘’'\"“”")
-    if unit:
-        display_value = normalize_tersel_expression(
-            f"${{{absolute}}} + {_a2ui_expression_string(unit)}"
-        ).value
-    return display_value
-
-
 def _expand_health_metric_generic_template(
     wire_id: str,
     params: dict[str, Any],
@@ -4850,7 +4814,17 @@ def _expand_health_metric_generic_template(
         if not isinstance(title, str) or not title.strip():
             raise TerselConversionError(f"Generic metric title is invalid: {title_name}")
         display_title = GENERIC_HEALTH_LABELS.get(relative, title.strip())
-        display_value = _generic_metric_display_value(leaf, absolute, placeholder)
+        display_value = placeholder
+        sample = leaf.get("sampleValue") if isinstance(leaf, dict) else None
+        description = leaf.get("description", "") if isinstance(leaf, dict) else ""
+        if isinstance(sample, (int, float)) and not isinstance(sample, bool):
+            unit_match = re.search(r"单位(?:为|是)[:：]?([^，。；,\s]+)", description)
+            if unit_match is not None:
+                unit = unit_match.group(1).strip("‘’'\"“”")
+                if unit:
+                    display_value = normalize_tersel_expression(
+                        f"${{{absolute}}} + {_a2ui_expression_string(unit)}"
+                    ).value
         selected.append((display_title, display_value))
     if not selected:
         raise TerselConversionError("Generic health metric requires at least one data path.")
@@ -4896,15 +4870,6 @@ def _expand_health_metric_generic_template(
                 ),
                 (),
             ),
-        )
-        value_node, label_node = rows
-        rows = (
-            Nested2Node(
-                "Row",
-                ({"width": "matchParent", "height": 19},),
-                (value_node,),
-            ),
-            label_node,
         )
         return Nested2Node(
             "Row",

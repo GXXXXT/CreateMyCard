@@ -8129,7 +8129,6 @@ async def test_template_exception_obeys_route_failure_policy(
     template_error: Exception,
 ):
     generated_sources: list[str] = []
-    source_kinds: list[str] = []
     model_generate_calls = 0
     template_processors: list[DslProcessorKind] = []
     callback_sizes: list[str] = []
@@ -8152,7 +8151,6 @@ async def test_template_exception_obeys_route_failure_policy(
     class Processor:
         def process(self, source_dsl: str, _context: Any) -> DslProcessingResult:
             generated_sources.append(source_dsl)
-            source_kinds.append(_context.source_kind)
             return DslProcessingResult(
                 source_dsl=source_dsl,
                 standard_dsl="valid-a2ui",
@@ -8219,13 +8217,11 @@ async def test_template_exception_obeys_route_failure_policy(
         assert response.artifactUrl == ""
         assert model_generate_calls == 0
         assert generated_sources == []
-        assert source_kinds == []
     else:
         assert response.status == GenerationStatus.SUCCESS
         assert response.artifactUrl == "https://artifact.test/template-fallback"
         assert model_generate_calls == 1
         assert generated_sources == ["generic-source"]
-        assert source_kinds == ["model"]
     assert template_processors == [DslProcessorKind.DESIGN_COMPACT]
     assert callback_sizes == ["2x2"]
 
@@ -8237,7 +8233,6 @@ async def test_template_source_has_priority_over_jsx_and_uses_common_repair_once
     policy_factory,
 ):
     processed_sources: list[str] = []
-    source_kinds: list[str] = []
     processor_kinds: list[DslProcessorKind] = []
     template_call_count = 0
     model_generate_calls = 0
@@ -8264,7 +8259,6 @@ async def test_template_source_has_priority_over_jsx_and_uses_common_repair_once
     class Processor:
         def process(self, source_dsl: str, _context: Any) -> DslProcessingResult:
             processed_sources.append(source_dsl)
-            source_kinds.append(_context.source_kind)
             if source_dsl == "template-invalid-source":
                 return DslProcessingResult(
                     source_dsl=source_dsl,
@@ -8346,7 +8340,6 @@ async def test_template_source_has_priority_over_jsx_and_uses_common_repair_once
         "generic-repaired-source",
     ]
     assert processor_kinds == [DslProcessorKind.DESIGN_COMPACT]
-    assert source_kinds == ["template", "model"]
     assert saved_design_tokens == ["generic-repaired-source"]
 
 
