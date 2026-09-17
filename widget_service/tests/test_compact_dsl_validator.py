@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2026-2026. All rights reserved.
 
+import json
 import re
 from pathlib import Path
 
@@ -109,3 +110,35 @@ def test_design_prompt_contains_root_height_hard_gate_examples() -> None:
     assert "64 + 40 + 36 + 8 × 2 = 156 > 136" in prompt
     assert "itemMargin 不生效" not in prompt
     assert "两者可以同时设置" in prompt
+
+
+@pytest.mark.parametrize("width,height", ((134, 126), (144, 136)))
+def test_wide_dual_business_gate_uses_300_by_150_canvas(width: int, height: int) -> None:
+    rows = [
+        [
+            "root", "Row",
+            {"width": "matchParent", "height": "matchParent", "padding": 12, "itemMargin": 8},
+            ["weather", "battery"],
+        ],
+        ["weather", "Column", {"width": width, "height": height}, ["temperature"]],
+        ["battery", "Column", {"width": width, "height": height}, ["level"]],
+        ["temperature", "Text", {"content": {"path": "/data/weather/value"}}],
+        ["level", "Text", {"content": {"path": "/data/battery/value"}}],
+        ["/data/weather/value", 26],
+        ["/data/battery/value", 80],
+    ]
+    compact_dsl = "\n".join(json.dumps(row) for row in rows)
+    task_spec = {
+        "size": "2x4",
+        "dataModelSchema": {
+            "data": {
+                "weather": {"value": {"type": "integer"}},
+                "battery": {"value": {"type": "integer"}},
+            },
+        },
+    }
+    if width == 134:
+        validate_compact_dsl(compact_dsl, task_spec=task_spec, card_spec={"dataBindings": []})
+    else:
+        with pytest.raises(CompactDslValidationError, match="134x126"):
+            validate_compact_dsl(compact_dsl, task_spec=task_spec, card_spec={"dataBindings": []})
