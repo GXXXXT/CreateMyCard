@@ -63,7 +63,6 @@ _COUNTDOWN_DEPARTURE_TERMS = (
 )
 _THEME_TERMS_BY_BUSINESS = {
     "ActivityOverview": ("sport", "activity", "运动", "步数"),
-    "AppUsageOverview": ("app", "usage", "digital", "应用", "时长"),
     "BatteryOverview": ("battery", "device", "电量", "设备"),
     "BluetoothDeviceOverview": ("earphone", "audio", "battery", "耳机", "电量"),
     "CalendarOverview": ("calendar", "schedule", "meeting", "日历", "日程"),

@@ -87,7 +87,6 @@ _ASSET_BY_PARAMETER = {
     "timeIcon": "resources/base/media/clock_fill.svg",
 }
 _SOURCE_ICON_BY_BUSINESS = {
-    "AppUsageOverview": "resources/base/media/icon_tiktok.png",
     "BluetoothDeviceOverview": "resources/base/media/icon_earphone.svg",
     "HeartRateOverview": "resources/base/media/heart_fill.svg",
     "GenericMetricOverview": "resources/base/media/figure_run.svg",
@@ -134,9 +133,6 @@ _SAMPLE_BY_BUSINESS_BINDING: dict[tuple[str, str], Any] = {
     ("ActivityOverview", "calories"): "420 千卡",
     ("ActivityOverview", "distance"): "4.6 公里",
     ("ActivityOverview", "steps"): 6200,
-    ("AppUsageOverview", "appName"): "短视频",
-    ("AppUsageOverview", "duration"): "1小时26分",
-    ("AppUsageOverview", "updatedAt"): "今天 09:00",
     ("BluetoothDeviceOverview", "battery"): 80,
     ("BluetoothDeviceOverview", "percent"): 80,
     ("BluetoothDeviceOverview", "chargingStatus"): "充电中",
@@ -344,7 +340,10 @@ def _preview_theme(
     registry: CardPlanRegistry,
 ) -> ThemeDefinition:
     if definition.capability_id == "ViewWeather":
-        return registry.require_theme("fusion-weather-blue")
+        theme = registry.themes.get("fusion-weather-blue")
+        if theme is None:
+            raise ValueError(f"No compatible preview theme: {definition.wire_id}")
+        return theme
 
     compatible_themes = tuple(
         item
@@ -367,7 +366,7 @@ def _preview_theme(
     if theme is None:
         theme = next(iter(compatible_themes), None)
     if theme is None:
-        theme = registry.require_theme("digital-wellbeing-neutral-dark")
+        raise ValueError(f"No compatible preview theme: {definition.wire_id}")
     return theme
 
 

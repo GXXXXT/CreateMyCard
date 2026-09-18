@@ -2628,25 +2628,19 @@ def _bluetooth_facts_from_candidate(
     has_connection_and_case_battery = (
         is_connected is not None and case_battery_level is not None
     )
-    left_battery_level = _trusted_percentage_number(
-        _first_field(candidate, "leftBatteryLevel")
-    )
-    right_battery_level = _trusted_percentage_number(
-        _first_field(candidate, "rightBatteryLevel")
-    )
-    # Pair-ear templates (e.g. EarbudPairCompact) render the name and both ear
-    # batteries without any connection state, so a complete ear battery pair
-    # identifies the entity even when only one of isConnected/earphoneName is
-    # present.
+    left_battery_level = _trusted_percentage_number(_first_field(candidate, "leftBatteryLevel"))
+    right_battery_level = _trusted_percentage_number(_first_field(candidate, "rightBatteryLevel"))
     has_complete_ear_battery = (
-        left_battery_level is not None and right_battery_level is not None
+        left_battery_level is not None
+        and right_battery_level is not None
     )
-    if (
-        not has_complete_ear_battery
-        and not has_name_and_case_battery
-        and not has_connection_and_case_battery
-        and (is_connected is None) != (earphone_name is None)
-    ):
+    has_independent_battery_facts = (
+        has_name_and_case_battery
+        or has_connection_and_case_battery
+        or has_complete_ear_battery
+    )
+    has_partial_identity = (is_connected is None) != (earphone_name is None)
+    if has_partial_identity and not has_independent_battery_facts:
         return None
     facts = BluetoothDeviceOverviewFacts(
         is_connected=is_connected,

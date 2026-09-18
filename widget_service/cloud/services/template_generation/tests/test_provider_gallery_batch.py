@@ -203,7 +203,7 @@ def test_gallery_inputs_cover_all_provider_business_scenarios(tmp_path: Path) ->
     manifest = write_gallery_input_dataset(input_root)
 
     assert not stale_input.exists()
-    assert len(manifest.providers) == 10
+    assert len(manifest.providers) == 9
     all_cases = []
     for provider in manifest.providers:
         all_cases.extend(provider.cases)
@@ -647,11 +647,11 @@ async def test_gallery_dry_run_emits_missing_and_not_generated_results(
 
     assert summary.total == 168
     assert summary.failed == 0
-    assert summary.missing == 12
-    assert summary.not_generated == 156
+    assert summary.missing == 6
+    assert summary.not_generated == 162
     assert service.requests == []
     reloaded = load_gallery_input_manifest(input_root)
-    assert len(reloaded.providers) == 10
+    assert len(reloaded.providers) == 9
 
 
 def test_gallery_paired_inputs_preserve_both_businesses_and_one_action(tmp_path: Path) -> None:
@@ -787,8 +787,8 @@ def test_support_inputs_cover_every_template_and_feasible_action_counts(tmp_path
                 expected_templates.add(template.template_id)
     assert {case.targetTemplateId for case in provider.cases} == expected_templates
     # 三个 Support 不提供自身动作，各少一个双动作场景。
-    assert len(provider.cases) == len(expected_templates) * 3 - 3 == 66
-    assert len({case.caseId for case in provider.cases}) == 66
+    assert len(provider.cases) == len(expected_templates) * 3 - 3 == 63
+    assert len({case.caseId for case in provider.cases}) == 63
     for case in provider.cases:
         assert not case.expectsFusionBall
         assert case.expectedLayout == "TwoSupportLayout"
@@ -814,9 +814,9 @@ async def test_support_runner_preserves_targets_actions_and_missing_members(tmp_
     summary = await ProviderGalleryBatchRunner(service).run(
         input_root, tmp_path / "output", provider_ids={"gallery.two-support"}, concurrency=2,
     )
-    assert summary.total == 66
+    assert summary.total == 63
     assert summary.success == 60
-    assert summary.missing == 6
+    assert summary.missing == 3
     assert summary.failed == summary.not_generated == 0
     assert len(service.requests) == 60
     assert {len(actions) for actions in service.template_action_ids} == {0, 1, 2}
