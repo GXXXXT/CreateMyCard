@@ -218,6 +218,11 @@ def _collect_hero_value_errors(
     components_by_id = {
         component.component_id: component for component in components
     }
+    # 与质量阶段使用相同的有效模板根标记，仅豁免主文字校验。
+    if len(components_by_id) == len(components) and "template_root" in components_by_id:
+        root = components_by_id.get("root")
+        if root is not None and "template_root" in root.children:
+            return
     data_model_schema = task_spec.get("dataModelSchema")
     if not isinstance(data_model_schema, dict):
         return
@@ -447,13 +452,17 @@ def _is_readable_formatted_hero(
 def _formatted_hero_binding(content: Any) -> tuple[str | None, str | None]:
     if isinstance(content, dict) and set(content) == {"path"}:
         path = content.get("path")
-        return (path, None) if isinstance(path, str) else (None, None)
+        if isinstance(path, str):
+            return path, None
+        return None, None
     if not isinstance(content, str):
         return None, None
     match = _SIMPLE_FORMATTED_EXPRESSION_PATTERN.fullmatch(content.strip())
     if match is None:
         return None, None
-    return match.group("path"), match.group("unit")
+    path = match.group("path")
+    unit = match.group("unit")
+    return path, unit
 
 
 def _is_large_2x4_panel(
