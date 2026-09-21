@@ -47,6 +47,8 @@ widget_service/cloud/services/template_generation/engine/cardplan/template_plan_
   s_4c8a3e0a94536a::t_d272143ed3b36c 249-262,267,270
   s_3bc4cc8682dbe6::t_2694338b85690a 751-753,755,757,759,767-768,774-778,780-782
   s_3bc4cc8682dbe6::t_6aba395ccf0adb 172-174,186-209
+  s_bbe494ad3016ed::t_e5cab5d4c04976 727
+  s_bbe494ad3016ed::t_060bace003aea2 23-24
 widget_service/cloud/services/template_generation/resources/source/themes/fusion-schedule-cool/first-layer.md
   s_afa21b5bb31967::t_bb0c7f4c40360d 3-4
 widget_service/cloud/services/template_generation/resources/source/providers/calendar/provider.json
@@ -57,6 +59,7 @@ widget_service/cloud/services/template_generation/resources/source/providers/cal
   s_5c78a3c42b8638::t_10ad79941382f7 203-205,207-221
   s_78e978066b2445::t_878cbe53040023 222,492,540-543,545-552
   s_5c78a3c42b8638::t_80a0104d2959a7 206
+  s_bbe494ad3016ed::t_e0b783aac26189 539
 widget_service/cloud/services/template_generation/engine/cardplan/business_actions.py
   s_2816259fc57861::t_efc0fc87002447 32-44,57-59
 widget_service/cloud/services/template_generation/engine/cardplan/fusion_ball_background.py
@@ -81,6 +84,10 @@ widget_service/cloud/services/template_generation/tests/test_template_retrieval.
   s_e369308494531a::t_47c42a6df49353 1912
   s_52a59f8672dc51::t_17dfada07eaceb 1385
   s_52a59f8672dc51::t_847e50cfb84704 1238-1245
+  s_bbe494ad3016ed::t_5bb2a6bbdae242 1949
+  s_bbe494ad3016ed::t_0cb5e2a0d38a70 2002
+  s_bbe494ad3016ed::t_af02dfe2973324 143-150
+  s_bbe494ad3016ed::t_ab15be5e1d7d32 278
 widget_service/cloud/services/template_generation/resources/source/providers/health-sport/templates/workout-overview.cardtpl
   s_88aa6edb0e1963::t_18b4e7825983c3 416,427
   s_88aa6edb0e1963::t_fabf68d39f0f68 318
@@ -107,6 +114,7 @@ widget_service/cloud/services/template_generation/resources/source/providers/bat
   s_44cf9ac165ef23::t_b20905c91f8c52 1872
   s_394917cf1856a5::t_b3e0c80918a5e3 175-195,197-212,214-219,221-224,226-231,233-236,238-243,245-249,251-256,259-261,263-268,271-275,277-284,286-287,297-302,1258,1266,1272-1274,1276-1284,1286,1288,1291,1300,1304,1321,1338,1354,1366-1387,1389-1408,1439-1441,1443-1449,1456-1457,1459-1470,1472-1478,1480-1502,1524-1528,1530-1536,1538-1560,1578-1580,1582-1606,1608-1623,1650-1656,1658-1661,1663-1666,1668-1673,1675-1692,1694-1698,1700-1707,1709,1714-1718,1725-1738,1740-1755,1757-1794,1796-1802,1804-1828,1830-1856,1858-1871,1873-1890,1892-1900,1902,1904-1913,1915-1922,1924,1934-1943,1945-1949,1951-1953,1955-1958,1961-1964
   s_44cf9ac165ef23::t_6602b4f0c274b1 1674
+  s_bbe494ad3016ed::t_cb8f745714db59 1420,1430,1523,1577
 widget_service/cloud/services/template_generation/resources/source/providers/weather/provider.json
   s_2816259fc57861::t_61e0c1438e6ffa 774
   s_550b8c6eab44be::t_93c5d5ec84900c 711,714
@@ -176,6 +184,10 @@ widget_service/cloud/services/template_generation/resources/source/providers/bat
 widget_service/cloud/services/template_generation/tests/test_template_generation.py
   s_2cc88edb08ff9e::t_52387f4b56a1bf 1662
   s_6fb4ab92275880::t_058d5a2a54de22 1836,1935-1936,1940-1946,3031,3047,3257,3262-3267,3276-3293,3662,5660-5662,7029-7033,7057-7062,7065,7074,7084
+  s_bbe494ad3016ed::t_5ffb6305269bdd 285
+  s_bbe494ad3016ed::t_39b9cc7cdfe5ed 3030
+  s_bbe494ad3016ed::t_ecc168b5b2b1cb 3162
+  s_bbe494ad3016ed::t_83f06d18886a26 1177
 widget_service/cloud/services/template_generation/resources/source/providers/health-sport/provider.json
   s_3bc4cc8682dbe6::t_78b296b6b9bb49 126-155
   s_88aa6edb0e1963::t_43d84a2265a2b3 256
@@ -191,6 +203,7 @@ widget_service/cloud/services/template_generation/resources/source/providers/hea
   s_cf4f24c2735016::t_fa4028ee301d0b 442
 widget_service/cloud/data/protocol_profiles/design-compact-dsl/PROMPT.md
   s_afa21b5bb31967::t_18b4d733b212f5 996
+  s_bbe494ad3016ed::t_d39c54013932c1 919
 widget_service/cloud/services/template_generation/tests/test_image_color_policy.py
   s_52a59f8672dc51::t_54dbc58112bfc6 125-131,136-141
 widget_service/cloud/services/template_generation/resources/source/providers/health-sport/templates/training-metrics-overview.cardtpl
@@ -252,6 +265,7 @@ widget_service/cloud/services/template_generation/engine/cardplan/provider_bundl
   s_44cf9ac165ef23::t_efc3d20e21e69d 1503-1561,1563-1617
   s_44cf9ac165ef23::t_360180b8eb0149 1485,1487,1489-1496,1500-1502
   s_7f960db7592216::t_b069c7ee972eef 1486,1488,1497-1499
+  s_bbe494ad3016ed::t_000dde1856ab2f 1562
 widget_service/cloud/services/template_generation/resources/source/providers/health-sport/templates/sleep-overview.cardtpl
   h_22e274a52827b7 470,472,510,543,575-587,592-593,597
   s_cf4f24c2735016::t_d646c7367e3efe 468,471,473-474,476-485,488-489
@@ -302,6 +316,7 @@ widget_service/cloud/services/template_generation/tests/test_template_preview_da
   s_52a59f8672dc51::t_8f5dfdf2ca37f9 166-170
   s_52a59f8672dc51::t_2c40d9994e0b2e 105
   s_52a59f8672dc51::t_d1b7ce6c13fc8c 24-25
+  s_bbe494ad3016ed::t_ea79edd836a665 19,26,28,31-33
 widget_service/cloud/services/template_generation/engine/advanced/ux_mixed_prompt.py
   h_22e274a52827b7 59,115-122,131-132,900-908,946,962-969,1505-1507
   s_3bc4cc8682dbe6::t_fece0630453af3 1039-1043,1051-1061
@@ -317,6 +332,15 @@ widget_service/cloud/services/template_generation/docs/provider-template-capabil
   s_cf4f24c2735016::t_f9eef7f4736106 204
   s_7f960db7592216::t_5611b6fce22f1c 152
   s_7f960db7592216::t_3138b1fdeba219 14,26,58-59,66,73-74,76-78,140-141,162,164,203,241-243
+  s_bbe494ad3016ed::t_32c7a3029ebb54 170
+  s_bbe494ad3016ed::t_44df68d43c1700 222
+  s_bbe494ad3016ed::t_a01bf5a038a524 125
+  s_bbe494ad3016ed::t_c5d15c966364fc 7
+  s_bbe494ad3016ed::t_213655855b80da 53
+  s_bbe494ad3016ed::t_380d53c3884bb0 37-40,42
+  s_bbe494ad3016ed::t_87e29c0c017423 110
+  s_bbe494ad3016ed::t_cd14e2f409e612 83
+  s_bbe494ad3016ed::t_9f81fd11137466 149
 widget_service/cloud/services/template_generation/tests/test_provider_asset_semantics.py
   s_44cf9ac165ef23::t_907c55dbc5d98c 19,59
 widget_service/cloud/services/template_generation/engine/cardplan/wide_template_planner.py
@@ -334,6 +358,7 @@ widget_service/cloud/services/template_generation/tests/test_wide_template_plann
 widget_service/cloud/services/template_generation/docs/provider-template-contract.md
   s_18da35940099eb::t_81c1c83391b2e4 386-389
   s_78e978066b2445::t_dbfcf3bd3d6d8f 535
+  s_bbe494ad3016ed::t_351d3ef6c27ee3 534,536
 widget_service/cloud/services/task_spec_builder.py
   s_e369308494531a::t_dd19a626d53230 117,121
 widget_service/cloud/services/template_generation/docs/support-template-action-policy.md
@@ -341,6 +366,18 @@ widget_service/cloud/services/template_generation/docs/support-template-action-p
   s_e369308494531a::t_5289253aa734a9 31
 docs/云侧方案设计.md
   h_22e274a52827b7 47-50,1063,1083-1086
+widget_service/cloud/services/template_generation/tests/test_calendar_requested_case_templates.py
+  s_bbe494ad3016ed::t_69e54af8f85f17 441-444
+  s_bbe494ad3016ed::t_437e47159f862e 324
+widget_service/cloud/services/template_generation/tests/test_non_fusion_overflow_marker.py
+  s_bbe494ad3016ed::t_27ba4f96e41190 164-166,168-174,176-183
+  s_bbe494ad3016ed::t_44f0c5c0ef7fe6 167
+  s_bbe494ad3016ed::t_ab25691d01afff 175
+  s_bbe494ad3016ed::t_caf4d2497faca1 186-196
+widget_service/cloud/services/template_generation/tests/test_provider_gallery_batch.py
+  s_bbe494ad3016ed::t_a5a58a3ec61690 217
+  s_bbe494ad3016ed::t_0d4ec6aa05c95c 656,659
+  s_bbe494ad3016ed::t_23a3c8797cd125 307
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -1228,6 +1265,72 @@ docs/云侧方案设计.md
         "glm-5.3-flash": {
           "additions": 140,
           "deletions": 104
+        }
+      }
+    },
+    "s_bbe494ad3016ed": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_54bbf0c4-1c3b-4781-8454-6ce139ae15e0",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 111,
+      "total_deletions": 247,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_000dde1856ab2f": "glm-5.3-flash",
+        "t_02e56302c8799b": "glm-5.3-flash",
+        "t_060bace003aea2": "glm-5.3-flash",
+        "t_0cb5e2a0d38a70": "glm-5.3-flash",
+        "t_0d4ec6aa05c95c": "glm-5.3-flash",
+        "t_0fef0cd26f78b9": "glm-5.3-flash",
+        "t_213655855b80da": "glm-5.3-flash",
+        "t_23a3c8797cd125": "glm-5.3-flash",
+        "t_27ba4f96e41190": "glm-5.3-flash",
+        "t_27f7b9256dc1fb": "glm-5.3-flash",
+        "t_32c7a3029ebb54": "glm-5.3-flash",
+        "t_351d3ef6c27ee3": "glm-5.3-flash",
+        "t_3737a0726872bc": "glm-5.3-flash",
+        "t_380d53c3884bb0": "glm-5.3-flash",
+        "t_39b9cc7cdfe5ed": "glm-5.3-flash",
+        "t_42f061efb05382": "glm-5.3-flash",
+        "t_437e47159f862e": "glm-5.3-flash",
+        "t_44df68d43c1700": "glm-5.3-flash",
+        "t_44f0c5c0ef7fe6": "glm-5.3-flash",
+        "t_4a23c7453c98e8": "glm-5.3-flash",
+        "t_540396a158e18c": "glm-5.3-flash",
+        "t_582888d77ba31f": "glm-5.3-flash",
+        "t_5bb2a6bbdae242": "glm-5.3-flash",
+        "t_5ffb6305269bdd": "glm-5.3-flash",
+        "t_6461eee726b3f4": "glm-5.3-flash",
+        "t_69e54af8f85f17": "glm-5.3-flash",
+        "t_83f06d18886a26": "glm-5.3-flash",
+        "t_87e29c0c017423": "glm-5.3-flash",
+        "t_92b5cca497a698": "glm-5.3-flash",
+        "t_9f81fd11137466": "glm-5.3-flash",
+        "t_a01bf5a038a524": "glm-5.3-flash",
+        "t_a5a58a3ec61690": "glm-5.3-flash",
+        "t_ab15be5e1d7d32": "glm-5.3-flash",
+        "t_ab25691d01afff": "glm-5.3-flash",
+        "t_ad40fa445fe529": "glm-5.3-flash",
+        "t_af02dfe2973324": "glm-5.3-flash",
+        "t_b1abbbb25d000a": "glm-5.3-flash",
+        "t_c5d15c966364fc": "glm-5.3-flash",
+        "t_caf4d2497faca1": "glm-5.3-flash",
+        "t_cb8f745714db59": "glm-5.3-flash",
+        "t_cd14e2f409e612": "glm-5.3-flash",
+        "t_cf71d150b7c834": "glm-5.3-flash",
+        "t_d39c54013932c1": "glm-5.3-flash",
+        "t_e0b783aac26189": "glm-5.3-flash",
+        "t_e5cab5d4c04976": "glm-5.3-flash",
+        "t_ea79edd836a665": "glm-5.3-flash",
+        "t_ecc168b5b2b1cb": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 111,
+          "deletions": 247
         }
       }
     },
