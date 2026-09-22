@@ -1675,3 +1675,77 @@ Column(
   )
 )
 #End
+
+#Template BluetoothDeviceOverviewMusicCompact@1(props: { musicIcon: asset, actionId?: string })
+data = {}
+
+Row(
+    {
+        "_advancedComponent": "BluetoothDeviceOverview",
+        "width": "matchParent",
+        "height": "matchParent",
+        "itemMargin": 4,
+        "justifyContent": "start",
+        "alignItems": "center",
+        "padding": {"left": 12, "top": 8, "right": 12, "bottom": 8},
+        "backgroundColor": $theme("supportContentStyle.backgroundColor"),
+        "borderRadius": $theme("supportContentStyle.borderRadius"),
+        "clip": true,
+        "constraintSize": {
+            "minWidth": 0,
+            "minHeight": 0
+        },
+        "onClick": EventAction(props?.actionId)
+    },
+    Column(
+        {
+            "layoutWeight": 1,
+            "itemMargin": 4,
+            "justifyContent": "start",
+            "alignItems": "start",
+            "constraintSize": {
+                "minWidth": 0,
+                "minHeight": 0
+            }
+        },
+        Text(
+            "打开歌单",
+            {
+                "fontSize": 14,
+                "fontWeight": 700,
+                "fontColor": $theme('primaryColor'),
+                "maxLines": 1,
+                "textOverflow": "ellipsis",
+                "constraintSize": {
+                    "minWidth": 0,
+                    "minHeight": 0
+                }
+            }
+        ),
+        Text(
+            "播放我的收藏",
+            {
+                "fontSize": 10,
+                "fontWeight": 500,
+                "fontColor": $theme('supportContentColor'),
+                "maxLines": 1,
+                "textOverflow": "ellipsis",
+                "constraintSize": {
+                    "minWidth": 0,
+                    "minHeight": 0
+                }
+            }
+        )
+    ),
+    Image(
+        props.musicIcon,
+        {
+            "width": 24,
+            "height": 24,
+            "objectFit": "contain",
+            "flexShrink": 0,
+            "fillColor": $theme('supportContentColor')
+        }
+    )
+)
+#End

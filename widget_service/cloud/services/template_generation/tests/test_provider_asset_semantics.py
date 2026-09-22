@@ -13,10 +13,10 @@ from services.template_generation.engine.cardplan.models import (
     TemplateDefinition,
 )
 from services.template_generation.engine.cardplan.prompt import (
-    _asset_semantic_tags,
     _parameter_allowed_asset_sources,
 )
 from services.template_generation.engine.cardplan.provider_bundle import (
+    asset_semantic_tags,
     load_provider_bundle,
     load_provider_templates,
 )
@@ -56,7 +56,7 @@ def catalog_contract() -> HybridBodyContract:
     for asset in assets:
         source = asset.get("src")
         assert isinstance(source, str)
-        tags_by_source[source] = _asset_semantic_tags(asset)
+        tags_by_source[source] = asset_semantic_tags(asset)
     return HybridBodyContract.model_construct(
         allowed_asset_sources=tuple(tags_by_source),
         asset_semantic_tags_by_source=tags_by_source,

@@ -200,6 +200,27 @@
       "optionalData": []
     },
     {
+      "templateId": "ScheduleOverviewThreeMeetingsFull@1",
+      "businessId": "CalendarOverview",
+      "capabilityId": "GetCalendarEvents",
+      "description": "三场会议 Full：无背板，按时间顺序展示三场会议各自的开始时间、标题和地点，每场会议以时间轴圆点开始；用于 2x4 组合布局的整列业务槽位。",
+      "entry": "templates/schedule-overview.cardtpl",
+      "primaryData": [
+        "/events/0/title",
+        "/events/1/title",
+        "/events/2/title"
+      ],
+      "secondaryData": [
+        "/events/0/dtStart",
+        "/events/0/eventLocation",
+        "/events/1/dtStart",
+        "/events/1/eventLocation",
+        "/events/2/dtStart",
+        "/events/2/eventLocation"
+      ],
+      "optionalData": []
+    },
+    {
       "templateId": "ScheduleOverviewLocationDescriptionEndFull@1",
       "businessId": "CalendarOverview",
       "capabilityId": "GetCalendarEvents",
@@ -515,6 +536,23 @@
         "/updatedAt"
       ],
       "optionalData": []
+    },
+    {
+      "templateId": "ScheduleOverviewMeetingSenderFull@1",
+      "businessId": "CalendarOverview",
+      "capabilityId": "GetCalendarEvents",
+      "description": "Q077 会议详情 Full：顶部展示今日日程标题，时间轴依次展示首项日程标题（可选，缺失时隐藏）、时间段（缺结束时间时仅开始时间）、两行地点；用于 2x4 组合布局的整列业务槽位（如 WideFullTwoCompactLayout 的 Full 槽位），不内嵌 Action。标题 14vp/700，副标题 10vp/400。",
+      "entry": "templates/schedule-overview.cardtpl",
+      "primaryData": [
+        "/events/0/dtStart"
+      ],
+      "secondaryData": [
+        "/events/0/eventLocation"
+      ],
+      "optionalData": [
+        "/events/0/title",
+        "/events/0/dtEnd"
+      ]
     }
   ],
   "compatibility": {

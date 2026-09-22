@@ -703,6 +703,87 @@
         "/location/prefectureName",
         "/location/districtName"
       ]
+    },
+    {
+      "templateId": "WeatherOverviewConditionFeelsLikeAlertFull@1",
+      "businessId": "WeatherOverview",
+      "capabilityId": "ViewWeather",
+      "description": "天气现象大字 Full：自带圆角底板，现象为主视觉，底部体感温度与天气预警（可选）；在 2x4 组合布局中与右侧 Compact 底板风格一致。",
+      "entry": "templates/weather-overview.cardtpl",
+      "primaryData": [
+        "/current/condition"
+      ],
+      "secondaryData": [],
+      "optionalData": [
+        "/current/temperatureText",
+        "/current/feelsLikeC",
+        "/current/alertLevel",
+        "/location/prefectureName",
+        "/location/districtName"
+      ]
+    },
+    {
+      "templateId": "WeatherOverviewHumidityWindLevelHero@1",
+      "supportedEventIds": [
+        "event.open.weather"
+      ],
+      "businessId": "WeatherOverview",
+      "capabilityId": "ViewWeather",
+      "description": "湿度风力 Hero：三段式结构，顶部 20vp 城市标题行，中部温度主值区（可选天气预警行），底部信息行展示空气湿度与风向风力；与双焦点面板另一侧 Hero 保持一致，可在根节点绑定天气事件。",
+      "entry": "templates/weather-overview.cardtpl",
+      "primaryData": [
+        "/current/temperatureText",
+        "/current/humidityPercent"
+      ],
+      "secondaryData": [
+        "/current/windDirection",
+        "/current/windLevel"
+      ],
+      "optionalData": [
+        "/current/alertLevel",
+        "/location/prefectureName",
+        "/location/districtName"
+      ]
+    },
+    {
+      "templateId": "WeatherOverviewFeelsLikeHero@1",
+      "supportedEventIds": [
+        "event.open.weather"
+      ],
+      "businessId": "WeatherOverview",
+      "capabilityId": "ViewWeather",
+      "description": "体感温度大字 Hero：顶部为“城市 + 天气”标题行，中部以大号数字展示体感温度并固定追加“°”；与双焦点面板另一侧 Hero 保持一致，可在根节点绑定天气事件。风力、天气预警、感冒风险和天气现象仅作为可选数据进入字段覆盖契约，不在模板内展示。",
+      "entry": "templates/weather-overview.cardtpl",
+      "primaryData": [
+        "/current/feelsLikeC"
+      ],
+      "secondaryData": [],
+      "optionalData": [
+        "/location/prefectureName",
+        "/location/districtName",
+        "/current/condition",
+        "/current/windLevel",
+        "/current/alertLevel",
+        "/current/coldLevel"
+      ]
+    },
+    {
+      "templateId": "WeatherOverviewRainWindFull@1",
+      "businessId": "WeatherOverview",
+      "capabilityId": "ViewWeather",
+      "description": "降水概率 Full：自带圆角底板，展示当天降水概率进度环与风力行，适配出行降雨摘要；在 2x4 组合布局中与右侧 Compact 底板风格一致。",
+      "entry": "templates/weather-overview.cardtpl",
+      "primaryData": [
+        "/daily/0/rainProbabilityPercent"
+      ],
+      "secondaryData": [
+        "/current/windLevel"
+      ],
+      "optionalData": [
+        "/current/windDirection",
+        "/location/prefectureName",
+        "/location/districtName"
+      ]
     }
   ],
   "compatibility": {

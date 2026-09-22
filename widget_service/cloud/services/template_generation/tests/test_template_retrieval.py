@@ -140,6 +140,14 @@ def _card_spec() -> dict[str, Any]:
     }
 
 
+def _stub_required_assets_registry_entry() -> SimpleNamespace:
+    """Fake TemplateDefinition：无必选素材槽位，素材可用性检查恒通过。"""
+    return SimpleNamespace(
+        variants=(SimpleNamespace(parameters_schema={}),),
+        asset_parameter_semantic_tags={},
+    )
+
+
 def _query(*paths: str) -> TemplateRetrievalQuery:
     return TemplateRetrievalQuery(
         themeId="family-weather-care-blue",
@@ -267,6 +275,7 @@ def test_candidate_diagnostics_distinguish_user_and_template_field_failures(
             missing_user_requirement,
         ),
         enabled_template_ids=lambda values: values,
+        require_template=lambda template_id: _stub_required_assets_registry_entry(),
     )
     info_logs: list[str] = []
     monkeypatch.setattr(
@@ -1230,6 +1239,14 @@ def test_optional_weather_title_does_not_relax_single_business_templates(
         )
         assert "WeatherOverviewConditionHero@1" in result.allowed_template_ids
         assert "WeatherOverviewHeroTitle@1" not in result.allowed_template_ids
+    elif action_count == 0:
+        # 条件+体感+预警 Full 以天气现象为必选字段，可独立覆盖此类查询；
+        # 可选标题模板仍不得借此进入单业务方案。
+        result = retrieve_template_variants(
+            query, task, get_cardplan_registry(), (_binding(),), _card_spec()
+        )
+        assert "WeatherOverviewConditionFeelsLikeAlertFull@1" in result.allowed_template_ids
+        assert "WeatherOverviewHeroTitle@1" not in result.allowed_template_ids
     else:
         with pytest.raises(TemplateRetrievalMiss):
             retrieve_template_variants(
@@ -1369,6 +1386,7 @@ def test_q001_weather_condition_fields_match_condition_hero() -> None:
     )
 
     assert result.component_candidates[0].available_template_ids == (
+        "WeatherOverviewConditionFeelsLikeAlertFull@1",
         "WeatherOverviewConditionHero@1",
     )
 
@@ -1895,6 +1913,7 @@ def test_search_without_action_keeps_only_full_candidates() -> None:
     # condition-only query matches both.
     assert template_ids == {
         "WeatherOverviewFull@1", "WeatherOverviewAlertInfoFull@1",
+        "WeatherOverviewConditionFeelsLikeAlertFull@1",
     }
 
 
@@ -1931,6 +1950,7 @@ def test_search_index_reports_per_field_matches_before_route_intersection() -> N
             record("WeatherCondition@1", condition),
         ),
         enabled_template_ids=lambda template_ids: template_ids,
+        require_template=lambda template_id: _stub_required_assets_registry_entry(),
     )
     query_tokens = frozenset({temperature, condition})
 
@@ -1983,6 +2003,7 @@ def test_search_filters_provider_templates_by_card_size() -> None:
             record("WeatherWide@1", frozenset({"2x4"})),
         ),
         enabled_template_ids=lambda template_ids: template_ids,
+        require_template=lambda template_id: _stub_required_assets_registry_entry(),
     )
 
     candidates = _component_templates_for_capability(

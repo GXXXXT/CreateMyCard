@@ -56,6 +56,7 @@ _WEATHER_BUILTIN_ASSETS = (
 _MAX_UX_MIXED_PROMPT_CHARS = 24_000
 _PILL_ACTION_TEMPLATE_ID = "PillAction@1"
 _COMPACT_ACTION_TEMPLATE_ID = "CompactAction@1"
+_COMPACT_SUBTITLE_ACTION_TEMPLATE_ID = "CompactSubtitleAction@1"
 _ICON_ACTION_TEMPLATE_ID = "IconAction@1"
 _LARGE_ICON_ACTION_TEMPLATE_ID = "LargeIconAction@1"
 _TWO_FOCUS_LAYOUT_IDS = frozenset(
@@ -111,6 +112,14 @@ def build_ux_mixed_validation_retry_prompt(
     error: ValueError,
 ) -> list[dict[str, str]]:
     """Ask only the second layer to regenerate after strict contract rejection."""
+    asset_hint = ""
+    if "Template asset semantics do not match" in str(error):
+        asset_hint = (
+            "该错误说明所选素材不满足对应参数声明的语义标签："
+            "素材必须取自该参数在 parameterSources 中的 allowedSources；"
+            "allowedSources 为空表示本轮没有匹配素材，可选参数必须整体省略，"
+            "不得改用其它素材替代。"
+        )
     return [
         *messages,
         {"role": "assistant", "content": raw_output},
@@ -119,7 +128,8 @@ def build_ux_mixed_validation_retry_prompt(
             "content": (
                 "上一输出未通过服务端严格契约校验："
                 f"{error}。严格使用原动态契约，重新输出完整调用树。"
-                "输出必须以 Template( 开头并以 ); 结束；"
+                + asset_hint
+                + "输出必须以 Template( 开头并以 ); 结束；"
                 "所有 Template 都必须是不含关键字参数的直接位置调用。"
                 "禁止变量赋值、return、props=、children=、对象方法、"
                 "数组 children、Markdown 或解释。"
@@ -889,7 +899,15 @@ def _layout_output_option(
         "WideSingleFocusLayout": _PILL_ACTION_TEMPLATE_ID if selected_actions else None,
         "WideFullHeroActionLayout": _PILL_ACTION_TEMPLATE_ID,
         "WideHeroActionFullLayout": _PILL_ACTION_TEMPLATE_ID,
-        "WideFullTwoCompactLayout": _COMPACT_ACTION_TEMPLATE_ID,
+        "WideFullTwoCompactLayout": (
+            _COMPACT_SUBTITLE_ACTION_TEMPLATE_ID
+            if _COMPACT_SUBTITLE_ACTION_TEMPLATE_ID in action_template_ids
+            # 双行动作模板的 subtitle 为必选 Props：仅当批准动作确实带有
+            # 副标题时才优先使用，否则回退单行 CompactAction。
+            and bool(selected_actions)
+            and all(item.get("subtitle") for item in selected_actions)
+            else _COMPACT_ACTION_TEMPLATE_ID
+        ),
         "WideHalfTwoCompactLayout": (
             "PlaylistCompactAction@1"
             if "PlaylistCompactAction@1" in action_template_ids
@@ -927,6 +945,7 @@ _ACTION_TEMPLATE_ALLOWED_PROPS: dict[str, tuple[str, ...]] = {
     "PillAction@1": ("actionId", "label"),
     "PlaylistCompactAction@1": ("actionId", "label"),
     "CompactAction@1": ("actionId", "label", "subtitle", "prominent"),
+    "CompactSubtitleAction@1": ("actionId", "label", "subtitle"),
     "IconAction@1": ("actionId",),
     "LargeIconAction@1": ("actionId",),
 }
@@ -942,7 +961,14 @@ def _action_output_syntax(
         if allowed_props is not None
         else action
     )
-    if action_template_id in {_COMPACT_ACTION_TEMPLATE_ID, "PlaylistCompactAction@1"}:
+    if action_template_id == _COMPACT_SUBTITLE_ACTION_TEMPLATE_ID:
+        props = {
+            **filtered,
+            "icon": "<one semantically matching trustedAssetSource>",
+        }
+        if "subtitle" not in props:
+            props["subtitle"] = "<与动作互补的副标题，来自用户请求语义>"
+    elif action_template_id in {_COMPACT_ACTION_TEMPLATE_ID, "PlaylistCompactAction@1"}:
         props = {
             **filtered,
             "icon": "<one semantically matching trustedAssetSource>",
@@ -1012,12 +1038,29 @@ def _validate_prompt_template_plans(
     for plan in plans:
         business_ids = {slot.business_id for slot in plan.business_slots}
         action_ids = {item.action_id for item in plan.action_assignments}
-        if business_ids != expected_business_ids:
+        if business_ids != expected_business_ids and not _is_fallback_scope_plan(
+            plan,
+            business_ids,
+            expected_business_ids,
+        ):
             raise ValueError("Template Plan businesses do not match Advanced Scope")
         if action_ids != expected_action_ids:
             raise ValueError("Template Plan Actions do not match selected Actions")
         if plan.theme_id != scope.theme_id:
             raise ValueError("Template Plan Theme does not match Advanced Scope")
+
+
+def _is_fallback_scope_plan(
+    plan: TemplatePlan,
+    business_ids: set[str],
+    expected_business_ids: set[str],
+) -> bool:
+    """独立 WideFull 部分覆盖兜底计划的业务集合是范围并集的子集，允许并存。"""
+    return (
+        plan.layout_template_id == "WideFullOnlyLayout@1"
+        and len(plan.business_slots) == 1
+        and business_ids < expected_business_ids
+    )
 
 
 def _planned_layout_selection(
@@ -1461,7 +1504,9 @@ def _filter_second_layer_template_candidates(
                 item for values in candidates_by_component.values() for item in values
             }
             filtered_groups = []
-            for group, layout_kind in zip(required_template_groups, layout_kinds):
+            for group, layout_kind in zip(
+                required_template_groups, layout_kinds, strict=True
+            ):
                 group_ids = tuple(item for item in group if item in allowed_ids)
                 if not any(
                     provider_template_layout_kind(item) == layout_kind

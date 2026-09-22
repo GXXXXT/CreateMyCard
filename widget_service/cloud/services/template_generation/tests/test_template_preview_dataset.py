@@ -17,20 +17,20 @@ def test_template_preview_dataset_covers_all_business_templates(tmp_path):
     cases = manifest.get("cases")
     assert isinstance(cases, list)
 
-    assert manifest.get("templateCount") == 153
+    assert manifest.get("templateCount") == 174
     assert manifest.get("countsByLayout") == {
         "HeroTitle": 1,
         "HeroContent": 1,
         "Support": 22,
-        "Compact": 19,
-        "Hero": 41,
-        "Full": 49,
+        "Compact": 24,
+        "Hero": 47,
+        "Full": 54,
         "WideHero": 4,
-        "WideFull": 13,
+        "WideFull": 18,
         "WideHalf": 3,
     }
-    assert manifest.get("countsBySize") == {"2x2": 133, "2x4": 20}
-    assert len(cases) == 153
+    assert manifest.get("countsBySize") == {"2x2": 149, "2x4": 25}
+    assert len(cases) == 174
     template_ids: set[str] = set()
     for case in cases:
         template_id = case.get("templateId")
@@ -39,7 +39,7 @@ def test_template_preview_dataset_covers_all_business_templates(tmp_path):
         assert isinstance(file_name, str)
         template_ids.add(template_id)
         assert (tmp_path / file_name).is_file()
-    assert len(template_ids) == 153
+    assert len(template_ids) == 174
     assert {
         "BluetoothDeviceOverviewEarbudTripleFull@1",
         "BluetoothDeviceOverviewEarbudTripleHero@1",
@@ -114,6 +114,7 @@ def test_template_preview_assets_are_bundled_by_genui_evaluation():
         "l_circle_fill.svg",
         "location_north_up_right_fill.svg",
         "moon_z_fill_1.svg",
+        "music_fill.svg",
         "r_circle_fill.svg",
     }
 
@@ -174,6 +175,11 @@ def test_template_preview_manifest_data_tiers_are_disjoint():
                 "/current/feelsLikeC",
                 "/location/prefectureName", "/location/districtName",
             )
+        elif case.template_id == "BluetoothDeviceOverviewMusicCompact@1":
+            # 纯歌单入口：不渲染任何耳机数据，三级数据均为空。
+            assert case.primary_data == ()
+            assert case.secondary_data == ()
+            assert case.optional_data == ()
         elif case.business_id == "GenericMetricOverview":
             assert case.primary_data == ()
             assert case.secondary_data == ()

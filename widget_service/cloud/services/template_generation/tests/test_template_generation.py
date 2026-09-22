@@ -282,7 +282,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         if path.is_dir()
     }
 
-    assert len(registry.provider_template_ids) == 182
+    assert len(registry.provider_template_ids) == 204
     assert {
         "ActivityOverviewFull@1",
         "BatteryOverviewFull@1",
@@ -1176,7 +1176,7 @@ def test_business_groups_are_derived_from_provider_templates() -> None:
     assert provider_layout_components == set(registry.ux_layout_components)
     assert len(registry.ux_business_component_provider_ids) == 11
     calendar = registry.require_ux_business_component("CalendarOverview")
-    assert len(calendar.local_template_ids) == 29
+    assert len(calendar.local_template_ids) == 31
     assert "ScheduleOverviewTimezoneTimeFull@1" in calendar.local_template_ids
     assert "ScheduleOverviewDateLocationFull@1" in calendar.local_template_ids
     assert "ScheduleOverviewReminderDetailsFull@1" in calendar.local_template_ids
@@ -1662,7 +1662,7 @@ def test_non_fusion_sleep_theme_uses_the_reviewed_solid_palette() -> None:
     theme = get_cardplan_registry().require_theme("sleep-night-violet")
 
     assert theme.primary_color == "#FF401F99"
-    assert theme.support_content_color == "#991F4799"
+    assert theme.support_content_color == "#99401F99"
     assert theme.root_style["backgroundColor"] == "#FFEDE6FF"
     assert "linearGradient" not in theme.root_style
     assert theme.action_style.content_color == "#FF401F99"
@@ -1839,7 +1839,7 @@ def test_fusion_ball_child_percentages_resolve_against_the_direct_slot(
     assert 160 * slot_height_ratio * ball_height_ratio == pytest.approx(diameter)
 
 
-def test_fusion_ball_wraps_only_2x2_with_expanded_tersel_background():
+def test_fusion_ball_wraps_2x2_and_2x4_with_expanded_tersel_background():
     card = Nested2Node(
         "Column",
         (
@@ -1938,16 +1938,59 @@ def test_fusion_ball_wraps_only_2x2_with_expanded_tersel_background():
     assert action_icon.values[-1]["fillColor"] == "#FF64BB5C"
     assert action_text.values[-1]["fontColor"] == "#FF64BB5C"
 
-    assert apply_fusion_ball_background(
+    # 2x4 融球按同一确定性展开包装根节点（画布 300x150，球体几何等比缩放）。
+    wrapped_wide = apply_fusion_ball_background(
         card,
         size="2x4",
         palette=palette,
-    ) is card
+    )
+    assert wrapped_wide.component_type == "Stack"
+    assert wrapped_wide.values[0] == "card"
+    assert wrapped_wide.children[0].component_type == "Stack"
+    assert wrapped_wide.children[0].values[-1]["_id"] == "fusionBallBackground"
+    assert wrapped_wide.children[1].component_type == "Stack"
+    assert wrapped_wide.children[1].values[-1]["_id"] == "template_root"
     assert apply_fusion_ball_background(
         card,
         size="2x2",
         palette=None,
     ) is card
+
+
+def test_fusion_ball_wide_chain_uses_wide_slot_geometry_and_keeps_2x2():
+    """模板链路展开 2x4 融球时必须透传尺寸：三球槽位使用宽版几何参数。"""
+    palette = FusionBallPalette(*_WEATHER_PALETTE)
+    card = Nested2Node(
+        "Column",
+        ("card", {"_id": "root", "width": "matchParent", "height": "matchParent"}),
+        (Nested2Node("Column", ("skeleton", {"width": "matchParent"}), ()),),
+    )
+    wrapped_wide = apply_fusion_ball_background(card, size="2x4", palette=palette)
+    slot_styles = {
+        child.values[-1]["_id"]: child.values[-1]
+        for child in wrapped_wide.children[0].children[:3]
+    }
+    large = slot_styles["fusionBallLargeSlot"]
+    assert large["width"] == "112.5%"
+    assert large["height"] == "58.75%"
+    assert large["alignContent"] == "bottom"
+    medium = slot_styles["fusionBallMediumSlot"]
+    assert medium["width"] == "50%"
+    assert medium["height"] == "175%"
+    assert medium["alignContent"] == "bottom"
+    small = slot_styles["fusionBallSmallSlot"]
+    assert small["width"] == "121.875%"
+    assert small["height"] == "137.5%"
+    assert small["alignContent"] == "bottomEnd"
+
+    # 2x2 行为保持不变：大球槽仍为 27.5% 高度、垂直居中。
+    wrapped_square = apply_fusion_ball_background(card, size="2x2", palette=palette)
+    square_slots = {
+        child.values[-1]["_id"]: child.values[-1]
+        for child in wrapped_square.children[0].children[:3]
+    }
+    assert square_slots["fusionBallLargeSlot"]["height"] == "27.5%"
+    assert square_slots["fusionBallLargeSlot"]["alignContent"] == "center"
 
 
 def test_template_compiler_keeps_non_fusion_2x2_theme_background():
@@ -3150,8 +3193,8 @@ def test_device_ring_progress_and_icons_bind_to_distinct_theme_colors() -> None:
                 assert fill_color.kind == "theme"
                 assert fill_color.name == "supportContentColor"
 
-    assert progress_count == 13
-    assert ring_icon_count == 12
+    assert progress_count == 17
+    assert ring_icon_count == 18
 
 
 def test_battery_ring_progress_uses_dedicated_track_theme_color() -> None:
@@ -3167,6 +3210,7 @@ def test_battery_ring_progress_uses_dedicated_track_theme_color() -> None:
         "BatteryOverviewChargingProgressFull@1",
         "BatteryOverviewPercentRingHero@1",
         "BatteryOverviewChargingRingHero@1",
+        "BatteryOverviewTemperatureRingHero@1",
     }
 
     for definition in bundle.templates:
@@ -3278,7 +3322,7 @@ def test_calendar_templates_follow_latest_schedule_contract() -> None:
     registry = get_cardplan_registry()
     calendar = registry.require_ux_business_component("CalendarOverview")
 
-    assert len(calendar.local_template_ids) == 29
+    assert len(calendar.local_template_ids) == 31
     assert "ScheduleOverviewHeroContent@1" in calendar.local_template_ids
     assert "ScheduleOverviewDateFull@1" in calendar.local_template_ids
     assert "ScheduleOverviewTimeSupport@1" in calendar.local_template_ids
@@ -3374,10 +3418,17 @@ def test_battery_templates_follow_consolidated_state_contract() -> None:
         "BatteryOverviewPercentRingHero@1",
         "BatteryOverviewTemperatureFull@1",
         "BatteryOverviewSupport@1",
+        "BatteryOverviewSupportHero@1",
         "BatteryOverviewStatusSupport@1",
         "BatteryOverviewStatusHero@1",
         "BatteryOverviewChargeStatusHero@1",
         "BatteryOverviewPhoneTextCompact@1",
+        "BatteryOverviewStatusWideFull@1",
+        "BatteryOverviewTemperatureHero@1",
+        "BatteryOverviewTemperatureRingHero@1",
+        "BatteryOverviewPercentRingCompact@1",
+        "BatteryOverviewPercentStatusCompact@1",
+        "BatteryOverviewStatusRingHero@1",
     }
 
     assert set(battery.local_template_ids) == expected_template_ids
@@ -3385,6 +3436,24 @@ def test_battery_templates_follow_consolidated_state_contract() -> None:
     assert compact.primary_data == ("/batterySOC",)
     assert compact.secondary_data == ("/chargingStatusDesc",)
     assert compact.optional_data == ()
+
+    charge_status_hero = registry.require_template("BatteryOverviewChargeStatusHero@1")
+    assert charge_status_hero.primary_data == ("/batterySOC",)
+    assert charge_status_hero.secondary_data == ()
+    assert charge_status_hero.optional_data == (
+        "/chargingStatusDesc",
+        "/pluggedTypeDesc",
+        "/batteryTemperatureText",
+    )
+
+    support_hero = registry.require_template("BatteryOverviewSupportHero@1")
+    assert support_hero.primary_data == ("/batterySOC",)
+    assert support_hero.secondary_data == ()
+    assert support_hero.optional_data == (
+        "/chargingStatusDesc",
+        "/batterySOCText",
+        "/batteryTemperatureText",
+    )
 
 
 def test_each_business_group_has_a_canonical_support_template() -> None:
@@ -3754,7 +3823,7 @@ async def test_calendar_dnd_action_keeps_text_only_button_and_scene_header():
             'Template("ScheduleOverviewNextEventHero@1",'
             '{"headerLabel":"下一场日程"}),'
             'Template("PillAction@1",{"actionId":"event.open.settings.dnd",'
-            '"label":"免打扰"}));'
+            '"label":"免打扰设置"}));'
         ),
     )
 
@@ -3791,7 +3860,7 @@ async def test_calendar_dnd_action_keeps_text_only_button_and_scene_header():
     action = next(component for component in components if component.get("onClick"))
     assert action["styles"]["backgroundColor"] == "#331F4799"
     assert action.get("component") == "Button"
-    assert action.get("label") == "免打扰"
+    assert action.get("label") == "免打扰设置"
     assert not action.get("children")
     action_styles = action.get("styles")
     assert isinstance(action_styles, dict)
@@ -5723,13 +5792,13 @@ async def test_2x2_battery_percent_ring_hero_does_not_require_capacity_level():
         writeResultTo="/data/phoneBattery",
         candidateOutputFields=[
             "/batterySOC",
-            "/batterySOCText",
-            "/chargingStatusDesc",
         ],
     )
     task_spec = _battery_task()
     phone_battery = task_spec.dataModelSchema["data"]["phoneBattery"]
     del phone_battery["batteryCapacityLevelDesc"]
+    del phone_battery["batterySOCText"]
+    del phone_battery["chargingStatusDesc"]
     model = _FixedTemplateModel(
         theme_id="fusion-battery-teal",
         component_id="BatteryOverview",
@@ -5760,9 +5829,75 @@ async def test_2x2_battery_percent_ring_hero_does_not_require_capacity_level():
         "HeroActionLayout@1",
     )
     assert "batterySOC" in output.a2ui
-    assert "batterySOCText" not in output.a2ui
+    # 候选模板（如 BatteryOverviewSupportHero@1）的可选数据会进入 updateDataModel
+    # 运行时投影，但组件绑定不得引用 batterySOCText。
+    assert "batterySOCText" not in output.a2ui.split("updateDataModel")[0]
     assert "batteryCapacityLevelDesc" not in output.a2ui
     assert "省电模式" in output.a2ui
+
+
+@pytest.mark.asyncio
+async def test_2x4_battery_multi_field_without_complete_plan_returns_route_miss():
+    """2x4 请求全部显式字段但仅有部分覆盖的 WideFull 可选时，必须明确返回路由未命中。
+
+    电池温度不在任何 2x4 宽版模板覆盖范围内；不允许把静默丢失温度的部分覆盖
+    WideFull 兜底成卡（历史缺陷：生成成功但缺少电池温度绑定）。
+    """
+    binding = CandidateDataBinding(
+        capabilityId="GetPhoneBatteryInfo",
+        writeResultTo="/data/phoneBattery",
+        candidateOutputFields=[
+            "/batterySOC",
+            "/batterySOCText",
+            "/chargingStatusDesc",
+            "/batteryCapacityLevelDesc",
+            "/batteryTemperatureText",
+        ],
+    )
+    task = TaskSpec(
+        userQuery="看看手机电量百分比、充上电没有、电量等级和电池温度",
+        size="2x4",
+        dataModelSchema={
+            "data": {
+                "phoneBattery": {
+                    "batterySOC": _provider_field(68, "integer"),
+                    "batterySOCText": _provider_field("68%", "string"),
+                    "chargingStatusDesc": _provider_field("未充电", "string"),
+                    "batteryCapacityLevelDesc": _provider_field("正常电量", "string"),
+                    "batteryTemperatureText": _provider_field("30℃", "string"),
+                }
+            }
+        },
+    )
+    card_spec = {
+        "title": "手机电量",
+        "description": "手机电量完整信息",
+        "suggestSize": "2x4",
+        "dataBindings": [
+            {
+                "capabilityId": "GetPhoneBatteryInfo",
+                "writeResultTo": "/data/phoneBattery",
+            }
+        ],
+    }
+    model = _FixedTemplateModel(
+        theme_id="fusion-battery-teal",
+        component_id="BatteryOverview",
+        available_template_ids=("BatteryOverviewWideFull@1",),
+        capability_id="GetPhoneBatteryInfo",
+        required_fields=(
+            "/batterySOC",
+            "/batterySOCText",
+            "/chargingStatusDesc",
+            "/batteryCapacityLevelDesc",
+            "/batteryTemperatureText",
+        ),
+        body='Template("BatteryOverviewWideFull@1",{});',
+    )
+
+    with pytest.raises(TemplateRouteNotApplicable):
+        await generate_template_a2ui(task, card_spec, (binding,), model)
+    assert model.second_layer_prompt is None
 
 
 @pytest.mark.asyncio
@@ -7127,7 +7262,11 @@ async def test_weather_template_defaults_to_non_fusion_a2ui_and_compact_artifact
     candidate_line = next(
         line for line in second_layer_user.splitlines() if line.startswith("componentCandidates=")
     )
-    weather_full_candidates = ["WeatherOverviewFull@1"]
+    weather_full_candidates = [
+        "WeatherOverviewConditionFeelsLikeAlertFull@1",
+        "WeatherOverviewFull@1",
+        "WeatherOverviewAlertInfoFull@1",
+    ]
     assert json.loads(candidate_line.removeprefix("componentCandidates=")) == [
         {
             "componentId": "WeatherOverview",
@@ -7151,11 +7290,15 @@ async def test_weather_template_defaults_to_non_fusion_a2ui_and_compact_artifact
     template_contracts = json.loads(
         template_contract_line.removeprefix("templateContracts=")
     )
-    assert template_contracts[0]["templateId"] == "WeatherOverviewFull@1"
-    assert template_contracts[0]["callSyntax"] == (
+    full_contract = next(
+        item
+        for item in template_contracts
+        if item["templateId"] == "WeatherOverviewFull@1"
+    )
+    assert full_contract["callSyntax"] == (
         'Template("WeatherOverviewFull@1", <props matching propsSchema>)'
     )
-    assert template_contracts[0]["propsSchema"] == {
+    assert full_contract["propsSchema"] == {
         "type": "object",
         "properties": {
             "location": {"type": "string"},
@@ -7164,7 +7307,7 @@ async def test_weather_template_defaults_to_non_fusion_a2ui_and_compact_artifact
         "required": [],
         "additionalProperties": False,
     }
-    assert template_contracts[0]["parameterSources"]["conditionIcon"] == {
+    assert full_contract["parameterSources"]["conditionIcon"] == {
         "valueKind": "asset-source",
         "allowedSources": ["resources/base/media/drop_1.svg"],
     }
@@ -7174,7 +7317,7 @@ async def test_weather_template_defaults_to_non_fusion_a2ui_and_compact_artifact
     assert "手机电量高级组件二层规则" not in second_layer_user
     assert "- 可用模板：" not in second_layer_user
     assert "WeatherOverviewCompact@1" not in second_layer_user
-    assert sum(len(item["content"]) for item in model.second_layer_prompt) < 8_000
+    assert sum(len(item["content"]) for item in model.second_layer_prompt) < 10_000
     assert "标准组件投影" not in model.second_layer_prompt[0]["content"]
     assert captured["compact"]
     assert "{{ ${/data/weather/current/condition}" in captured["compact"]

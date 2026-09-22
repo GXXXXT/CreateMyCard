@@ -116,6 +116,8 @@ _SUPPORT_PREVIEW_ASSET_OVERRIDES: dict[tuple[str, str], str | None] = {
         "resources/base/media/icon_earphone.svg",
     ("BluetoothDeviceOverviewConnectionSupport@1", "deviceIcon"):
         "resources/base/media/icon_earphone.svg",
+    ("BluetoothDeviceOverviewMusicCompact@1", "musicIcon"):
+        "resources/base/media/music_fill.svg",
     ("BatteryOverviewSupport@1", "batteryIcon"):
         "resources/base/media/icon_phone.svg",
     ("WeatherOverviewTemperatureSupport@1", "conditionIcon"):

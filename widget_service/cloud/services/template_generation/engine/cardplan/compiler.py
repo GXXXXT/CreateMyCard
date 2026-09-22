@@ -12,6 +12,7 @@ from typing import Any, Literal
 from jsonschema import Draft202012Validator
 
 from models.generation import TaskSpec
+from services.fusion_ball_expander import FUSION_BALL_SIZES
 from services.template_generation.engine.a2ui_expression import (
     A2UIExpressionError,
     normalize_tersel_expression,
@@ -79,11 +80,16 @@ from .models import (
     TemplateVariant,
 )
 from .parser import ParsedCall, parse_hybrid_card, parse_ux_layout_card
-from .provider_bundle import provider_template_family_identity, provider_template_layout_kind
+from .provider_bundle import (
+    provider_template_family_identity,
+    provider_template_layout_kind,
+    size_scoped_template_parameters,
+)
 from .registry import CardPlanRegistry
 
 _STANDARD_CONTAINERS = frozenset({"Row", "Column", "List", "Stack"})
 _CONTAINERS = _STANDARD_CONTAINERS | UX_LAYOUT_COMPONENT_IDS
+_FUSION_BALL_TEMPLATE_LAYOUT_KINDS = frozenset({"Compact", "Full", "Hero", "WideFull"})
 _SINGLE_TEMPLATE_CONDITIONS = frozenset(
     {"IfParam", "IfMissingParam", "IfBind", "IfMissingBind"}
 )
@@ -92,11 +98,19 @@ _GROUPED_TEMPLATE_CONDITIONS = frozenset(
 )
 _TEMPLATE_CONDITIONS = _SINGLE_TEMPLATE_CONDITIONS | _GROUPED_TEMPLATE_CONDITIONS
 _UX_ACTION_COMPONENTS = frozenset(
-    {"PillAction", "CompactAction", "IconAction", "LargeIconAction", "ActionTile"}
+    {
+        "PillAction",
+        "CompactAction",
+        "CompactSubtitleAction",
+        "IconAction",
+        "LargeIconAction",
+        "ActionTile",
+    }
 )
 _ACTION_TEMPLATE_COMPONENTS = {
     "PillAction@1": "PillAction",
     "CompactAction@1": "CompactAction",
+    "CompactSubtitleAction@1": "CompactSubtitleAction",
     "PlaylistCompactAction@1": "CompactAction",
     "IconAction@1": "IconAction",
     "LargeIconAction@1": "LargeIconAction",
@@ -1114,19 +1128,25 @@ def _wrap_action_template(
     )
     if binding is None or action_id not in contract.content_action_ids:
         raise TerselConversionError(f"Action Provider Template is not approved: {wire_id}")
-    if action_component in {"PillAction", "CompactAction"} and (
+    if action_component in {"PillAction", "CompactAction", "CompactSubtitleAction"} and (
         params.get("label") != binding.display_label
     ):
         raise TerselConversionError(
             f"{action_component} label/actionId pair is not approved."
         )
+    if (
+        action_component == "CompactSubtitleAction"
+        and binding.display_subtitle
+        and params.get("subtitle") != binding.display_subtitle
+    ):
+        raise TerselConversionError("CompactSubtitleAction subtitle is not approved.")
     icon = params.get("icon")
     if icon is not None and (
         not isinstance(icon, str) or icon not in contract.allowed_asset_sources
     ):
         raise TerselConversionError(f"{action_component} icon is not approved.")
     if action_component in {
-        "CompactAction",
+        "CompactSubtitleAction",
         "IconAction",
         "LargeIconAction",
     } and not isinstance(icon, str):
@@ -1171,7 +1191,9 @@ def _validate_provider_template_state(
             "hero",
             "healthLevelHero",
             "percentLevelHero",
+            "percentRingCompact",
             "percentRingHero",
+            "percentStatusCompact",
             "phoneTextCompact",
             "progressCompact",
             "progressSupport",
@@ -1179,8 +1201,13 @@ def _validate_provider_template_state(
             "statusIconSupport",
             "statusSupport",
             "statusHero",
+            "statusRingHero",
+            "statusWideFull",
+            "temperatureHero",
+            "temperatureRingHero",
             "chargeStatusHero",
             "support",
+            "supportHero",
             "temperatureIconCompact",
             "temperatureIconSupport",
             "temperatureFull",
@@ -1261,6 +1288,12 @@ def _validate_provider_template_state(
             if facts.is_connected is None or not has_case:
                 raise TerselConversionError("Case connection Hero requires connection and battery.")
             return
+        if variant_name == "caseConnectionCompact":
+            if facts.is_connected is None or not has_case:
+                raise TerselConversionError(
+                    "Case connection Compact requires connection and battery."
+                )
+            return
         if variant_name == "tripleBatteryWideHalf":
             if not has_case or not has_left or not has_right:
                 raise TerselConversionError("Triple battery WideHalf requires all three batteries.")
@@ -1308,6 +1341,9 @@ def _validate_provider_template_state(
                 raise TerselConversionError(
                     "Bluetooth Provider Template variant does not match the trusted data shape."
                 )
+            return
+        if variant_name == "musicCompact":
+            # 纯歌单入口：不渲染耳机数据，因此不设任何数据前提。
             return
         if facts.is_connected is None or facts.earphone_name is None:
             raise TerselConversionError(
@@ -4923,7 +4959,16 @@ def _expand_health_metric_generic_template(
                 ),
                 Nested2Node(
                     "Image",
-                    (icon, {"width": 24, "height": 24, "objectFit": "contain", "flexShrink": 0}),
+                    (
+                        icon,
+                        {
+                            "width": 24,
+                            "height": 24,
+                            "objectFit": "contain",
+                            "flexShrink": 0,
+                            "fillColor": support_color,
+                        },
+                    ),
                     (),
                 ),
             ),
@@ -5566,7 +5611,7 @@ def _template_fusion_ball_palette(
     selected_template_ids: tuple[str, ...] = (),
 ) -> FusionBallPalette | None:
     """Resolve fusion balls for a single business or the dual-layout HeroContent."""
-    if size != "2x2":
+    if size not in FUSION_BALL_SIZES:
         return None
     theme = registry.require_theme(contract.theme_profile_id)
     fusion = theme.fusion_ball_style
@@ -5585,7 +5630,7 @@ def _template_fusion_ball_palette(
             return None
         business_template = business_templates[0]
         layout_kind = provider_template_layout_kind(business_template.wire_id)
-        if layout_kind not in {"Compact", "Full", "Hero"}:
+        if layout_kind not in _FUSION_BALL_TEMPLATE_LAYOUT_KINDS:
             return None
     if business_template.capability_id not in theme.supported_capability_ids:
         return None
@@ -6584,7 +6629,10 @@ def _validate_provider_template_layout_action_requirements(
                 f"{layout_id} two Actions require exactly one Full data Template."
             )
         return
-    if layout_id == "WideFullTwoCompactLayout" and action_names == ("CompactAction",):
+    if layout_id == "WideFullTwoCompactLayout" and action_names in {
+        ("CompactAction",),
+        ("CompactSubtitleAction",),
+    }:
         if layout_kinds not in {("Full", "Compact"), ("Hero", "Compact")}:
             raise TerselConversionError(
                 f"{layout_id} Provider Template slot combination is invalid."
@@ -9173,11 +9221,43 @@ def _lower_action_template_tree(
             return _merge_node_options(styled, {"fillColor": foreground})
         return styled
 
-    content = apply_foreground(node.children[0])
+    def fill_missing_icon_color(current: Nested2Node) -> Nested2Node:
+        options = next((value for value in current.values if isinstance(value, dict)), {})
+        children = tuple(fill_missing_icon_color(child) for child in current.children)
+        styled = Nested2Node(current.component_type, current.values, children)
+        if current.component_type != "Image":
+            return styled
+        if options.get("_preserveOriginalColor") is True or "fillColor" in options:
+            return styled
+        return _merge_node_options(styled, {"fillColor": foreground})
+
+    content = node.children[0]
     root_options = next((value for value in content.values if isinstance(value, dict)), None)
     if root_options is None or "onClick" not in root_options:
         raise TerselConversionError("UX Action Template must declare onClick.")
-    return _merge_node_options(content, {"backgroundColor": background})
+    if root_options.get("_preserveOriginalColor") is True:
+        # 动作配色注入的退出标记：保留模板自身声明的主题底板与文字颜色；
+        # 图标仍需补动作前景色，否则端侧按素材本色（黑色）渲染。
+        # 决策完成后即移除标记，避免下游补色趟继承 preserve 而跳过图标颜色处理。
+        filled = fill_missing_icon_color(content)
+        filled_options = next(
+            (value for value in filled.values if isinstance(value, dict)),
+            {},
+        )
+        cleaned = {
+            key: value
+            for key, value in filled_options.items()
+            if key != "_preserveOriginalColor"
+        }
+        values = list(filled.values)
+        options_index = next(
+            (index for index, value in enumerate(values) if isinstance(value, dict)),
+            None,
+        )
+        values[options_index] = cleaned
+        return Nested2Node(filled.component_type, tuple(values), filled.children)
+    styled = apply_foreground(content)
+    return _merge_node_options(styled, {"backgroundColor": background})
 
 
 def _lower_action_tile(
@@ -9313,7 +9393,7 @@ def _parsed_template_shape_params(call: ParsedCall) -> tuple[str, dict[str, Any]
 
 def _normalize_template_provider_params(
     content: ParsedCall,
-    _task_spec: TaskSpec,
+    task_spec: TaskSpec,
     contract: HybridBodyContract,
     registry: CardPlanRegistry,
 ) -> tuple[ParsedCall, int]:
@@ -9334,6 +9414,9 @@ def _normalize_template_provider_params(
         size, raw_params, ui_syntax = _parsed_template_shape_params(call)
         params = dict(raw_params)
         definition = registry.require_template(call.name)
+        for parameter_name in size_scoped_template_parameters(definition, task_spec.size):
+            if params.pop(parameter_name, None) is not None:
+                normalization_count += 1
         try:
             variant = registry.require_variant(call.name, str(size))
         except ValueError:
@@ -9345,20 +9428,23 @@ def _normalize_template_provider_params(
         for parameter_name in required:
             if parameter_name in params or parameter_name not in properties:
                 continue
-            candidates: list[object]
-            if parameter_name in definition.asset_parameter_semantic_tags:
-                required_tags = set(definition.asset_parameter_semantic_tags[parameter_name])
-                candidates = [
+            declared_tags = definition.asset_parameter_semantic_tags.get(parameter_name)
+            if declared_tags is None:
+                continue
+            required_tags = set(declared_tags)
+            unique_candidates = list(
+                dict.fromkeys(
                     source
                     for source in contract.allowed_asset_sources
                     if required_tags.issubset(
                         contract.asset_semantic_tags_by_source.get(source, ())
                     )
-                ]
-            else:
+                )
+            )
+            if not unique_candidates:
                 continue
-            unique_candidates = list(dict.fromkeys(candidates))
-            if len(unique_candidates) != 1:
+            if not required_tags and len(unique_candidates) != 1:
+                # 未声明语义标签的参数不做语义挑选，仅在唯一候选时兜底。
                 continue
             params[parameter_name] = unique_candidates[0]
             normalization_count += 1

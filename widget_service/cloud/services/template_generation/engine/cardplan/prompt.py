@@ -24,10 +24,13 @@ from .models import (
     HybridLimits,
 )
 from .provider_bundle import (
+    asset_semantic_tags,
+    parameter_value_kind,
     provider_template_admission,
     provider_template_family_identity,
     provider_template_layout_kind,
     provider_template_variant_admission,
+    size_scoped_template_parameters,
 )
 from .registry import CardPlanRegistry
 
@@ -44,6 +47,7 @@ _PLAIN_LAYOUTS = ("card", "section", "compact", "between", "actions", "list", "d
 _ACTION_TEMPLATE_IDS = (
     "PillAction@1",
     "CompactAction@1",
+    "CompactSubtitleAction@1",
     "PlaylistCompactAction@1",
     "IconAction@1",
     "LargeIconAction@1",
@@ -52,8 +56,8 @@ _ACTION_PROVIDER_ID = "com.huawei.action.cli"
 _ACTION_LABELS = {
     "event.call.phone": "联系家人",
     "event.clean.memory": "一键清理",
-    "event.enter.meeting": "加入会议",
-    "event.open.settings.dnd": "免打扰",
+    "event.enter.meeting": "一键入会",
+    "event.open.settings.dnd": "免打扰设置",
     "event.open.settings.bluetooth": "蓝牙设置",
     "event.open.settings.battery": "电池设置",
     "event.open.settings.batteryHealth": "电池健康",
@@ -72,76 +76,9 @@ _ACTION_LABELS = {
 _ACTION_SUBTITLES = {
     "event.viewCalendarEvent": "日程详情",
     "event.open.clock.alarm": "闹钟应用",
-}
-_ASSET_SEMANTIC_TERMS = {
-    "calendar": ("calendar", "schedule", "日程", "日历"),
-    "schedule": ("schedule", "日程"),
-    "meeting": ("meeting", "conference", "会议", "入会"),
-    "time": ("time", "clock", "时间", "时钟"),
-    "location": ("location", "place", "room", "地点", "位置", "会议室"),
-    "focus": ("focus", "dnd", "专注", "勿扰"),
-    "sport": ("sport", "training", "run", "运动", "训练", "跑步"),
-    "run": ("run", "running", "跑步"),
-    "activity": ("activity", "steps", "walk", "活动", "步数", "步行"),
-    "steps": ("steps", "step count", "walk", "步数", "步行"),
-    "calories": ("calorie", "calories", "kcal", "热量", "卡路里"),
-    "energy": ("energy", "flame", "fire", "能量", "火焰"),
-    "distance": ("distance", "mileage", "距离", "里程"),
-    "route": ("route", "path", "路线", "路径"),
-    "workout": ("workout", "exercise", "training", "锻炼", "训练", "运动"),
-    "heart": ("heart", "cardiac", "心脏", "心率"),
-    "heart-rate": ("heart rate", "heartrate", "心率"),
-    "pulse": ("pulse", "bpm", "脉搏", "心率"),
-    "call": ("call", "phone", "电话", "拨打"),
-    "weather": ("weather", "天气"),
-    "weather-condition": ("晴天", "天气降雨", "台风", "大风提醒"),
-    "weather-temperature-indicator": (
-        "weather_thermometer", "天气温度", "当前气温", "温度计", "温度指标", "温差变化", "冷热趋势",
-    ),
-    "weather-indicator": (
-        "晴天", "天气降雨", "台风", "大风提醒", "体感温度", "天气温度", "当前气温",
-    ),
-    "sleep": ("sleep", "睡眠", "月亮"),
-    "alert": ("alert", "warning", "预警", "警告"),
-    "product": ("product", "earphone", "headphone", "耳机"),
-    "audio": ("audio", "music", "earphone", "headphone", "音频", "音乐", "耳机"),
-    "earphone": ("earphone", "earbud", "headphone", "耳机", "耳塞"),
-    "earphone-body": ("耳机本体", "左右分体", "earphone body", "earbuds body"),
-    "earphone-case": ("耳机收纳盒", "耳机充电盒", "earphone case", "earbud case"),
-    "app-icon": ("应用图标", "品牌", "app icon"),
-    "phone-device": ("smartphone", "phone icon", "icon_phone", "手机图标"),
-    "music": ("music", "playlist", "音乐", "歌单"),
-    "favorite": ("favorite", "like", "heart", "收藏", "心动", "心形"),
-    "battery": ("battery", "charge", "charging", "电池", "电量", "充电"),
-    "power": ("power", "charge", "charging", "省电", "电量", "充电"),
-    "power-saving": (
-        "power saving",
-        "power-saving",
-        "battery saver",
-        "save power",
-        "leaf",
-        "省电",
-        "节电",
-        "节能",
-        "绿叶",
-        "叶片",
-        "叶子",
-    ),
-    "memory": ("memory", "ram", "内存"),
-    "resource": ("system resource", "resource usage", "系统资源", "资源占用"),
-    "clean": ("clean", "cleanup", "clear", "清理", "释放"),
-    "app": ("app", "application", "应用", "软件"),
-    "timer": ("timer", "timing", "hourglass", "计时", "时长", "时间"),
-    "countdown": ("countdown", "timing", "hourglass", "stopwatch", "沙漏", "秒表"),
-    "settings": ("settings", "setting", "设置"),
-    "parental-control": (
-        "parental control",
-        "parent control",
-        "digital wellbeing",
-        "家长控制",
-        "健康使用",
-        "管控时间",
-    ),
+    "event.open.settings.dnd": "勿扰模式",
+    "event.enter.meeting": "加入会议",
+    "event.startNavigate": "导航回家",
 }
 
 
@@ -182,7 +119,7 @@ def build_hybrid_prompt(
         if isinstance(item, dict) and isinstance(item.get("src"), str)
     )
     asset_semantic_tags_by_source = {
-        str(item["src"]): _asset_semantic_tags(item)
+        str(item["src"]): asset_semantic_tags(item)
         for item in task_spec.assetCandidates
         if isinstance(item, dict) and isinstance(item.get("src"), str)
     }
@@ -205,7 +142,11 @@ def build_hybrid_prompt(
             *binding_argument_literals,
             *(str(fact.value) for fact in facts if isinstance(fact.value, str)),
             *(_action_label(event) for event in task_spec.eventCandidates),
-            *(_action_subtitle(event) for event in task_spec.eventCandidates),
+            *(
+                subtitle
+                for subtitle in (_action_subtitle(event) for event in task_spec.eventCandidates)
+                if subtitle
+            ),
         ]
     )
     trusted_numbers = tuple(
@@ -450,9 +391,12 @@ def _system_prompt(
             ):
                 continue
             properties = variant.parameters_schema.get("properties", {})
+            hidden_parameters = size_scoped_template_parameters(definition, task_spec.size)
             params: dict[str, dict[str, Any]] = {}
             for name, value in properties.items():
-                value_kind = _parameter_value_kind(name, value)
+                if name in hidden_parameters:
+                    continue
+                value_kind = parameter_value_kind(name, value)
                 parameter: dict[str, Any] = {
                     "type": value.get("type", "value"),
                     "description": value.get("description", ""),
@@ -618,10 +562,26 @@ def build_template_prompt_contracts(
                 )
             if variant.size != "default":
                 raise ValueError(f"Template variant is not default: {wire_id}")
-            properties = variant.parameters_schema.get("properties", {})
+            hidden_parameters = size_scoped_template_parameters(definition, task_spec.size)
+            parameters_schema = variant.parameters_schema
+            if hidden_parameters:
+                parameters_schema = {
+                    **parameters_schema,
+                    "properties": {
+                        name: value
+                        for name, value in parameters_schema.get("properties", {}).items()
+                        if name not in hidden_parameters
+                    },
+                    "required": [
+                        name
+                        for name in parameters_schema.get("required", ())
+                        if name not in hidden_parameters
+                    ],
+                }
+            properties = parameters_schema.get("properties", {})
             parameter_sources: dict[str, dict[str, Any]] = {}
             for name, schema in properties.items():
-                value_kind = _parameter_value_kind(name, schema)
+                value_kind = parameter_value_kind(name, schema)
                 source_contract: dict[str, Any] = {"valueKind": value_kind}
                 if value_kind == "data-path":
                     source_contract["format"] = (
@@ -687,7 +647,7 @@ def build_template_prompt_contracts(
                     "layoutKind": (
                         provider_template_layout_kind(wire_id) if ux_layout_root else None
                     ),
-                    "propsSchema": variant.parameters_schema,
+                    "propsSchema": parameters_schema,
                     "parameterSources": parameter_sources,
                     "parameterRelations": [
                         item.model_dump(by_alias=True) for item in variant.parameter_relations
@@ -735,11 +695,14 @@ def _composition_rules(ux_layout_root: bool) -> tuple[str, ...]:
 
 
 def _ux_layout_action_rule(contract: HybridBodyContract) -> str:
-    actions = [
-        {"actionId": item.action_id, "label": item.display_label}
-        for item in contract.action_bindings
-        if item.action_id in contract.content_action_ids
-    ]
+    actions = []
+    for item in contract.action_bindings:
+        if item.action_id not in contract.content_action_ids:
+            continue
+        candidate = {"actionId": item.action_id, "label": item.display_label}
+        if item.display_subtitle:
+            candidate["subtitle"] = item.display_subtitle
+        actions.append(candidate)
     if not actions:
         return "本次没有批准 Action；必须选择 actionPolicy=none/optional 的布局并省略 Action。"
     action_rule = (
@@ -749,6 +712,9 @@ def _ux_layout_action_rule(contract: HybridBodyContract) -> str:
         "PillAction@1 的 actionId/label 必须来自同一候选，只展示文本，禁止设置 icon；"
         "IconAction@1 和 LargeIconAction@1 必须填写批准的 actionId/icon，"
         "图标从 actionIconCandidates 选择。"
+        "CompactAction@1 省略 icon，不传图标素材，按钮只展示 label 文字。"
+        "CompactSubtitleAction@1 必须提供 subtitle 副标题，"
+        "且 subtitle 必须逐字来自候选的 subtitle 值，禁止改写或虚构。"
     )
     two_support_allowed = "TwoSupportLayout" in contract.allowed_layout_component_ids
     if two_support_allowed:
@@ -935,34 +901,10 @@ def _is_action_or_asset_parameter(name: str) -> bool:
     )
 
 
-def _parameter_value_kind(name: str, schema: dict[str, Any]) -> str:
-    if name.casefold().endswith("path"):
-        return "data-path"
-    semantic_text = f"{name} {schema.get('description', '')}".casefold()
-    if any(
-        token in semantic_text
-        for token in (
-            "icon",
-            "image",
-            "asset",
-            "source",
-            "src",
-            "图标",
-            "图片",
-            "素材",
-            "资源",
-        )
-    ):
-        return "asset-source"
-    if any(token in semantic_text for token in ("action", "event", "操作", "事件")):
-        return "action-id"
-    return "literal"
-
-
 def _variant_requires_action(variant: Any) -> bool:
     required = variant.parameters_schema.get("required", [])
     return any(
-        _parameter_value_kind(name, variant.parameters_schema.get("properties", {}).get(name, {}))
+        parameter_value_kind(name, variant.parameters_schema.get("properties", {}).get(name, {}))
         == "action-id"
         for name in required
     )
@@ -976,7 +918,7 @@ def _variant_has_available_required_assets(
     properties = variant.parameters_schema.get("properties", {})
     for name in variant.parameters_schema.get("required", []):
         schema = properties.get(name, {})
-        if _parameter_value_kind(name, schema) != "asset-source":
+        if parameter_value_kind(name, schema) != "asset-source":
             continue
         if not _parameter_allowed_asset_sources(name, definition, contract):
             return False
@@ -1117,9 +1059,11 @@ def _provider_variant_matches_trusted_state(
             "hero",
             "healthLevelHero",
             "percentLevelHero",
+            "percentRingCompact",
             "percentRingHero",
             "progressCompact",
             "statusIconCompact",
+            "supportHero",
             "temperatureIconCompact",
             "temperatureFull",
             "wideFull",
@@ -1135,9 +1079,15 @@ def _provider_variant_matches_trusted_state(
             return variant_name == f"{facts.state}Phone"
         return True
     if wire_id == "BluetoothDeviceOverview@1":
+        if variant_name == "musicCompact":
+            # 纯歌单入口：无数据前提，也不要求耳机事实存在。
+            return True
         facts = extract_bluetooth_device_overview_facts(task_spec.dataModelSchema)
         if facts is None:
             return False
+        if variant_name == "caseConnectionCompact":
+            # 仓连接 Compact：只依赖连接状态与耳机仓电量两个事实。
+            return facts.is_connected is not None and facts.case_battery_level is not None
         if variant_name in {
             "caseStatus",
             "caseStatusCompact",
@@ -1276,7 +1226,21 @@ def _action_label(event: Any) -> str:
 
 
 def _action_subtitle(event: Any) -> str:
-    return _ACTION_SUBTITLES.get(getattr(event, "id", "") or "", "")
+    """返回事件批准的双行动作副标题；无批准文案时返回空串。"""
+    event_id = getattr(event, "id", "") or ""
+    if event_id == "event.startNavigate":
+        args = getattr(event, "args", None)
+        params = args.get("params") if isinstance(args, dict) else None
+        destination = params.get("dstLocation") if isinstance(params, dict) else None
+        location = (
+            str(destination.get("location", "") or "")
+            if isinstance(destination, dict)
+            else ""
+        )
+        if location == "company":
+            return "前往公司"
+        return "导航回家"
+    return _ACTION_SUBTITLES.get(event_id, "")
 
 
 def _build_action_bindings(task_spec: TaskSpec) -> tuple[ActionBinding, ...]:
@@ -1324,20 +1288,3 @@ def action_bindings(task_spec: TaskSpec) -> tuple[ActionBinding, ...]:
 def action_binding_ids(task_spec: TaskSpec) -> tuple[str, ...]:
     """Return stable per-occurrence Action IDs used by prompt and compiler contracts."""
     return tuple(action.action_id for action in action_bindings(task_spec))
-
-
-def _asset_semantic_tags(asset: dict[str, Any]) -> tuple[str, ...]:
-    explicit = [
-        str(tag).casefold()
-        for tag in asset.get("sceneTags", [])
-        if isinstance(tag, str) and tag.strip()
-    ]
-    searchable = " ".join(
-        str(asset.get(key, "")) for key in ("id", "src", "description")
-    ).casefold()
-    inferred = [
-        tag
-        for tag, terms in _ASSET_SEMANTIC_TERMS.items()
-        if any(term in searchable for term in terms)
-    ]
-    return tuple(dict.fromkeys([*explicit, *inferred]))

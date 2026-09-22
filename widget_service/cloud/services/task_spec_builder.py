@@ -113,10 +113,11 @@ class TaskSpecBuilder:
                     f"fallback_count={generated_sample_count}"
                 )
 
+        # 端侧可能不下发 prdVer（如部分评测用例）；缺失时回退默认版本，避免 TaskSpec 校验失败。
         return TaskSpec(
             userQuery=user_query,
             size=size,
-            appVersion=app_version,
+            appVersion=app_version or get_settings().default_prd_version,
             eventCandidates=event_candidates,
             dataModelSchema=data_model_schema,
             assetCandidates=[

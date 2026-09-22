@@ -4,8 +4,9 @@
 - 调用统一使用 `Template("TemplateId@1", props)`；不再输出 Variant。
 - `2x2` 单业务双 Action 场景仅存在提醒 Compact（`ScheduleOverviewReminderCompact@1`），
   仅当显式字段全部由该提醒模板覆盖时进入模板路线；不得用 Hero、Full 或
-  WideFull 冒充缺失形态。`2x4` 单业务双 Action 用 `WideFullTwoCompactLayout@1` +
-  `ScheduleOverviewEventCountDetailsFull@1` 组合（见下文 EventCountDetailsFull 条目）。
+  WideFull 冒充缺失形态。`2x4` 单业务双 Action 用 `WideFullTwoCompactLayout@1`，
+  Full 槽位按显式字段选择 `ScheduleOverviewEventCountDetailsFull@1` 或
+  `ScheduleOverviewMeetingSenderFull@1`（见下文各自条目）。
   双业务可选择四种日程 Support 进入 `TwoSupportLayout@1`；
   双业务单 Action 也可以使用 `ScheduleOverviewHeroContent@1`，并固定放在
   `HeroTitleContentActionLayout@1` 的第二个业务位置。
@@ -24,6 +25,13 @@
     不接收展示 Prop。
   - `ScheduleOverviewMeetingEntryHero@1`：会议条目 Hero；以时间轴样式展示首项日程的开始时间和地点，
     两者均为必需；不接收展示 Prop，不含动作。
+  - `ScheduleOverviewMeetingSenderFull@1`：会议详情 Full；顶部展示今日日程标题（可选
+    `headerLabel` 覆盖），时间轴依次展示首项日程标题（可选，缺失时整行隐藏）、时间段（缺结束时间时
+    仅开始时间）和两行地点；开始时间和地点必需。标题 14vp/700，副标题 10vp/400。数据标题缺失时，
+    可选 `title` Prop 只能逐字复用 `cardComposition.businessTitleCandidate` 作为标题兜底。用于 2x4
+    组合布局的整列业务槽位（如 `WideFullTwoCompactLayout@1` 的 Full 槽位），不内嵌 Action；2x4 单业务
+    双操作时依次组合本 Full 与两个 `CompactAction@1`（按各自 `allowedActionIds` 语义绑定，如免打扰
+    设置 + 一键入会）。
   - `ScheduleOverviewHeroContent@1`：日程 HeroContent；展示标题、起止时间和地点；只用于
     `HeroTitleContentActionLayout@1` 的第二个业务 child。
   - `ScheduleOverviewTimeSupport@1`：开始时间必需，标题、结束时间和地点可选；有标题时主行显示标题、
@@ -43,6 +51,9 @@
     `timeIcon` 与 `locationIcon` 可选。
   - `ScheduleOverviewTwoEventsFull@1`：双日程 Full；按顺序展示前两项日程各自的标题和开始时间，
     不接收展示 Prop。
+  - `ScheduleOverviewThreeMeetingsFull@1`：三场会议 Full；无背板，按顺序展示前三项日程各自的
+    开始时间、标题和地点，每场会议以时间轴圆点开始；不接收展示 Prop，用于 2x4 组合布局的整列
+    业务槽位（如 `WideFullTwoCompactLayout@1` 的 Full 槽位），不内嵌 Action。
   - `ScheduleOverviewLocationDescriptionEndFull@1`：备注详情 Full；展示首项日程的备注、结束时间和地点；
     可选 `calendarIcon` 与 `headerLabel`。
   - `ScheduleOverviewDatedAllDayHero@1`：带日期全天日程 Hero；展示日期、标题和全天状态，

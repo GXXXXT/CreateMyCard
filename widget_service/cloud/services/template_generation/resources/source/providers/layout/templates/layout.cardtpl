@@ -238,9 +238,25 @@ Row({
   "height": "matchParent",
   "itemMargin": 8
 },
-  Column({"layoutWeight": 1, "height": "matchParent"}, children[0]),
-  Column({"layoutWeight": 1, "height": "matchParent", "itemMargin": 8},
-    Column({"width": "matchParent", "height": 82}, children[1]),
+  Column({
+    "layoutWeight": 1,
+    "height": "matchParent",
+    "padding": {"left": 12, "top": 8, "right": 12, "bottom": 8},
+    "itemMargin": 0,
+    "backgroundColor": $theme("supportContentStyle.backgroundColor"),
+    "borderRadius": $theme("supportContentStyle.borderRadius")
+  },
+    Column({"width": "matchParent", "layoutWeight": 1}, children[0])
+  ),
+  Column({
+    "layoutWeight": 1,
+    "height": "matchParent",
+    "padding": {"left": 12, "top": 8, "right": 12, "bottom": 8},
+    "itemMargin": 0,
+    "backgroundColor": $theme("supportContentStyle.backgroundColor"),
+    "borderRadius": $theme("supportContentStyle.borderRadius")
+  },
+    Column({"width": "matchParent", "layoutWeight": 1}, children[1]),
     Column({"width": "matchParent", "height": 36}, children[2])
   )
 )
@@ -255,21 +271,26 @@ Row({
   "height": "matchParent",
   "itemMargin": 8
 },
-  Column({"layoutWeight": 1, "height": "matchParent", "itemMargin": 8},
-    Column({"width": "matchParent", "height": 82}, children[1]),
+  Column({
+    "layoutWeight": 1,
+    "height": "matchParent",
+    "padding": {"left": 12, "top": 8, "right": 12, "bottom": 8},
+    "itemMargin": 0,
+    "backgroundColor": $theme("supportContentStyle.backgroundColor"),
+    "borderRadius": $theme("supportContentStyle.borderRadius")
+  },
+    Column({"width": "matchParent", "layoutWeight": 1}, children[1]),
     Column({"width": "matchParent", "height": 36}, children[2])
   ),
   Column({
     "layoutWeight": 1,
     "height": "matchParent",
+    "padding": {"left": 12, "top": 8, "right": 12, "bottom": 8},
+    "itemMargin": 0,
     "backgroundColor": $theme("supportContentStyle.backgroundColor"),
-    "borderRadius": 16
+    "borderRadius": $theme("supportContentStyle.borderRadius")
   },
-    Column({
-      "width": "matchParent",
-      "height": "matchParent",
-      "padding": 12
-    }, children[0])
+    Column({"width": "matchParent", "layoutWeight": 1}, children[0])
   )
 )
 #End

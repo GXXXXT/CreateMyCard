@@ -305,6 +305,10 @@ class TemplateDefinition(StrictModel):
         alias="assetParameterSemanticTags",
     )
     supported_event_ids: tuple[str, ...] = Field(default=(), alias="supportedEventIds")
+    size_scoped_hidden_parameters: dict[str, tuple[str, ...]] = Field(
+        default_factory=dict,
+        alias="sizeScopedHiddenParameters",
+    )
     provider_id: str | None = Field(default=None, alias="providerId")
     business_id: str | None = Field(default=None, alias="businessId")
     capability_id: str | None = Field(default=None, alias="capabilityId")

@@ -156,22 +156,44 @@ async def test_wide_pipeline_marks_shared_content_without_enabling_fusion(
         actual_events.extend(component.get("onClick", []))
     root = by_id.get("root")
     foreground = by_id.get("template_root")
-    skeleton = by_id.get(_SKELETON_ID)
     assert isinstance(root, dict)
     assert isinstance(foreground, dict)
-    assert isinstance(skeleton, dict)
     assert root.get("component") == "Stack"
-    assert root.get("children") == ["template_root"]
     assert root.get("styles", {}).get("padding") == 0
-    assert foreground.get("children") == [_SKELETON_ID]
     assert foreground.get("styles", {}).get("padding") == 12
-    assert skeleton.get("component") in {"Column", "Row", "Stack"}
-    assert [key for key in by_id if key.startswith("__genui_render_component__")] == [_SKELETON_ID]
-    assert "fusionBallBackground" not in by_id
+    if enable_fusion_ball and scenario == "single":
+        # 方案允许单业务 2x4 WideFull 在版本门禁开启时展开融球背景；
+        # 内容根同步标记保留为 template_root 的前缀包装，不承载防溢出骨架标记。
+        assert root.get("children") == ["fusionBallBackground", "template_root"]
+        assert "fusionBallBackground" in by_id
+        wrapped_skeleton = by_id.get("__genui_render_component__template_root")
+        assert isinstance(wrapped_skeleton, dict)
+        assert [key for key in by_id if key.startswith("__genui_render_component__")] == [
+            "__genui_render_component__template_root",
+        ]
+    else:
+        assert root.get("children") == ["template_root"]
+        skeleton = by_id.get(_SKELETON_ID)
+        assert isinstance(skeleton, dict)
+        assert foreground.get("children") == [_SKELETON_ID]
+        assert skeleton.get("component") in {"Column", "Row", "Stack"}
+        assert [key for key in by_id if key.startswith("__genui_render_component__")] == [
+            _SKELETON_ID,
+        ]
+        assert "fusionBallBackground" not in by_id
     theme = get_cardplan_registry(enable_fusion_ball).require_theme(output.theme_id)
     assert (theme.fusion_ball_style is not None) is enable_fusion_ball
-    assert root.get("styles", {}).get("backgroundColor") == theme.root_style.get("backgroundColor")
-    assert root.get("styles", {}).get("linearGradient") == theme.root_style.get("linearGradient")
+    if enable_fusion_ball and scenario == "single":
+        # 融球模式下 root 背景让位给融球背景层，使用透明底色。
+        assert root.get("styles", {}).get("backgroundColor") == "#00000000"
+        assert "linearGradient" not in root.get("styles", {})
+    else:
+        assert root.get("styles", {}).get("backgroundColor") == theme.root_style.get(
+            "backgroundColor"
+        )
+        assert root.get("styles", {}).get("linearGradient") == theme.root_style.get(
+            "linearGradient"
+        )
     assert "/data/phoneBattery/batterySOC" in output.a2ui
     assert "/data/phoneBattery/chargingStatusDesc" in output.a2ui
     if scenario != "single":

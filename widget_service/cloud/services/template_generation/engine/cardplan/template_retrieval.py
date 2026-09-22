@@ -29,7 +29,11 @@ from .calendar_field_paths import (
     normalize_calendar_reminder_bindings,
 )
 from .models import TemplateDefinition
-from .provider_bundle import provider_template_layout_kind
+from .provider_bundle import (
+    asset_semantic_tags,
+    parameter_value_kind,
+    provider_template_layout_kind,
+)
 from .registry import CardPlanRegistry
 from .retrieval_index import FieldToken, TemplateVariantSearchRecord
 
@@ -1248,6 +1252,46 @@ def _candidate_with_complete_field_coverage_or_pair(
     return candidate.model_copy(update={"available_template_ids": template_ids}), None
 
 
+def template_required_assets_are_available(
+    definition: TemplateDefinition, task_spec: TaskSpec
+) -> bool:
+    """A candidate must fill its required asset props from TaskSpec asset candidates."""
+    assets = [
+        item
+        for item in task_spec.assetCandidates
+        if isinstance(item, dict) and isinstance(item.get("src"), str)
+    ]
+    tags_by_source = {str(item["src"]): asset_semantic_tags(item) for item in assets}
+    for variant in definition.variants:
+        properties = variant.parameters_schema.get("properties", {})
+        satisfied = True
+        for name in variant.parameters_schema.get("required", ()):
+            schema = properties.get(name)
+            if schema is None or parameter_value_kind(name, schema) != "asset-source":
+                continue
+            required_tags = set(definition.asset_parameter_semantic_tags.get(name, ()))
+            if required_tags:
+                matched = any(required_tags.issubset(tags) for tags in tags_by_source.values())
+            else:
+                matched = bool(tags_by_source)
+            if not matched:
+                satisfied = False
+                break
+        if satisfied:
+            return True
+    return False
+
+
+def _template_required_assets_are_available(
+    record: TemplateVariantSearchRecord,
+    task_spec: TaskSpec,
+    registry: CardPlanRegistry,
+) -> bool:
+    return template_required_assets_are_available(
+        registry.require_template(record.template_id), task_spec
+    )
+
+
 def _component_templates_for_capability(
     registry: CardPlanRegistry,
     capability_id: str,
@@ -1300,6 +1344,8 @@ def _component_templates_for_capability(
             if not _template_query_discriminator_is_requested(record, query_tokens):
                 continue
             if not _template_required_fields_are_available(record, task_spec, card_spec):
+                continue
+            if not _template_required_assets_are_available(record, task_spec, registry):
                 continue
             if business_id == "GenericMetricOverview" and task_spec.size == "2x4":
                 # Generic Compact templates deliberately have no fixed field

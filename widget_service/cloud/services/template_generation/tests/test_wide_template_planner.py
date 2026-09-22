@@ -95,7 +95,7 @@ def _plans(task, bindings, card, intent):
     return plan_template_candidates(intent, found, task, registry)
 
 
-def _body(plan, actions, *, tamper=None):
+def _body(plan, actions, *, tamper=None, icon_src="resources/base/media/heart_fill.svg"):
     children = []
     embedded = {
         action.business_position: action.action_id
@@ -128,7 +128,7 @@ def _body(plan, actions, *, tamper=None):
         if assignment.action_template_id in {"LargeIconAction@1", "IconAction@1"}:
             props.pop("label")
         if assignment.action_template_id != "PillAction@1":
-            props["icon"] = "resources/base/media/heart_fill.svg"
+            props["icon"] = icon_src
         children.append(
             f'Template("{assignment.action_template_id}", {json.dumps(props, ensure_ascii=False)})'
         )
@@ -136,6 +136,7 @@ def _body(plan, actions, *, tamper=None):
 
 
 def _contract(plans, task):
+    bindings = action_bindings(task)
     return HybridBodyContract(
         theme_profile_id=plans[0].theme_id,
         allowed_design_tokens=(),
@@ -147,7 +148,9 @@ def _contract(plans, task):
         protected_literals=(),
         allowed_template_ids=(),
         allowed_components=(),
-        action_bindings=action_bindings(task),
+        action_bindings=bindings,
+        # 与真实投影一致：原子计划选中的动作都属于内容动作。
+        content_action_ids=tuple(action.action_id for action in bindings),
         allowed_template_plans=plans,
         limits=HybridLimits(
             max_raw_components=80,
@@ -265,10 +268,17 @@ def test_health_residual_plans_cover_every_requested_field_and_business(include_
 
 
 class _PlanModel:
-    def __init__(self, intent, tamper=None, actions=()):
+    def __init__(
+        self,
+        intent,
+        tamper=None,
+        actions=(),
+        icon_src="resources/base/media/heart_fill.svg",
+    ):
         self.intent = intent
         self.actions = actions
         self.tamper = tamper
+        self.icon_src = icon_src
         self.calls = 0
         self.body = None
 
@@ -284,7 +294,9 @@ class _PlanModel:
                 if line.startswith("planCandidates="):
                     values = json.loads(line.removeprefix("planCandidates="))
                     plan = TemplatePlan.model_validate(values[0])
-                    self.body = _body(plan, self.actions, tamper=self.tamper)
+                    self.body = _body(
+                        plan, self.actions, tamper=self.tamper, icon_src=self.icon_src
+                    )
                     return self.body
         raise AssertionError("second layer did not receive atomic plans")
 
@@ -486,4 +498,141 @@ async def test_wide_full_embedded_action_uses_the_common_planner():
     model = _PlanModel(intent, actions=action_bindings(task))
     output = await generate_template_a2ui(task, card, bindings, model)
     assert model.calls == 1
+    assert output.a2ui.count('"call":"clickToDeeplink"') == 1
+
+
+def _weather_earphone_case():
+    task = TaskSpec(
+        userQuery="看当天风力和下雨概率、耳机连接和耳机仓电量，骑车时可以打开收藏歌单",
+        size="2x4",
+        dataModelSchema={
+            "data": {
+                "weather": {
+                    "current": {"windLevel": _field(4, "integer")},
+                    "daily": [{"rainProbabilityPercent": _field("60%")}],
+                },
+                "earphone": {
+                    "isConnected": _field(True, "boolean"),
+                    "batteryLevel": _field(60, "integer"),
+                },
+            }
+        },
+        eventCandidates=[
+            EventAction(
+                id="event.open.music.favorite",
+                call="clickToDeeplink",
+                args={"uri": "music:favorite"},
+            ),
+        ],
+        assetCandidates=[
+            {"src": "resources/base/media/heart_fill.svg", "description": "歌单图标"},
+            {
+                "src": "resources/base/media/earphone_case.svg",
+                "description": "耳机充电盒",
+                "sceneTags": ["earphone-case"],
+            },
+        ],
+    )
+    bindings = (
+        CandidateDataBinding(
+            capabilityId="ViewWeather",
+            writeResultTo="/data/weather",
+            candidateOutputFields=["/current/windLevel", "/daily/0/rainProbabilityPercent"],
+        ),
+        CandidateDataBinding(
+            capabilityId="GetEarphoneInfo",
+            writeResultTo="/data/earphone",
+            candidateOutputFields=["/isConnected", "/batteryLevel"],
+        ),
+    )
+    card = {
+        "title": "骑行听歌",
+        "suggestSize": "2x4",
+        "dataBindings": [
+            {"capabilityId": "ViewWeather", "writeResultTo": "/data/weather"},
+            {"capabilityId": "GetEarphoneInfo", "writeResultTo": "/data/earphone"},
+        ],
+    }
+    intent = TemplateSearchIntent(
+        requiredOutputFieldsByCapability={
+            "ViewWeather": ("/current/windLevel", "/daily/0/rainProbabilityPercent"),
+            "GetEarphoneInfo": ("/isConnected", "/batteryLevel"),
+        },
+        action=("event.open.music.favorite",),
+    )
+    return task, bindings, card, intent
+
+
+def test_case_connection_compact_forms_the_reviewed_wide_plan():
+    task, bindings, card, intent = _weather_earphone_case()
+    registry = get_cardplan_registry()
+    found = search_template_variants(intent, task, registry, bindings, card)
+    earphone_candidates = {
+        candidate.template_id
+        for group in found.business_candidates
+        if group.capability_id == "GetEarphoneInfo"
+        for candidate in group.candidates
+    }
+    assert "BluetoothDeviceOverviewCaseConnectionCompact@1" in earphone_candidates
+    plans = plan_template_candidates(intent, found, task, registry)
+    first = plans[0]
+    assert first.layout_template_id == "WideFullTwoCompactLayout@1"
+    # Q083 评审组合：左侧降水概率 Full，右侧连接 Compact 加歌单入口 Compact，
+    # 音乐动作内嵌进歌单入口 Compact 的根节点底板。
+    assert [slot.template_id for slot in first.business_slots] == [
+        "WeatherOverviewRainWindFull@1",
+        "BluetoothDeviceOverviewCaseConnectionCompact@1",
+        "BluetoothDeviceOverviewMusicCompact@1",
+    ]
+    assignment = first.action_assignments[0]
+    assert assignment.action_id == "event.open.music.favorite"
+    assert assignment.consumer == "business-template"
+    assert assignment.business_position == 2
+    # 同分计划按 _WIDE_LAYOUTS 位次决胜后，前三计划由评审位次更高的 TwoCompact
+    # 组合构成；业务槽位组合仍提供多个候选，评审主计划本身不受影响。
+    assert len({tuple(slot.template_id for slot in plan.business_slots) for plan in plans}) >= 2
+    body = _body(first, action_bindings(task))
+    assert _validate_allowed_template_plan(
+        parse_ux_layout_card(body), _contract(plans, task), registry, card_size="2x4"
+    )
+
+
+@pytest.mark.asyncio
+async def test_right_two_slot_plan_compiles_end_to_end():
+    task, bindings, card, intent = _weather_earphone_case()
+    model = _PlanModel(intent, actions=action_bindings(task))
+    output = await generate_template_a2ui(task, card, bindings, model)
+    assert model.calls == 1
+    assert output.a2ui.count('"call":"clickToDeeplink"') == 1
+    assert "已连接" in output.a2ui
+
+
+@pytest.mark.asyncio
+async def test_companion_music_compact_without_music_icon_never_reaches_second_layer():
+    """伴生模板缺少必需素材时不得进入计划：公开入口要么换合法组合，要么明确未命中。
+
+    历史缺陷：移除歌单图标后 Planner 仍把要求 `musicIcon` 的
+    `BluetoothDeviceOverviewMusicCompact@1` 放进计划，第二层提示词构建阶段
+    才以 "no complete signature" 整条链路失败。伴生槽位现执行与普通候选
+    等价的必需素材/必需数据准入，缺素材时继续寻找合法组合或返回未命中。
+    """
+    task, bindings, card, intent = _weather_earphone_case()
+    task.assetCandidates = [
+        asset
+        for asset in task.assetCandidates
+        if asset.get("src") != "resources/base/media/heart_fill.svg"
+    ]
+    # 桩内动作图标改为使用仍被批准的素材，避免用已被移除的素材补齐输入。
+    model = _PlanModel(
+        intent,
+        actions=action_bindings(task),
+        icon_src="resources/base/media/earphone_case.svg",
+    )
+
+    output = await generate_template_a2ui(task, card, bindings, model)
+    assert model.calls == 1
+    # 依赖音乐图标的 MusicCompact 不得再进入计划，动作改由根 Action 槽位承载，
+    # 输出不得引用已被移除的歌单图标，也不得在第二层提示词构建阶段整条失败。
+    assert "MusicCompact" not in output.a2ui
+    assert "heart_fill.svg" not in output.a2ui
     assert output.a2ui.count('"call":"clickToDeeplink"') == 1

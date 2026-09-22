@@ -321,6 +321,7 @@ _EXPECTED_COMPLETE: dict[str, set[str]] = {
     "Q018": {
         "ScheduleOverviewLocationHero@1",
         "ScheduleOverviewMeetingEntryHero@1",
+        "ScheduleOverviewMeetingSenderFull@1",
     },
     "Q035": {
         "ScheduleOverviewEventCountDetailsHero@1",
@@ -437,7 +438,10 @@ def test_title_and_location_are_mutually_exclusive_for_new_hero_templates() -> N
     complete = set(selection.component_candidates[0].available_template_ids)
     for group in selection.required_template_groups:
         complete.intersection_update(group)
-    assert complete == {"ScheduleOverviewNextEventLocationFull@1"}
+    assert complete == {
+        "ScheduleOverviewNextEventLocationFull@1",
+        "ScheduleOverviewMeetingSenderFull@1",
+    }
 
 
 def test_q006_keeps_two_event_indices_distinct_and_rejects_short_array() -> None:

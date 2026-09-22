@@ -20,6 +20,20 @@
   ],
   "templates": [
     {
+      "templateId": "ActivityOverviewYesterdayStepsSleepCompact@1",
+      "businessId": "ActivityOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "Q087 昨日活动睡眠 Compact：参考 Q069 深睡小睡布局的单行 2x1 双指标面板，两行均标签在左、数值在右，上行展示昨日步数加“步”单位，下行展示昨晚睡眠得分加“分”单位，不展示图标；用于 2x4 组合布局右侧上 Compact 槽位（如 WideFullTwoCompactLayout），歌单动作由根 CompactAction 承载。 组件形态：compact。",
+      "optionalData": [],
+      "entry": "templates/activity-overview.cardtpl",
+      "primaryData": [
+        "/dailySteps"
+      ],
+      "secondaryData": [
+        "/sleepScore"
+      ]
+    },
+    {
       "templateId": "ActivityOverviewCompact@1",
       "businessId": "ActivityOverview",
       "capabilityId": "GetHealthAndSportSummary",
@@ -82,6 +96,9 @@
       "templateId": "ActivityOverviewFull@1",
       "businessId": "ActivityOverview",
       "capabilityId": "GetHealthAndSportSummary",
+      "sizeScopedHiddenParameters": {
+        "2x4": ["stepsIcon"]
+      },
       "description": "今日活动完整摘要，展示步数与固定万步基准进度，可补充消耗热量和运动距离，可使用步数图标。 组件形态：full。",
       "optionalData": [
         "/dailyTotalCaloriesText",
@@ -109,6 +126,37 @@
       ]
     },
     {
+      "templateId": "ActivityOverviewTrainingMetricsWideFull@1",
+      "businessId": "ActivityOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "训练概览四宫格宽卡，完整 4x2 内以两行两列排布四个 2x1 指标格：左上大号步数配“今日步数”副标题，右上平均心率配“平均心率”副标题，左下运动时长配“用时”副标题，右下热量配“总消耗热量”副标题，每格右侧可选对应语义图标。 组件形态：wideFull。",
+      "optionalData": [],
+      "entry": "templates/training-metrics-overview.cardtpl",
+      "primaryData": [
+        "/dailySteps"
+      ],
+      "secondaryData": [
+        "/exerciseDurationText",
+        "/exerciseHeartRateAvg",
+        "/exerciseCalorieText"
+      ],
+      "assetParameterSemanticTags": {
+        "stepsIcon": [
+          "steps"
+        ],
+        "timeIcon": [
+          "time"
+        ],
+        "heartIcon": [
+          "heart"
+        ],
+        "caloriesIcon": [
+          "calories",
+          "energy"
+        ]
+      }
+    },
+    {
       "templateId": "ActivityOverviewWideFull@1",
       "businessId": "ActivityOverview",
       "capabilityId": "GetHealthAndSportSummary",
@@ -123,6 +171,27 @@
         "/dailyDistanceText",
         "/targetDateText"
       ]
+    },
+    {
+      "templateId": "ActivityOverviewGoalProgressWideFull@1",
+      "businessId": "ActivityOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "今日活动宽版目标进度摘要，顶部标题和可选步数图标，中部大号步数与固定八千步目标线性进度条，底部三格展示距离、热量和健康数据更新时间。 组件形态：wideFull。",
+      "optionalData": [],
+      "entry": "templates/activity-overview.cardtpl",
+      "primaryData": [
+        "/dailySteps"
+      ],
+      "secondaryData": [
+        "/dailyDistanceText",
+        "/dailyTotalCaloriesText",
+        "/updatedAt"
+      ],
+      "assetParameterSemanticTags": {
+        "stepsIcon": [
+          "steps"
+        ]
+      }
     },
     {
       "templateId": "WorkoutOverviewFull@1",
@@ -182,6 +251,30 @@
         "/exerciseDurationText"
       ],
       "secondaryData": []
+    },
+    {
+      "templateId": "WorkoutOverviewTrainingRecordWideFull@1",
+      "businessId": "WorkoutOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "训练记录宽卡完整摘要，左侧顶部展示运动类型，中部紧凑组合大号运动时长与运动日期，底部展示平均心率和最高心率，左列不展示右上角图标；右侧两个胶囊块均以图标收尾，上块展示运动开始-结束时间并配运动时间副标题与计时图标，下块为左对齐的“打开锻炼”入口按钮并配运动图标，点击打开运动健康锻炼页。 组件形态：wideFull。",
+      "optionalData": [],
+      "entry": "templates/workout-overview.cardtpl",
+      "primaryData": [
+        "/exerciseDurationText"
+      ],
+      "secondaryData": [
+        "/exerciseTypeName",
+        "/targetDateText",
+        "/exerciseStartTimeText",
+        "/exerciseEndTimeText",
+        "/exerciseHeartRateAvg",
+        "/exerciseHeartRateMax"
+      ],
+      "supportedEventIds": ["event.open.health.sport"],
+      "assetParameterSemanticTags": {
+        "timeIcon": ["timer"],
+        "actionIcon": ["run"]
+      }
     },
     {
       "templateId": "HeartRateOverviewFull@1",
@@ -341,6 +434,46 @@
         "/nightSleepDurationText"
       ],
       "secondaryData": []
+    },
+    {
+      "templateId": "SleepOverviewScoreFull@1",
+      "businessId": "SleepOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "睡眠得分完整摘要，以大号数字展示睡眠得分并配“分”单位，顶部展示睡眠健康状态，底部展示总睡眠时长，可选展示深睡眠时长，可使用睡眠图标。 组件形态：full。",
+      "optionalData": [
+        "/sleepStatus",
+        "/deepSleepDurationText"
+      ],
+      "entry": "templates/sleep-overview.cardtpl",
+      "primaryData": [
+        "/sleepScore"
+      ],
+      "secondaryData": [
+        "/nightSleepDurationText"
+      ]
+    },
+    {
+      "templateId": "SleepOverviewScoreDetailWideFull@1",
+      "businessId": "SleepOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "睡眠得分宽卡完整摘要，左侧顶部展示睡眠监测标题，以大号数字展示睡眠得分并配“分”单位，下方展示“睡眠得分”副标题，底部展示睡眠状况；右侧两个胶囊块均以睡眠图标收尾，上块大号展示总睡眠时长并以“睡眠总时长”为副标题，下块依次展示小睡时长和深睡眠时长，数据缺失时隐藏对应指标行或胶囊块。 组件形态：wideFull。",
+      "optionalData": [
+        "/sleepStatus",
+        "/totalNapDurationText",
+        "/deepSleepDurationText"
+      ],
+      "entry": "templates/sleep-overview.cardtpl",
+      "primaryData": [
+        "/sleepScore"
+      ],
+      "secondaryData": [
+        "/nightSleepDurationText"
+      ],
+      "assetParameterSemanticTags": {
+        "sourceIcon": [
+          "sleep"
+        ]
+      }
     },
     {
       "templateId": "SleepOverviewNapFull@1",

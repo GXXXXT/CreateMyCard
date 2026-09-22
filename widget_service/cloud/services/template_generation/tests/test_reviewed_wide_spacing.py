@@ -60,8 +60,6 @@ def test_large_action_fits_wide_half_slot():
         "WideTwoHalfLayout@1",
         "WideFullTwoCompactLayout@1",
         "WideFourCompactLayout@1",
-        "WideFullHeroActionLayout@1",
-        "WideHeroActionFullLayout@1",
         "WideFullHeroTwoActionLayout@1",
         "WideFullFourActionLayout@1",
         "WideHalfCompactTwoLargeActionLayout@1",
@@ -81,6 +79,31 @@ def test_wide_layout_fixed_slots_fit_content_budget(template_id, compact_rows):
     budget = _ux_layout_body_budget(registry, "2x4")
     assert budget == 126
     assert _estimate_height(root) == budget
+
+
+@pytest.mark.parametrize(
+    "template_id",
+    [
+        "WideFullHeroActionLayout@1",
+        "WideHeroActionFullLayout@1",
+    ],
+)
+def test_wide_full_hero_action_flexes_within_content_budget(template_id):
+    """Full+Hero+Action 两个半区与 WideTwoFocusTwoActionLayout 同构：弹性槽位吸收底板内边距。"""
+    registry = CardPlanRegistry()
+    definition = registry.require_template(template_id)
+    child = Nested2Node("Text", ("content", {"height": 14}), ())
+    root = _instantiate_blueprint(
+        definition.variants[0].root,
+        {},
+        theme_values={
+            "supportContentStyle.backgroundColor": "#FFFFFFFF",
+            "supportContentStyle.borderRadius": 16,
+        },
+        spread_children=(child,) * 5,
+    )
+    budget = _ux_layout_body_budget(registry, "2x4")
+    assert 0 < _estimate_height(root) <= budget
 
 
 def test_production_prompt_uses_current_wide_canvas():

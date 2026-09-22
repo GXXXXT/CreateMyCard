@@ -22,7 +22,8 @@ _UX_ACTION_COMPONENTS = frozenset(
 )
 _UX_ACTION_TEMPLATE_IDS = frozenset(
     {
-        "PillAction@1", "CompactAction@1", "PlaylistCompactAction@1",
+        "PillAction@1", "CompactAction@1", "CompactSubtitleAction@1",
+        "PlaylistCompactAction@1",
         "IconAction@1", "LargeIconAction@1",
     }
 )

@@ -589,7 +589,7 @@ Column(
               },
               Text(
                   data.steps,
-                  { "fontSize": 38, "fontWeight": 800, "fontColor": $theme('primaryColor'), "maxLines": 1 }
+                  { "fontSize": 24, "fontWeight": 800, "fontColor": $theme('primaryColor'), "maxLines": 1 }
               ),
               Text(
                   "步",
@@ -954,5 +954,146 @@ Row(
           )
         #endif
     )
+)
+#End
+
+#Template ActivityOverviewGoalProgressWideFull@1(props: { stepsIcon?: asset })
+data = {
+    steps: $path("/dailySteps"),
+    distance: $path("/dailyDistanceText"),
+    calories: $path("/dailyTotalCaloriesText"),
+    updatedAt: $path("/updatedAt")
+}
+
+Column(
+  {
+    "_advancedComponent": "ActivityOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 4,
+    "justifyContent": "spaceBetween",
+    "alignItems": "start",
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+      {"width": "matchParent", "height": 20, "justifyContent": "spaceBetween", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+      Text(
+          "今日活动",
+          {"fontSize": 12, "minFontSize": 10, "fontWeight": 600, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+        ),
+      #if props.stepsIcon
+        Image(
+            props.stepsIcon,
+            {"width": 20, "height": 20, "objectFit": "contain", "flexShrink": 0, "fillColor": $theme('supportContentColor')}
+          )
+      #endif
+    ),
+  Column(
+      {"width": "matchParent", "itemMargin": 2, "justifyContent": "start", "alignItems": "start", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+      Row(
+          {"width": "matchParent", "itemMargin": 4, "justifyContent": "spaceBetween", "alignItems": "bottom", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+          Text(
+              Expr(data.steps + "步"),
+              {"height": 24, "fontSize": 20, "minFontSize": 16, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+            ),
+          Text(
+              "今日目标",
+              {"fontSize": 10, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "padding": {"bottom": 2}, "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+            )
+        ),
+      Progress(
+          {"value": data.steps,
+            "total": 8000,
+            "type": "linear",
+            "width": "matchParent",
+            "height": 8,
+            "strokeWidth": 8,
+            "borderRadius": 4,
+            "color": $theme('progressColor'),
+            "backgroundColor": $theme('progressBackgroundColor')}
+        )
+    ),
+  Row(
+      {"width": "matchParent", "itemMargin": 8, "justifyContent": "spaceBetween", "alignItems": "center", "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+      Column(
+          {"width": 0, "height": 47, "layoutWeight": 1, "padding": {"left": 10, "right": 10, "top": 6, "bottom": 6}, "itemMargin": 2, "justifyContent": "center", "alignItems": "start", "backgroundColor": $theme('actionStyle.backgroundColor'), "borderRadius": 12, "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+          Text(
+              data.distance,
+              {"fontSize": 14, "minFontSize": 10, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+            ),
+          Text(
+              "距离",
+              {"fontSize": 10, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+            )
+        ),
+      Column(
+          {"width": 0, "height": 47, "layoutWeight": 1, "padding": {"left": 10, "right": 10, "top": 6, "bottom": 6}, "itemMargin": 2, "justifyContent": "center", "alignItems": "start", "backgroundColor": $theme('actionStyle.backgroundColor'), "borderRadius": 12, "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+          Text(
+              data.calories,
+              {"fontSize": 14, "minFontSize": 10, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+            ),
+          Text(
+              "热量",
+              {"fontSize": 10, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+            )
+        ),
+      Column(
+          {"width": 0, "height": 47, "layoutWeight": 1, "padding": {"left": 10, "right": 10, "top": 6, "bottom": 6}, "itemMargin": 2, "justifyContent": "center", "alignItems": "start", "backgroundColor": $theme('actionStyle.backgroundColor'), "borderRadius": 12, "clip": true, "constraintSize": {"minWidth": 0, "minHeight": 0}},
+          Text(
+              data.updatedAt,
+              {"fontSize": 14, "minFontSize": 9, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+            ),
+          Text(
+              "更新时间",
+              {"fontSize": 10, "minFontSize": 10, "fontWeight": 400, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis", "constraintSize": {"minWidth": 0, "minHeight": 0}}
+            )
+        )
+    )
+)
+#End
+
+#Template ActivityOverviewYesterdayStepsSleepCompact@1(props: { })
+data = {
+    steps: $path("/dailySteps"),
+    score: $path("/sleepScore")
+}
+
+Column(
+  {
+    "_advancedComponent": "ActivityOverview",
+    "width": "matchParent",
+    "height": "matchParent",
+    "itemMargin": 4,
+    "justifyContent": "center",
+    "alignItems": "start",
+    "padding": {"left": 12, "top": 8, "right": 12, "bottom": 8},
+    "backgroundColor": $theme('progressBackgroundColor'),
+    "borderRadius": 16,
+    "clip": true,
+    "constraintSize": {"minWidth": 0, "minHeight": 0}
+  },
+  Row(
+    {"width": "matchParent", "itemMargin": 4, "justifyContent": "spaceBetween", "alignItems": "center", "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Text(
+      "昨日步数",
+      {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"}
+    ),
+    Text(
+      Expr(data.steps + "步"),
+      {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"}
+    )
+  ),
+  Row(
+    {"width": "matchParent", "itemMargin": 4, "justifyContent": "spaceBetween", "alignItems": "center", "constraintSize": {"minWidth": 0, "minHeight": 0}},
+    Text(
+      "昨晚睡眠",
+      {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('supportContentColor'), "maxLines": 1, "textOverflow": "ellipsis"}
+    ),
+    Text(
+      Expr(data.score + "分"),
+      {"fontSize": 12, "fontWeight": 500, "fontColor": $theme('primaryColor'), "maxLines": 1, "textOverflow": "ellipsis"}
+    )
+  )
 )
 #End
