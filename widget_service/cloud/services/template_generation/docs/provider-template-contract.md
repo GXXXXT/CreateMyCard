@@ -275,6 +275,9 @@ Column({"width": "matchParent", "itemMargin": 4},
   从上到下只展开首个命中分支；即使该分支为空，也不继续匹配。没有命中时使用 `#else`，未声明
   `#else` 时不生成内容。每个条件块最多一个 `#else`，其后不能再声明 `#elseif`；嵌套块独立匹配和闭合。
   所有分支仍需通过绑定、参数、动作等校验，后续分支不能借用先前分支的可选数据存在性保证。
+- 容器的全部子内容都由条件分支构成时（例如仅包裹 `#if data.updatedAt` 的底部 Column），当条件
+  不成立，整个容器不生成，而不是触发"展开后容器必须包含子节点"的校验失败；条件成立时渲染结果
+  不变。容器在蓝图中本就没有子节点的静态空容器仍会被校验拒绝。
 - Provider 全局路径中已经存在的值必须使用 `data.xxx`，由服务端根据 `dataDomain + 相对路径`
   绑定为端侧表达式，不得在 `props` 中重复传递。没有对应全局路径的受控派生展示值，以及素材、
   排版等模板参数，
@@ -430,14 +433,17 @@ Action 和 Layout 模板不参与业务数量计算。主题适用能力还必�
 不满足门禁的卡片继续使用 Theme 原有纯色或线性渐变。融球包装只替换卡片根背景，不改写业务文本、图标或
 Action 内容颜色。业务 Provider 必须显式区分主内容与辅助内容，分别使用 `$theme('primaryColor')` 和
 `$theme('supportContentColor')`；服务端只给未配置颜色的内容组件补 `primaryColor`，不得猜测主辅语义。
-PillAction 模板使用 `$theme('actionStyle.backgroundColor')` 和 `$theme('actionStyle.contentColor')`；Theme 不得
+PillAction 模板直接展开为标准 Button，使用 `$theme('actionStyle.backgroundColor')` 和
+`$theme('actionStyle.contentColor')`；Theme 不得
 覆盖 Action Template 节点已经显式声明的高度、圆角、字号和字重。
 
 ### 完整 A2UI 转换
 
 融球树在模板 CardPlan/Tersel 阶段已经由标准组件组成：`Stack` 承载定位层，三球和玻璃层使用无 children
 约束的 `Divider` 视觉叶节点，并在进入 A2UI-Compact 前完成。玻璃层使用 5% 白色和
-`backdropBlur: {"radius": 120}`。融球模板路径在 `template_root` 与 `root_1` 之间注入 ID 为
+`backdropBlur: {"radius": 210}`。球体配色由各 Theme 的 `fusionBallStyle` 定义，具体色值见
+[主题说明](../resources/source/themes/README.md)；球体尺寸和定位保持不变。融球模板路径在
+`template_root` 与 `root_1` 之间注入 ID 为
 `__genui_render_component__template_root` 的标准 Stack，以启用端侧内容层防溢出能力；`root_1` 保持普通布局
 骨架 ID。A2UI-Compact 不声明 `FusionBall` 组件能力，任何残留均按不支持组件拒绝。
 
@@ -505,7 +511,9 @@ PillAction 模板使用 `$theme('actionStyle.backgroundColor')` 和 `$theme('act
 确定性 `template_plan_planner.py` 在 Search 与第二层 LLM 之间重新读取 Registry 元数据，联合规划 Theme、
 Layout、业务顺序、准确模板 ID 和 Action 消费位置。每个 Plan 必须覆盖全部显式字段并消费每个已选 Action
 恰好一次；`2x2` 单业务优先让用户主焦点命中模板 `primaryData`。Action 可以由根 Action 模板消费，也可由
-声明可选 `actionId` 的垂域 Support 模板消费。Planner 稳定排序、去重后最多输出三个完整原子 Plan。
+声明可选 `actionId` 的垂域 Support 模板消费。主焦点与主数据匹配后，优先选择实际使用本轮可用数据更多的
+组合；按 Search 返回的 `availableDataFields` 完整路径并集去重，缺失或类型不匹配的数据不计入。
+再按原有次数据与可选数据匹配规则稳定排序、去重，最多输出三个完整原子 Plan，二层优先选择靠前者。
 
 配置 `firstLayerComponentSelector: "llm"` 时，系统可走兼容选择器
 `plan_template_route_with_llm()`，由第一层直接产出 Theme、组件候选和 Action；该路径不是当前默认生产路径。
@@ -515,7 +523,9 @@ Theme、Layout、业务顺序、模板 ID 或 Action 消费位置，也不得跨
 `dataFacts`、`mustKeep` 或数据样例，不重新判断展示字段，不得用基础组件补业务内容。编译器在展开前验证
 最终调用树与且仅与一个 Plan 完全一致，混合两个 Plan 或重复、遗漏 Action 均按契约失败。
 
-PillAction Props 包含 `actionId`、`label` 和可选 `icon`，IconAction Props 包含 `actionId`、`icon`。
+PillAction 直接使用标准 Button 的 `label` 展示文本，点击事件绑定在 Button 上；保持 36vp 高度、18vp
+圆角和 14fp 字号，不再展开 Stack、Row、Text。Props 仅包含 `actionId`、`label`；两种尺寸均禁止传入 `icon`，
+由 Props schema 拒绝并进入现有修复链路。IconAction Props 仍包含 `actionId`、`icon`。
 必选 Action CardTpl 在交互组件样式中写入 `onClick: EventAction(props.actionId)`；Support CardTpl 的可选事件
 使用 `onClick: EventAction(props?.actionId)`。微服务将受信 `actionId` 绑定到已批准事件，模型不得输出
 原始 `call`、`args` 或 `onClick`。完整模块边界见
@@ -529,9 +539,9 @@ PillAction Props 包含 `actionId`、`label` 和可选 `icon`，IconAction Props
 ## 当前迁移范围
 
 天气、日历、手机电量、耳机、健康运动、倒计时和系统内存当前共有
-149 个无 Variant 的业务 UI 模板，其中 22 个是 Support，另保留通用指标模板。
+153 个无 Variant 的业务 UI 模板，其中 22 个是 Support，另保留通用指标模板。
 Layout Provider 提供 24 个支持 `...children` 的布局模板，Action Provider 提供 5 个动作模板，
-运行时 Registry 共 178 个模板。应用使用时长能力已下线，对应模板不再进入运行目录。
+运行时 Registry 共 182 个模板。应用使用时长能力已下线，对应模板不再进入运行目录。
 名称包含 `Wide` 的布局只用于 `2x4`，其余布局只用于 `2x2`，两类布局不得混用。
 新增或修改资源后执行：
 

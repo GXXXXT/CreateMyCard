@@ -101,6 +101,12 @@ _ACTION_TEMPLATE_COMPONENTS = {
     "IconAction@1": "IconAction",
     "LargeIconAction@1": "LargeIconAction",
 }
+_ACTION_TEMPLATE_ROOT_COMPONENTS = {
+    "PillAction": "Button",
+    "CompactAction": "Stack",
+    "IconAction": "Stack",
+    "LargeIconAction": "Stack",
+}
 _ACTION_PROVIDER_ID = "com.huawei.action.cli"
 _UX_DIRECT_BUSINESS_COMPONENTS = UX_DIRECT_BUSINESS_COMPONENT_IDS
 _DANGEROUS_EVENT_KEYS = frozenset({"onClick", "call", "args", "action"})
@@ -1090,9 +1096,10 @@ def _wrap_action_template(
     action_component = _ACTION_TEMPLATE_COMPONENTS.get(wire_id)
     if action_component is None:
         raise TerselConversionError(f"Action Provider Template is unsupported: {wire_id}")
-    if root.component_type != "Stack":
+    expected_root = _ACTION_TEMPLATE_ROOT_COMPONENTS.get(action_component)
+    if root.component_type != expected_root:
         raise TerselConversionError(
-            f"Action Provider Template root must be Stack: {wire_id}"
+            f"Action Provider Template root must be {expected_root}: {wire_id}"
         )
     action_id = params.get("actionId")
     if wire_id == "PlaylistCompactAction@1" and action_id != "event.open.music.daily":
@@ -1163,6 +1170,7 @@ def _validate_provider_template_state(
             "full",
             "hero",
             "healthLevelHero",
+            "percentLevelHero",
             "percentRingHero",
             "phoneTextCompact",
             "progressCompact",
@@ -1288,16 +1296,15 @@ def _validate_provider_template_state(
                     "Earbud charging Template requires both batteries and charging states."
                 )
             return
-        if variant_name == "earbudPairCompact":
-            # 与 earbudsSupport/earbudsFull 一致：成对耳机电量即为可信数据形态，
-            # 连接状态与设备名并非该变体的渲染前提。
-            if not has_left or not has_right:
+        if variant_name in {"earbudPairHero", "earbudPairCompact"}:
+            if facts.earphone_name is None or not has_left or not has_right:
                 raise TerselConversionError(
                     "Bluetooth Provider Template variant does not match the trusted data shape."
                 )
             return
-        if variant_name == "earbudPairHero":
-            if facts.earphone_name is None or not has_left or not has_right:
+        if variant_name in {"earbudTripleFull", "earbudTripleHero"}:
+            has_three_batteries = has_left and has_right and has_case
+            if facts.earphone_name is None or not has_three_batteries:
                 raise TerselConversionError(
                     "Bluetooth Provider Template variant does not match the trusted data shape."
                 )
@@ -4672,15 +4679,24 @@ def _instantiate_blueprint_children(
                     )
                 )
             continue
-        instantiated.append(
-            _instantiate_blueprint(
-                child,
-                params,
-                bindings,
-                theme_values,
-                spread_children=spread_children,
-            )
+        instantiated_child = _instantiate_blueprint(
+            child,
+            params,
+            bindings,
+            theme_values,
+            spread_children=spread_children,
         )
+        if (
+            child.component in _CONTAINERS
+            and child.children
+            and not instantiated_child.children
+        ):
+            # 蓝图子节点实例化后全部为空（如容器内容仅由数据/参数条件构成且条件
+            # 不成立，或条件命中但内部又递归剪空）时，容器会展开为空，直接命中
+            # 扩展校验的空容器拒绝；此处丢弃这种条件性空容器。
+            # 蓝图本身无子节点的静态空容器不在此列，仍由扩展校验拒绝。
+            continue
+        instantiated.append(instantiated_child)
     return tuple(instantiated)
 
 
@@ -9103,6 +9119,9 @@ def _provider_layout_action_background(
 ) -> str:
     """Resolve a single-business Provider Template Action background override."""
     theme = registry.require_theme(contract.theme_profile_id)
+    business_names = _contract_ux_business_component_names(contract, registry)
+    if theme.fusion_ball_style is not None and business_names == {"BluetoothDeviceOverview"}:
+        return default
     if not theme.allow_template_action_background_override:
         return default
     if len(_contract_ux_business_component_names(contract, registry)) != 1:
@@ -9132,7 +9151,8 @@ def _lower_action_template_tree(
     background: str,
     foreground: str,
 ) -> Nested2Node:
-    if len(node.children) != 1 or node.children[0].component_type != "Stack":
+    expected_root = _ACTION_TEMPLATE_ROOT_COMPONENTS.get(node.component_type)
+    if len(node.children) != 1 or node.children[0].component_type != expected_root:
         raise TerselConversionError("UX Action must contain one trusted Action Template.")
 
     def apply_foreground(
@@ -9142,7 +9162,7 @@ def _lower_action_template_tree(
         preserve_here = preserve_original or options.get("_preserveOriginalColor") is True
         children = tuple(apply_foreground(child, preserve_here) for child in current.children)
         styled = Nested2Node(current.component_type, current.values, children)
-        if current.component_type == "Text":
+        if current.component_type in {"Text", "Button"}:
             if preserve_here:
                 return styled
             return _merge_node_options(styled, {"fontColor": foreground})

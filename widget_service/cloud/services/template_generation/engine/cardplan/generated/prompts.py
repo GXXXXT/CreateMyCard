@@ -204,5 +204,7 @@ UX_MIXED_SYSTEM_PROMPT_KERNEL = (
     '@1` 与 `WideHeroActionFullLayout@1` 同时可'
     '用时，比较两个业务 Template\n   的最大文本字号：字号更大的业务'
     '必须位于左侧；两者相同时使用 `WideFullHeroActionLayo'
-    'ut@1`。'
+    'ut@1`。\n9. PillAction@1 暂时只展示文本，仅允许 ac'
+    'tionId、label Props，禁止设置 icon；IconActio'
+    'n@1 仍按签名填写图标。'
 )

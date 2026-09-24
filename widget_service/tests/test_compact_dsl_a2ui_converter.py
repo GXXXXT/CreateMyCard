@@ -226,7 +226,10 @@ class CompactDslA2uiConverterTest(unittest.TestCase):
                 [
                     "action_icon",
                     "Image",
-                    {"src": "resources/base/media/weather.svg"},
+                    {
+                        "src": "resources/base/media/weather.svg",
+                        "fillColor": "#FF1F4799",
+                    },
                 ],
             ]
         )
@@ -268,6 +271,7 @@ class CompactDslA2uiConverterTest(unittest.TestCase):
             components[2]["src"],
             "resources/base/media/weather.svg",
         )
+        self.assertEqual(components[2]["styles"]["fillColor"], "#FF1F4799")
 
     def test_preserves_label_less_icon_round_button_image_child(self) -> None:
         event = {
@@ -951,7 +955,7 @@ class CompactDslA2uiConverterTest(unittest.TestCase):
 
         with self.assertRaisesRegex(
             CompactDslValidationError,
-            "vertical layout requires at least 164vp within 136vp",
+            "vertical layout requires at least 164vp within 126vp",
         ):
             validate_compact_dsl(
                 compact_dsl,
@@ -1048,13 +1052,13 @@ class CompactDslA2uiConverterTest(unittest.TestCase):
                     {
                         "width": "matchParent",
                         "height": "matchParent",
-                        "padding": 12,
+                        "padding": 8,
                         "itemMargin": 8,
                     },
                     ["zone_top", "zone_bottom"],
                 ],
-                ["zone_top", "Text", {"content": "上区", "height": 64}],
-                ["zone_bottom", "Text", {"content": "下区", "height": 64}],
+                ["zone_top", "Text", {"content": "上区", "height": 63}],
+                ["zone_bottom", "Text", {"content": "下区", "height": 63}],
             ]
         )
 
@@ -1177,6 +1181,100 @@ class CompactDslA2uiConverterTest(unittest.TestCase):
                 },
                 card_spec={"dataBindings": []},
             )
+
+    def test_rejects_quoted_json_pointer_mixed_with_valid_binding(self) -> None:
+        compact_dsl = _serialize(
+            [
+                [
+                    "root",
+                    "Column",
+                    {"width": 160, "height": 160},
+                    ["reminder"],
+                ],
+                [
+                    "reminder",
+                    "Text",
+                    {
+                        "content": (
+                            "{{ '/data/calendar/events/0/dtStart' + ' · ' + "
+                            "${/data/calendar/events/0/remindTime/0} }}"
+                        )
+                    },
+                ],
+                ["/data/calendar/events/0/dtStart", "14:00"],
+                ["/data/calendar/events/0/remindTime/0", "15"],
+            ]
+        )
+        task_spec = {
+            "dataModelSchema": {
+                "data": {
+                    "calendar": {
+                        "events": [
+                            {
+                                "dtStart": {"type": "string"},
+                                "remindTime": [{"type": "string"}],
+                            }
+                        ]
+                    }
+                }
+            },
+            "assetCandidates": [],
+            "eventCandidates": [],
+        }
+
+        with self.assertRaisesRegex(
+            CompactDslValidationError,
+            "expression wraps quoted JSON Pointer",
+        ):
+            validate_compact_dsl(
+                compact_dsl,
+                task_spec=task_spec,
+                card_spec={"dataBindings": []},
+            )
+
+    def test_allows_slash_as_expression_display_separator(self) -> None:
+        compact_dsl = _serialize(
+            [
+                [
+                    "root",
+                    "Column",
+                    {"width": 160, "height": 160},
+                    ["ratio"],
+                ],
+                [
+                    "ratio",
+                    "Text",
+                    {
+                        "content": (
+                            "{{ ${/data/metrics/used} + '/' + "
+                            "${/data/metrics/total} }}"
+                        )
+                    },
+                ],
+                ["/data/metrics/used", 2],
+                ["/data/metrics/total", 5],
+            ]
+        )
+        task_spec = {
+            "dataModelSchema": {
+                "data": {
+                    "metrics": {
+                        "used": {"type": "integer"},
+                        "total": {"type": "integer"},
+                    }
+                }
+            },
+            "assetCandidates": [],
+            "eventCandidates": [],
+        }
+
+        result = validate_compact_dsl(
+            compact_dsl,
+            task_spec=task_spec,
+            card_spec={"dataBindings": []},
+        )
+
+        self.assertEqual(result.warnings, ())
 
     def test_rejects_compact_data_path_missing_from_task_spec(self) -> None:
         compact_dsl = _serialize(
@@ -1521,7 +1619,7 @@ def _converted_components(rows: list[list[object]], size: str) -> dict[str, dict
     return result
 
 
-@pytest.mark.parametrize("size,width", (("2x2", 136), ("2x4", 276)))
+@pytest.mark.parametrize("size,width", (("2x2", 126), ("2x4", 276)))
 def test_card_header_keeps_branch_canvas_budget(size: str, width: int) -> None:
     if size == "2x4":
         root_rows: list[list[object]] = [
@@ -1554,12 +1652,12 @@ def test_card_header_keeps_branch_canvas_budget(size: str, width: int) -> None:
         assert styles.get("width") == width
 
 
-@pytest.mark.parametrize("size,width,height", (("2x2", 136, 64), ("2x4", 134, 59)))
+@pytest.mark.parametrize("size,width,height", (("2x2", 134, 63), ("2x4", 138, 63)))
 def test_small_backboard_keeps_size_and_right_icon_inset(
     size: str, width: int, height: int,
 ) -> None:
     rows: list[list[object]] = [
-        ["root", "Column", {"itemMargin": 8}, ["zone0", "zone1"]],
+        ["root", "Column", {"padding": 8, "itemMargin": 8}, ["zone0", "zone1"]],
     ]
     for index in range(2):
         rows.extend([

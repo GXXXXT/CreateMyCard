@@ -2,9 +2,8 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2026-2026. All rights reserved.
 from __future__ import annotations
 
-import logging
-
 from .base import BaseValidator, expression_references
+from .context import ValidationContext
 from .display_unit_rules import (
     collect_bound_display_unit_rules,
     matching_unit_literal_count,
@@ -13,8 +12,6 @@ from .display_unit_rules import (
     unit_rule_for_path,
 )
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class DisplayUnitValidator(BaseValidator):
     """校验带单位动态字段在 Text 中没有漏写或重复展示单位。"""
@@ -22,17 +19,15 @@ class DisplayUnitValidator(BaseValidator):
     stage = "semantic"
     name = "display_unit"
 
-    def validate(self, context, rules, reporter) -> None:
+    def validate(self, context: ValidationContext, rules, reporter) -> None:
         del rules
-        if context.has_fusion_template_root():
-            _LOGGER.info("semantic_validation_skipped reason=template_root validator=display_unit")
-            return
         unit_rules = collect_bound_display_unit_rules(
             context.cardspec,
             context.effective_data_capabilities,
         )
         if not unit_rules:
             return
+        skip_missing_unit = context.has_fusion_template_root()
         parents_by_child = self._parents_by_child(context.components)
         for component in context.components:
             if component.get("component") != "Text":
@@ -71,7 +66,7 @@ class DisplayUnitValidator(BaseValidator):
                     message="动态字段已自带展示单位，不得再次拼接或另行展示相同单位。",
                     fix_hint="删除表达式或相邻 Text 中重复追加的单位，仅保留字段自身内容。",
                 )
-            elif not rule.unit_included and visible_unit_count == 0:
+            elif not rule.unit_included and visible_unit_count == 0 and not skip_missing_unit:
                 reporter.add(
                     "error",
                     "DISPLAY_UNIT_MISSING",

@@ -3,7 +3,7 @@ data = {
     workoutType: $optionalPath("/exerciseTypeName"),
     workoutCalories: $path("/exerciseCalorieText"),
     duration: $path("/exerciseDurationText"),
-    endTime: $path("/exerciseEndTimeText")
+    endTime: $optionalPath("/exerciseEndTimeText")
 }
 
 Column(
@@ -75,8 +75,8 @@ Column(
         },
         Text(
             data.workoutCalories,
-            {
-                "fontSize": 20,
+            { "height": 24,
+                "fontSize": 18,
                 "fontWeight": 800,
                 "fontColor": $theme('primaryColor'),
                 "maxLines": 1,
@@ -92,6 +92,7 @@ Column(
               "alignItems": "center",
               "constraintSize": {"minWidth": 0, "minHeight": 0}
             },
+            #if data.endTime
             Text(
                 `${data.duration} | ${data.endTime}`,
                 {
@@ -102,7 +103,20 @@ Column(
                     "textOverflow": "ellipsis",
                     "constraintSize": {"minWidth": 0, "minHeight": 0}
                 }
+            ),
+            #else
+            Text(
+                data.duration,
+                {
+                    "fontWeight": 400,
+                    "fontColor": $theme('supportContentColor'),
+                    "fontSize": 12,
+                    "maxLines": 1,
+                    "textOverflow": "ellipsis",
+                    "constraintSize": {"minWidth": 0, "minHeight": 0}
+                }
             )
+            #endif
         )
     )
 )
@@ -140,7 +154,7 @@ Column(
             },
             Text(
                 data.workoutCalories,
-                {"fontSize": 20, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
+                { "height": 24,"fontSize": 18, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
             ),
             #if data.workoutType
                 Text(
@@ -221,12 +235,12 @@ Column(
     #if data.workoutCalories
         Text(
             data.workoutCalories,
-            {"fontSize": 24, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
+            { "height": 24,"fontSize": 18, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
         ),
     #else
         Text(
             data.duration,
-            {"fontSize": 24, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
+            { "width": "matchParent", "height": 34,"fontSize": 24, "fontWeight": 700, "fontColor": $theme('primaryColor'), "maxLines": 1}
         ),
     #endif
     Row(

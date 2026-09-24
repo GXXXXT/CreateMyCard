@@ -629,7 +629,9 @@ def build_ux_mixed_prompt(
                 ensure_ascii=False,
             ),
             (
-                "Planner 已给出最多三个完整原子 Plan。必须完整选择其中一个 Plan，"
+                "Planner 已按主焦点、主数据匹配、数据使用量及次数据匹配排序，"
+                "给出最多三个完整原子 Plan。能合法补全开放 Props 时优先选择排名靠前的 Plan，"
+                "必须完整选择其中一个 Plan，"
                 "严格保持 layoutTemplateId、业务 Template 顺序以及 Action 消费位置；"
                 "不得跨 Plan 混用或更换 fieldBindings；重复通用模板按 Plan 实例数生成。"
                 "仅补全所选 Template 的开放 Props 与可信素材。"

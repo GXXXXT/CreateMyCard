@@ -82,16 +82,16 @@
       "templateId": "ActivityOverviewFull@1",
       "businessId": "ActivityOverview",
       "capabilityId": "GetHealthAndSportSummary",
-      "description": "今日活动完整摘要，展示步数、固定万步基准进度、消耗热量和运动距离，可使用步数图标。 组件形态：full。",
-      "optionalData": [],
+      "description": "今日活动完整摘要，展示步数与固定万步基准进度，可补充消耗热量和运动距离，可使用步数图标。 组件形态：full。",
+      "optionalData": [
+        "/dailyTotalCaloriesText",
+        "/dailyDistanceText"
+      ],
       "entry": "templates/activity-overview.cardtpl",
       "primaryData": [
         "/dailySteps"
       ],
-      "secondaryData": [
-        "/dailyTotalCaloriesText",
-        "/dailyDistanceText"
-      ]
+      "secondaryData": []
     },
     {
       "templateId": "ActivityOverviewTrainingSummaryFull@1",
@@ -128,8 +128,9 @@
       "templateId": "WorkoutOverviewFull@1",
       "businessId": "WorkoutOverview",
       "capabilityId": "GetHealthAndSportSummary",
-      "description": "最近一次单次运动训练摘要，展示该次热量、时长和结束时间，可选展示运动类型。 组件形态：latest。",
+      "description": "最近一次单次运动训练摘要，展示该次热量和时长，可补充结束时间与运动类型。 组件形态：latest。",
       "optionalData": [
+        "/exerciseEndTimeText",
         "/exerciseTypeName"
       ],
       "entry": "templates/workout-overview.cardtpl",
@@ -137,8 +138,7 @@
         "/exerciseDurationText"
       ],
       "secondaryData": [
-        "/exerciseCalorieText",
-        "/exerciseEndTimeText"
+        "/exerciseCalorieText"
       ]
     },
     {
@@ -307,6 +307,20 @@
       "entry": "templates/generic-metric-overview.cardtpl",
       "primaryData": [],
       "secondaryData": []
+    },
+    {
+      "templateId": "HeartRateOverviewUpdatedFull@1",
+      "businessId": "HeartRateOverview",
+      "capabilityId": "GetHealthAndSportSummary",
+      "description": "运动平均心率摘要，展示平均心率与更新时间。 组件形态：fullUpdated。",
+      "optionalData": [],
+      "entry": "templates/heart-rate-overview.cardtpl",
+      "primaryData": [
+        "/exerciseHeartRateAvg"
+      ],
+      "secondaryData": [
+        "/updatedAt"
+      ]
     },
     {
       "templateId": "SleepOverviewFull@1",

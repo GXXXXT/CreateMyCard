@@ -28,12 +28,14 @@ from .calendar_field_paths import (
     calendar_reminder_aliases,
     normalize_calendar_reminder_bindings,
 )
+from .models import TemplateDefinition
 from .provider_bundle import provider_template_layout_kind
 from .registry import CardPlanRegistry
 from .retrieval_index import FieldToken, TemplateVariantSearchRecord
 
 _MAX_COMPONENT_TEMPLATE_CANDIDATES = 24
 _GENERIC_SCALAR_TYPES = frozenset({"string", "integer", "number", "boolean"})
+BATTERY_TEXT_LEVEL_FALLBACK_TEMPLATE = "BatteryOverviewPercentLevelHero@1"
 _TEMPLATE_QUERY_DISCRIMINATORS = {
     "WeatherOverviewAlertFull@1": frozenset({"/current/alertLevel"}),
 }
@@ -58,6 +60,9 @@ class TemplateSearchIntent(BaseModel):
     action_ids: tuple[str, ...] = Field(default=(), alias="action", max_length=4)
     allow_calendar_view_fallback: bool = Field(
         default=False, alias="allowCalendarViewFallback", strict=True,
+    )
+    allow_battery_settings_fallback: bool = Field(
+        default=False, alias="allowBatterySettingsFallback", strict=True,
     )
 
     @field_validator("required_output_fields_by_capability")
@@ -87,6 +92,7 @@ class TemplateSearchCandidate(BaseModel):
 
     template_id: str = Field(alias="templateId", min_length=1)
     covered_explicit_fields: tuple[str, ...] = Field(alias="coveredExplicitFields")
+    available_data_fields: tuple[str, ...] = Field(default=(), alias="availableDataFields")
 
 
 class TemplateBusinessCandidates(BaseModel):
@@ -202,6 +208,25 @@ def build_template_retrieval_prompt(
     )
     action_limit = 4 if task_spec.size == "2x4" else 2
     schema["properties"]["action"]["maxItems"] = action_limit
+    battery_only = set(capability_ids) == {"GetPhoneBatteryInfo"} and task_spec.size == "2x2"
+    battery_rule = ""
+    if battery_only:
+        battery_rule = (
+            "allowBatterySettingsFallback 仅标记单手机电量用户是否允许默认电池设置入口："
+            "用户未明确禁止按钮、操作或跳转时为 true；明确说不要按钮、不需要操作、"
+            "只展示不交互等时为 false；其他业务或多个业务也为 false。"
+            "没有提到按钮不等于禁止按钮。action 仍只含显式需求，不直接选择默认入口。"
+            "服务端在 Search 后优先使用匹配的 Full；只有没有 Full 而有可用 Hero，"
+            "且没有已选动作、候选中存在唯一合法电池设置入口时，才补选该入口。"
+            "不得自行判断模板条件，也不得为兜底补字段、删用户要求的字段或编造事件。"
+            "没有电池设置候选且用户明确要求电池健康时，服务端可补选唯一合法电池健康入口，"
+            "按钮仍为电池健康；不得把省电模式作为默认入口。"
+        )
+    else:
+        # 不向其他业务和混合业务的首层提示词引入电量专用规则或字段。
+        properties = schema.get("properties")
+        if isinstance(properties, dict):
+            properties.pop("allowBatterySettingsFallback", None)
     action_rule = (
         "action 仅当用户明确要求点击、跳转或操作时才选择 actionCandidates 中"
         f"语义一致的零到 {action_limit} 个不重复 eventId；不能因候选事件存在而默认选择。"
@@ -252,6 +277,8 @@ def build_template_retrieval_prompt(
         "服务端在 Search 后优先使用匹配的 Full；只有没有 Full 而有可用 Hero，"
         "且候选存在唯一、指向当前日程的查看动作时，才补选查看日程。"
         "不得自行判断上述模板条件，也不得为兜底补充展示字段或编造事件。"
+        + battery_rule
+        +
         "不得输出主题、schemaVersion、组件、模板、Variant、尺寸、布局、Props 或理由。\n"
         + ui_instruction + "\n"
         + json.dumps(schema, ensure_ascii=False)
@@ -427,6 +454,11 @@ def search_template_variants(
             preferred_template_ids,
             candidate_output_fields=candidate_paths,
             retain_all_candidates=task_spec.size == "2x4",
+            allow_battery_text_level_fallback=(
+                task_spec.size == "2x2"
+                and tuple(intent.required_output_fields_by_capability) == ("GetPhoneBatteryInfo",)
+                and set(explicit_fields) == {"/batterySOCText", "/batteryCapacityLevelDesc"}
+            ),
         )
         for business_id, matches in matches_by_business.items():
             candidates: list[TemplateSearchCandidate] = []
@@ -441,6 +473,12 @@ def search_template_variants(
                         templateId=template_id,
                         coveredExplicitFields=tuple(
                             path for path in explicit_fields if path in covered_paths
+                        ),
+                        availableDataFields=_template_available_data_fields(
+                            registry.require_template(template_id),
+                            task_spec,
+                            data_roots,
+                            candidate_paths,
                         ),
                     )
                 )
@@ -1220,6 +1258,7 @@ def _component_templates_for_capability(
     preferred_layout_suffix: str | None = None,
     candidate_output_fields: set[str] | None = None,
     retain_all_candidates: bool = False,
+    allow_battery_text_level_fallback: bool = False,
 ) -> dict[str, dict[str, frozenset[str]]]:
     result: dict[str, dict[str, frozenset[str]]] = {}
     data_roots = _capability_data_roots(card_spec, capability_id)
@@ -1239,6 +1278,9 @@ def _component_templates_for_capability(
         for record in registry.template_variant_search_records:
             if record.capability_id != capability_id or record.business_id != business_id:
                 continue
+            if record.template_id == BATTERY_TEXT_LEVEL_FALLBACK_TEMPLATE:
+                if not allow_battery_text_level_fallback:
+                    continue
             evaluations.append(
                 _template_record_evaluation(
                     record,
@@ -1278,6 +1320,17 @@ def _component_templates_for_capability(
                 )
         if query_tokens:
             matches = {template_id: paths for template_id, paths in matches.items() if paths}
+        if BATTERY_TEXT_LEVEL_FALLBACK_TEMPLATE in matches:
+            required_paths = {token.path for token in query_tokens}
+            has_existing_match = False
+            for template_id, paths in matches.items():
+                if template_id == BATTERY_TEXT_LEVEL_FALLBACK_TEMPLATE:
+                    continue
+                if required_paths.issubset(paths):
+                    has_existing_match = True
+                    break
+            if has_existing_match:
+                matches.pop(BATTERY_TEXT_LEVEL_FALLBACK_TEMPLATE)
         limited_matches: dict[str, frozenset[str]] = {}
         if matches:
             limited_matches = _limit_component_templates(
@@ -1666,6 +1719,32 @@ def _log_action_param_fields_dropped(
             }
         )}"
     )
+
+
+def _template_available_data_fields(
+    definition: TemplateDefinition,
+    task_spec: TaskSpec,
+    data_roots: tuple[str, ...],
+    candidate_paths: set[str],
+) -> tuple[str, ...]:
+    """Report distinct, usable binding paths without ranking Search candidates."""
+    paths: set[str] = set()
+    for binding in definition.bindings.values():
+        if binding.path not in candidate_paths:
+            continue
+        root = data_roots[binding.root_index]
+        pointer = f"{root.rstrip('/')}{binding.path}"
+        leaf = _task_spec_schema_leaf(task_spec.dataModelSchema, pointer)
+        if leaf is None:
+            continue
+        actual_type = leaf.get("type")
+        numeric_types_match = (
+            binding.data_type in {"integer", "number"}
+            and actual_type in ("integer", "number")
+        )
+        if actual_type == binding.data_type or numeric_types_match:
+            paths.add(pointer)
+    return tuple(sorted(paths))
 
 
 def _capability_data_roots(

@@ -1113,8 +1113,12 @@ def test_search_orders_complete_hero_title_and_hero_content_businesses(
     expected_primary_color = "#FFCCEEFF" if enable_fusion_ball else "#FF1F4799"
     expected_support_color = "#B3CCEEFF" if enable_fusion_ball else "#991F4799"
     themed_text_count = 0
+    action_buttons = [item for item in components if item.get("component") == "Button"]
+    assert len(action_buttons) == 1
+    assert action_buttons[0].get("label") == action.display_label
     for component in components:
-        content = component.get("content")
+        content_key = "label" if component.get("component") == "Button" else "content"
+        content = component.get(content_key)
         if not isinstance(content, str):
             continue
         weather_title_paths = (
@@ -1165,9 +1169,9 @@ def test_search_orders_complete_hero_title_and_hero_content_businesses(
         )
         assert background_count == 1
         palette = {
-            "fusionBallLarge": "#FF121E59",
-            "fusionBallMedium": "#FF2BA2D9",
-            "fusionBallSmall": "#FF52CCCC",
+            "fusionBallLarge": "#FF1F3399",
+            "fusionBallMedium": "#FF2385B3",
+            "fusionBallSmall": "#FF24B3B3",
         }
         for component_id, color in palette.items():
             component = by_id.get(component_id)

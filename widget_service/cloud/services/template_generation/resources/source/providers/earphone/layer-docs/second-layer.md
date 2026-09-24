@@ -3,6 +3,11 @@
 - Provider：`com.huawei.earphone.cli`；业务领域为 `BluetoothDeviceOverview`。
 - 调用统一使用 `Template("TemplateId@1", props)`；不再输出 Variant。
 - 可用模板：
+  - `BluetoothDeviceOverviewEarbudTripleFull@1`：固定小标题“蓝牙耳机”、大字耳机名称，左右耳与盒电量；
+    不要求连接状态；用于无动作 SingleFocusLayout，盒与左右耳图标可选。
+  - `BluetoothDeviceOverviewEarbudTripleHero@1`：耳机名称、三处电量和充电状态；从左到右为左耳、右耳、盒，
+    每列从上到下依次为图标、电量、对应充电状态，间距分别4vp、2vp；图标可选，缺失显示左/右/盒；
+    用于 HeroActionLayout 搭配一个 PillAction，不使用角落 IconAction。
   - `BluetoothDeviceOverviewEarbudPairHero@1`：主行展示耳机名称，下方 12px 左右图标与 10fp 电量百分比并排；
     名称和左右电量必需，不要求连接状态或仓电量。图标可选，缺失显示左/右文字；用于 HeroActionLayout 加一个按钮。
   - `BluetoothDeviceOverviewHero@1`：展示连接状态、设备名，左右耳电量可选；可选左右耳图标；用于
@@ -32,7 +37,7 @@
     “充电状态”。主数据：/chargingStatusDesc；次要数据：无；可选数据：无。用于 `WideTwoFocus` 系列
     左右双焦点布局的一个 Hero 槽位；`deviceIcon` 为可选参数，仅在本轮存在匹配的充电盒素材时传入。
   - `BluetoothDeviceOverviewEarbudPairFull@1`：展示连接状态、设备名、盒电量和左右耳电量；盒与左右耳
-    图标均可选；用于无 Action 的 Full，或搭配一个 `IconAction@1`。
+    图标均可选；左右耳与盒充电状态为可选字段，三个字段齐全时才在电量下同时增加状态层，缺任意字段则整层隐藏；用于无 Action 的 Full，或搭配一个 `IconAction@1`。
   - `BluetoothDeviceOverviewEarbudPairCompact@1`：展示设备名和左右耳电量，左右耳图标可选；用于
     `CompactTwoActionLayout@1` 加两个 `PillAction@1`。
   - `BluetoothDeviceOverviewEarbudsPhoneWideFull@1`、
@@ -60,3 +65,10 @@
 - `BluetoothDeviceOverviewMusicFull@1` 用于 Q059 耳机名称、连接状态、耳机盒电量及更新时间。2x4 单业务双操作时，使用 WideFullTwoCompactLayout，依次组合本 Full、蓝牙设置 CompactAction、每日歌单 CompactAction；布局设置 compactRows=true（右侧按钮高 57vp，间距 12vp），两个动作使用 prominent=true，文案沿用批准的“蓝牙设置”和“每日推荐”。素材仅使用输入批准的候选；缺少蓝牙标志时可使用对应耳机设备图标。
 
 - `BluetoothDeviceOverviewEarbudChargingWideFull@1`：左右两列等宽，间距 12vp，高度撑满骨架内容区，外侧安全边距由骨架统一提供 12vp。左侧音乐面板内边距 8vp、底部按钮高 36vp；右侧两个耳机面板等分可用高度，间距 12vp，电量字体 16vp，环直径 44vp。通过规划器分配的 actionId 承担收藏歌单操作，不额外组合底部按钮。
+
+EarbudPairCompact 现可选展示连接状态和仓电量。双动作需求包含连接状态时，无需回退；
+输入仍只需名称和左右耳电量，连接状态或仓电量缺失不影响原模板使用。
+明确要求电量和连接状态时应同时保留这两类需求，不能只保留连接状态。
+连接状态紧跟名称，盒电量紧跟左右耳电量；不添加第三个按钮。
+
+耳机融球主题的操作按钮使用主题背景白色 #33FFFFFF、20%不透明度，单按钮和双按钮一致；非融球主题保留原有配色和模板透明度覆盖，不应用融球按钮规则。

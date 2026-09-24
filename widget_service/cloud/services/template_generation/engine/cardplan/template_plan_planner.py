@@ -108,7 +108,7 @@ def plan_template_candidates(
                 registry,
             )
             if plan is not None:
-                score = _wide_plan_score(plan, intent, registry)
+                score = _wide_plan_score(plan, intent, registry, search_result.business_candidates)
                 drafts.append(_PlanDraft(plan=plan, score=score, sequence=sequence))
                 sequence += 1
         group_options = ()
@@ -351,7 +351,7 @@ def _single_business_drafts(
                 registry,
             )
             if plan is not None:
-                result.append((plan, _plan_score(plan, intent, registry)))
+                result.append((plan, _plan_score(plan, intent, registry, (group,))))
     return tuple(result)
 
 
@@ -397,7 +397,7 @@ def _dual_business_drafts(
                     registry,
                 )
                 if plan is not None:
-                    result.append((plan, _plan_score(plan, intent, registry)))
+                    result.append((plan, _plan_score(plan, intent, registry, groups)))
     for first_group, second_group in ordered_groups:
         first_ids = _template_ids_for_role(first_group, "Support")
         second_ids = _template_ids_for_role(second_group, "Support")
@@ -429,7 +429,7 @@ def _dual_business_drafts(
             ):
                 plan = _make_plan("TwoSupportLayout@1", slots, assignments, registry)
                 if plan is not None:
-                    result.append((plan, _plan_score(plan, intent, registry)))
+                    result.append((plan, _plan_score(plan, intent, registry, groups)))
     return tuple(result)
 
 
@@ -592,11 +592,18 @@ def _plan_score(
     plan: TemplatePlan,
     intent: TemplateSearchIntent,
     registry: CardPlanRegistry,
+    groups: tuple[TemplateBusinessCandidates, ...],
 ) -> tuple[int, ...]:
     explicit_primary_matches = 0
     primary_matches = 0
     secondary_matches = 0
     optional_only_matches = 0
+    selected_template_ids = {slot.template_id for slot in plan.business_slots}
+    available_data_fields: set[str] = set()
+    for group in groups:
+        for candidate in group.candidates:
+            if candidate.template_id in selected_template_ids:
+                available_data_fields.update(candidate.available_data_fields)
     for slot in plan.business_slots:
         definition = registry.require_template(slot.template_id)
         explicit = set(slot.covered_explicit_fields)
@@ -609,6 +616,7 @@ def _plan_score(
     return (
         explicit_primary_matches,
         primary_matches,
+        len(available_data_fields),
         secondary_matches,
         -optional_only_matches,
     )
@@ -669,8 +677,9 @@ def _wide_plan_score(
     plan: TemplatePlan,
     intent: TemplateSearchIntent,
     registry: CardPlanRegistry,
+    groups: tuple[TemplateBusinessCandidates, ...],
 ) -> tuple[int, ...]:
-    base = _plan_score(plan, intent, registry)
+    base = _plan_score(plan, intent, registry, groups)
     generic_count = sum(bool(slot.field_bindings) for slot in plan.business_slots)
     embedded_count = sum(item.consumer == "business-template" for item in plan.action_assignments)
     requested_order = tuple(intent.required_output_fields_by_capability)

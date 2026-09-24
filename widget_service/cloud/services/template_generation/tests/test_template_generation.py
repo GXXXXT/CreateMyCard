@@ -184,8 +184,8 @@ _WEATHER_TEMPLATE_FIELDS = (
     "/current/coldLevel",
     "/daily/0/temperatureRangeText",
 )
-_WEATHER_PALETTE = ("#FF121259", "#FF2B65D9", "#FF57AED9")
-_SPORT_PALETTE = ("#FFB33024", "#FFFF8833", "#FFE68073")
+_WEATHER_PALETTE = ("#FF1F1F99", "#FF2B65D9", "#FF57AED9")
+_SPORT_PALETTE = ("#FFF24131", "#FFFF8833", "#FFE68073")
 _TEST_APP_VERSION = ".".join(("11", "7", "5", "205"))
 
 
@@ -282,7 +282,7 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         if path.is_dir()
     }
 
-    assert len(registry.provider_template_ids) == 178
+    assert len(registry.provider_template_ids) == 182
     assert {
         "ActivityOverviewFull@1",
         "BatteryOverviewFull@1",
@@ -295,6 +295,8 @@ def test_all_provider_templates_are_loaded_from_the_isolated_directory():
         "BatteryOverviewHealthLevelHero@1",
         "BluetoothDeviceOverviewConnectionSupport@1",
         "BluetoothDeviceOverviewEarbudPairFull@1",
+        "BluetoothDeviceOverviewEarbudTripleFull@1",
+        "BluetoothDeviceOverviewEarbudTripleHero@1",
         "BluetoothDeviceOverviewEarbudsFull@1",
         "BluetoothDeviceOverviewEarphoneCaseHero@1",
         "BluetoothDeviceOverviewEarphoneCaseCompact@1",
@@ -718,13 +720,13 @@ def test_weather_wind_hero_optional_time_row_is_pruned(
 @pytest.mark.parametrize(
     ("template_id", "text_path", "font_size", "height"),
     [
-        ("WeatherOverviewDailyDateFull@1", (1, 0), 20, 28),
+        ("WeatherOverviewDailyDateFull@1", (1, 0), 18, 24),
         ("WeatherOverviewDailyDateFull@1", (1, 1), 12, 20),
-        ("WeatherOverviewDailyRainFull@1", (0, 1, 0), 32, None),
+        ("WeatherOverviewDailyRainFull@1", (0, 1, 0), 30, 40),
         ("WeatherOverviewDailyRainFull@1", (1, 1), 12, 20),
         ("WeatherOverviewDailyHealthFull@1", (0, 1, 0), 20, 28),
-        ("WeatherOverviewCareAlertFull@1", (0, 1, 0), 20, 28),
-        ("WeatherOverviewConditionHero@1", (1, 0), 20, 28),
+        ("WeatherOverviewCareAlertFull@1", (0, 1, 0), 18, 24),
+        ("WeatherOverviewConditionHero@1", (1, 0), 18, 24),
         ("WeatherOverviewAirQualityHero@1", (1, 1), 12, 20),
     ],
 )
@@ -806,7 +808,7 @@ def test_weather_dual_city_full_matches_q034_data_contract() -> None:
         ("WeatherOverviewAirQualityHero@1", "airQuality"),
     ],
 )
-def test_weather_index_templates_use_20vp_primary_values(
+def test_weather_index_templates_use_18fp_text_values(
     template_id: str, value_binding: str,
 ) -> None:
     registry = get_cardplan_registry()
@@ -824,7 +826,7 @@ def test_weather_index_templates_use_20vp_primary_values(
     assert value.values[0] == bindings.get(value_binding)
     value_options = value.values[-1]
     assert isinstance(value_options, dict)
-    assert value_options.get("fontSize") == 20
+    assert value_options.get("fontSize") == 18
     assert value_options.get("fontWeight") == 700
     if value_binding == "uvIndex":
         options = value_column.values[-1]
@@ -832,7 +834,7 @@ def test_weather_index_templates_use_20vp_primary_values(
         assert "height" not in options
         assert "layoutWeight" not in options
         assert options.get("itemMargin") == 0
-        assert value_options.get("height") == 28
+        assert value_options.get("height") == 24
         label = value_column.children[1]
         assert label.component_type == "Text"
         assert label.values[0] == "紫外线"
@@ -1357,22 +1359,19 @@ def test_theme_styles_have_distinct_root_content_and_action_scopes() -> None:
         allowed_layout_component_ids=("SingleFocusLayout",),
     )
     action = Nested2Node(
-        "Stack",
+        "Button",
         (
+            "打开",
             {
                 "_boundTemplateAction": "event.open",
                 "onClick": [{"call": "open"}],
                 "height": 36,
                 "borderRadius": 18,
+                "fontSize": 14,
+                "fontWeight": 500,
             },
         ),
-        (
-            Nested2Node(
-                "Text",
-                ("打开", {"fontSize": 14, "fontWeight": 500}),
-                (),
-            ),
-        ),
+        (),
     )
     content = Nested2Node(
         "Column",
@@ -1412,7 +1411,9 @@ def test_theme_styles_have_distinct_root_content_and_action_scopes() -> None:
     assert image.values[-1]["fillColor"] == "#FF654321"
     assert progress.values[-1]["color"] == "#FFABCDEF"
     assert button.values[-1]["fontColor"] == "#E6000000"
-    assert "fontColor" not in styled_action.children[0].values[-1]
+    styled_action_options = styled_action.values[-1]
+    assert isinstance(styled_action_options, dict)
+    assert "fontColor" not in styled_action_options
 
     action_style = registry.require_theme("device-clean-blue-teal").action_style
     assert action_style is not None
@@ -1422,12 +1423,14 @@ def test_theme_styles_have_distinct_root_content_and_action_scopes() -> None:
         background=action_style.background_color,
         foreground=action_style.content_color,
     )
-    assert lowered_action.values[-1]["backgroundColor"] == action_style.background_color
-    assert lowered_action.values[-1]["height"] == 36
-    assert lowered_action.values[-1]["borderRadius"] == 18
-    assert lowered_action.children[0].values[-1]["fontColor"] == action_style.content_color
-    assert lowered_action.children[0].values[-1]["fontSize"] == 14
-    assert lowered_action.children[0].values[-1]["fontWeight"] == 500
+    lowered_options = lowered_action.values[-1]
+    assert isinstance(lowered_options, dict)
+    assert lowered_options.get("backgroundColor") == action_style.background_color
+    assert lowered_options.get("height") == 36
+    assert lowered_options.get("borderRadius") == 18
+    assert lowered_options.get("fontColor") == action_style.content_color
+    assert lowered_options.get("fontSize") == 14
+    assert lowered_options.get("fontWeight") == 500
 
 
 def test_all_themes_use_fixed_root_inset_and_color_only_action_style() -> None:
@@ -1568,7 +1571,7 @@ def test_nested2_full_document_requires_data_for_every_component_binding():
         (
             "fusion-sleep-violet",
             "sleep",
-            FusionBallPalette("#FF2B2459", "#FF572BD9", "#FFB398D9"),
+            FusionBallPalette("#FF493D99", "#FF5536B3", "#FF7D6B99"),
         ),
         (
             "fusion-sport-orange",
@@ -1578,12 +1581,12 @@ def test_nested2_full_document_requires_data_for_every_component_binding():
         (
             "fusion-battery-teal",
             "battery",
-            FusionBallPalette("#FF17734C", "#FF26BFA6", "#FF60BF98"),
+            FusionBallPalette("#FF1F9985", "#FF24B3B3", "#FF5AB38E"),
         ),
         (
             "fusion-schedule-cool",
             "schedule-cool",
-            FusionBallPalette("#FF121E59", "#FF2BA2D9", "#FF52CCCC"),
+            FusionBallPalette("#FF1F3399", "#FF2385B3", "#FF24B3B3"),
         ),
         ("device-clean-blue-teal", None, None),
     ],
@@ -1779,6 +1782,9 @@ def test_fusion_ball_background_expands_to_standard_tersel_components():
         "fusionBallSmallSlot",
         "fusionBallGlassLayer",
     ]
+    glass_style = background.children[-1].values[-1]
+    assert isinstance(glass_style, dict)
+    assert glass_style.get("backdropBlur") == {"radius": 210}
     ball_colors = tuple(
         child.children[0].values[-1]["backgroundColor"]
         for child in background.children[:3]
@@ -2143,22 +2149,137 @@ def test_activity_template_sizes_separate_compact_and_wide_variants():
 def test_activity_daily_summary_stacks_supporting_metrics():
     registry = get_cardplan_registry()
     root = registry.require_variant("ActivityOverviewFull@1", "default").root
-    supporting_metrics = next(
-        node
-        for node in reversed(_template_nodes(root, "Column"))
-        if len(node.children) == 2 and all(child.component == "Row" for child in node.children)
+    calories_guard = next(
+        child for child in root.children if child.component == "IfBind"
     )
 
+    assert calories_guard.values[0].value == "calories"
+    # 热量分支顶部区：标题行 + 数字/万步进度块。
+    header_and_progress = calories_guard.children[0]
+    assert header_and_progress.component == "Column"
+    assert [child.component for child in header_and_progress.children] == [
+        "Row",
+        "Column",
+    ]
+    number_block = header_and_progress.children[1]
+    assert [child.component for child in number_block.children] == ["Row", "Progress"]
+    supporting_metrics = calories_guard.children[1]
     assert supporting_metrics.component == "Column"
     supporting_options = _template_node_options(supporting_metrics)
     assert supporting_options["justifyContent"] == "start"
     assert supporting_options.get("alignItems", "start") == "start"
-    assert len(supporting_metrics.children) == 2
-    assert all(child.component == "Row" for child in supporting_metrics.children)
-    assert all(
-        _template_node_options(child)["alignItems"] == "center"
-        for child in supporting_metrics.children
+    assert [child.component for child in supporting_metrics.children] == [
+        "Row",
+        "IfBind",
+    ]
+    assert supporting_metrics.children[1].values[0].value == "distance"
+    assert supporting_metrics.children[1].children[0].component == "Row"
+    assert _template_node_options(supporting_metrics.children[0])["alignItems"] == "center"
+
+    # 热量缺失时按距离回退；两者都缺失时渲染 Countdown 风格的三行居中步数卡（无进度条）。
+    distance_fallback = root.children[-1]
+    assert distance_fallback.component == "IfMissingBind"
+    assert distance_fallback.values[0].value == "calories"
+    distance_guard = distance_fallback.children[0]
+    assert distance_guard.component == "IfBind"
+    assert distance_guard.values[0].value == "distance"
+    fallback_column = distance_guard.children[1]
+    assert fallback_column.component == "Column"
+    assert [child.component for child in fallback_column.children] == ["Row"]
+
+    steps_only_guard = distance_fallback.children[1]
+    assert steps_only_guard.component == "IfMissingBind"
+    assert steps_only_guard.values[0].value == "distance"
+    steps_only_card = steps_only_guard.children[0]
+    assert steps_only_card.component == "Column"
+    card_options = _template_node_options(steps_only_card)
+    assert card_options["justifyContent"] == "center"
+    assert card_options["alignItems"] == "center"
+    # 三行均为 matchParent + textAlign center 的 Text，保证步数视觉居中。
+    assert [child.component for child in steps_only_card.children] == [
+        "Text",
+        "Text",
+        "Text",
+    ]
+    assert _template_node_options(steps_only_card.children[1])["textAlign"] == "center"
+
+
+def test_activity_full_renders_metric_rows_only_when_fields_are_advertised():
+    registry = get_cardplan_registry()
+    root = registry.require_variant("ActivityOverviewFull@1", "default").root
+    theme_values = {
+        "primaryColor": "#FF401F99",
+        "supportContentColor": "#991F4799",
+        "progressColor": "#33564AF7",
+        "progressBackgroundColor": "#1F33564A",
+    }
+    binding_paths = {
+        "steps": "${data.healthSport.dailySteps}",
+        "calories": "${data.healthSport.dailyTotalCaloriesText}",
+        "distance": "${data.healthSport.dailyDistanceText}",
+    }
+
+    def instantiate(*names: str) -> Nested2Node:
+        bindings: dict[str, str] = {}
+        for name in names:
+            path = binding_paths.get(name)
+            assert path is not None
+            bindings[name] = path
+        return _instantiate_blueprint(
+            root,
+            {},
+            bindings,
+            theme_values,
+        )
+
+    def walk(node: Nested2Node) -> list[Nested2Node]:
+        nodes = [node]
+        for child in node.children:
+            nodes.extend(walk(child))
+        return nodes
+
+    def text_values(node: Nested2Node) -> tuple[str, ...]:
+        values: list[str] = []
+        for item in walk(node):
+            if item.component_type != "Text" or not item.values:
+                continue
+            value = item.values[0]
+            if isinstance(value, str):
+                values.append(value)
+        return tuple(values)
+
+    steps_only = instantiate("steps")
+    steps_only_text = text_values(steps_only)
+    # 仅步数时渲染 Countdown 风格三行居中卡：标题/步数/单位，无进度条、无原标题。
+    assert any("今日总步数" in value for value in steps_only_text)
+    assert not any("今日活动" in value for value in steps_only_text)
+    assert not any(
+        "消耗热量" in value or "运动距离" in value for value in steps_only_text
     )
+    assert not any(node.component_type == "Progress" for node in walk(steps_only))
+    steps_only_card = steps_only.children[-1]
+    assert steps_only_card.component_type == "Column"
+    assert steps_only_card.values[0]["justifyContent"] == "center"
+    assert [child.component_type for child in steps_only_card.children] == [
+        "Text",
+        "Text",
+        "Text",
+    ]
+    assert steps_only_card.children[1].values[-1]["textAlign"] == "center"
+
+    distance_only = instantiate("steps", "distance")
+    distance_only_text = text_values(distance_only)
+    assert not any("消耗热量" in value for value in distance_only_text)
+    assert any("运动距离" in value for value in distance_only_text)
+    assert any(node.component_type == "Progress" for node in walk(distance_only))
+
+    complete = instantiate("steps", "calories", "distance")
+    complete_text = text_values(complete)
+    assert any("dailyTotalCaloriesText" in value for value in complete_text)
+    assert any("消耗热量" in value for value in complete_text)
+    assert any("dailyDistanceText" in value for value in complete_text)
+    assert any("运动距离" in value for value in complete_text)
+    assert any(node.component_type == "Progress" for node in walk(complete))
 
 
 def test_workout_template_requires_one_complete_training_session():
@@ -2166,8 +2287,8 @@ def test_workout_template_requires_one_complete_training_session():
     definition = registry.require_template("WorkoutOverviewFull@1")
 
     assert definition.primary_data == ("/exerciseDurationText",)
-    assert definition.secondary_data == ("/exerciseCalorieText", "/exerciseEndTimeText")
-    assert definition.optional_data == ("/exerciseTypeName",)
+    assert definition.secondary_data == ("/exerciseCalorieText",)
+    assert definition.optional_data == ("/exerciseEndTimeText", "/exerciseTypeName")
     assert set(definition.variants[0].parameters_schema["properties"]) == {"sourceIcon"}
 
     hero = registry.require_template("WorkoutOverviewHero@1")
@@ -2291,7 +2412,6 @@ def test_first_layer_receives_workout_session_routing_rules_and_required_paths()
     assert template["requiredTaskSpecPaths"] == [
         "/data/healthSport/exerciseDurationText",
         "/data/healthSport/exerciseCalorieText",
-        "/data/healthSport/exerciseEndTimeText",
     ]
     provider_rules = json.dumps(payload["providerFirstLayerRules"], ensure_ascii=False)
     assert "最近一次特定运动训练会话" in provider_rules
@@ -2718,18 +2838,21 @@ def test_sleep_hero_requires_both_time_bindings_for_the_fallback_row() -> None:
 def test_sport_templates_bind_progress_color_to_dedicated_theme_tokens() -> None:
     registry = get_cardplan_registry()
 
-    for template_id in (
-        "ActivityOverviewHero@1",
-        "ActivityOverviewFull@1",
+    # ActivityOverviewFull@1 仅在补充数据（热量/距离）存在时渲染进度条，
+    # 卡片语言没有 ||，因此进度条在 #if/#elseif 两个存在分支里各有一份。
+    for template_id, expected_progress in (
+        ("ActivityOverviewHero@1", 1),
+        ("ActivityOverviewFull@1", 2),
     ):
         root = registry.require_variant(template_id, "default").root
         progress = _template_nodes(root, "Progress")
-        assert len(progress) == 1
-        options = progress[0].values[-1]
-        assert options.kind == "object"
-        color = options.properties["color"]
-        assert color.kind == "theme"
-        assert color.name == "progressColor"
+        assert len(progress) == expected_progress
+        for node in progress:
+            options = node.values[-1]
+            assert options.kind == "object"
+            color = options.properties["color"]
+            assert color.kind == "theme"
+            assert color.name == "progressColor"
 
 
 def test_health_sport_templates_follow_latest_display_contract() -> None:
@@ -2743,7 +2866,7 @@ def test_health_sport_templates_follow_latest_display_contract() -> None:
             "组件形态：hero。"
         ),
         "ActivityOverviewFull@1": (
-            "今日活动完整摘要，展示步数、固定万步基准进度、消耗热量和运动距离，"
+            "今日活动完整摘要，展示步数与固定万步基准进度，可补充消耗热量和运动距离，"
             "可使用步数图标。 组件形态：full。"
         ),
         "SleepOverviewFull@1": (
@@ -2888,6 +3011,13 @@ def test_business_artwork_and_monochrome_icons_keep_explicit_color_policies() ->
         ("BluetoothDeviceOverviewEarbudPairFull@1", "caseIcon"),
         ("BluetoothDeviceOverviewEarbudPairCompact@1", "leftEarIcon"),
         ("BluetoothDeviceOverviewEarbudPairCompact@1", "rightEarIcon"),
+        ("BluetoothDeviceOverviewEarbudPairCompact@1", "caseIcon"),
+        ("BluetoothDeviceOverviewEarbudTripleFull@1", "leftEarIcon"),
+        ("BluetoothDeviceOverviewEarbudTripleFull@1", "rightEarIcon"),
+        ("BluetoothDeviceOverviewEarbudTripleFull@1", "caseIcon"),
+        ("BluetoothDeviceOverviewEarbudTripleHero@1", "leftEarIcon"),
+        ("BluetoothDeviceOverviewEarbudTripleHero@1", "rightEarIcon"),
+        ("BluetoothDeviceOverviewEarbudTripleHero@1", "caseIcon"),
         ("BluetoothDeviceOverviewEarbudsFull@1", "leftEarIcon"),
         ("BluetoothDeviceOverviewEarbudsFull@1", "rightEarIcon"),
         ("BluetoothDeviceOverviewEarphoneCaseHero@1", "caseIcon"),
@@ -3087,16 +3217,12 @@ def test_pr7_visual_fixes_are_encoded_in_provider_cardtpl_variants():
     assert _template_node_options(countdown)["justifyContent"] == "center"
     countdown_value_row = countdown.children[2]
     assert countdown_value_row.component == "Row"
-    assert _template_node_options(countdown_value_row)["justifyContent"] == "center"
-    assert len(countdown_value_row.children) == 2
-    countdown_value, transparent_unit = countdown_value_row.children
+    assert _template_node_options(countdown_value_row).get("justifyContent") == "center"
+    assert len(countdown_value_row.children) == 1
+    countdown_value = countdown_value_row.children[0]
     assert countdown_value.component == "Text"
     assert countdown_value.values[0].kind == "binding"
     assert countdown_value.values[0].name == "days"
-    assert transparent_unit.component == "Text"
-    assert transparent_unit.values[0].value == "天"
-    assert _template_node_options(transparent_unit)["fontSize"] == 8
-    assert _template_node_options(transparent_unit)["fontColor"] == "#00000000"
     visible_unit = countdown.children[3]
     assert visible_unit.component == "Text"
     assert visible_unit.values[0].value == "天"
@@ -3144,7 +3270,8 @@ def test_pr7_visual_fixes_are_encoded_in_provider_cardtpl_variants():
         _template_node_options(node) for node in _template_nodes(activity, "Text")
     ]
     assert all(options.get("fontColor") != "#E6000000" for options in activity_text_options)
-    assert sum(options.get("minFontSize") == 10 for options in activity_text_options) == 2
+    # 距离文本在 calories 主分支与 #else 距离兜底分支各出现一次。
+    assert sum(options.get("minFontSize") == 10 for options in activity_text_options) == 3
 
 
 def test_calendar_templates_follow_latest_schedule_contract() -> None:
@@ -3239,6 +3366,7 @@ def test_battery_templates_follow_consolidated_state_contract() -> None:
         "BatteryOverviewCompact@1",
         "BatteryOverviewHealthLevelHero@1",
         "BatteryOverviewChargingProgressHero@1",
+        "BatteryOverviewPercentLevelHero@1",
         "BatteryOverviewChargingProgressFull@1",
         "BatteryOverviewChargingDiagnosticsHero@1",
         "BatteryOverviewChargingDiagnosticsWideFull@1",
@@ -3546,7 +3674,7 @@ def test_genui_rsi_battery_and_countdown_templates_keep_expected_geometry() -> N
 
 
 @pytest.mark.asyncio
-async def test_calendar_dnd_action_restores_label_icon_and_scene_header():
+async def test_calendar_dnd_action_keeps_text_only_button_and_scene_header():
     task = TaskSpec(
         userQuery="显示下一场会议的完整信息，点击进入免打扰设置",
         size="2x2",
@@ -3626,7 +3754,7 @@ async def test_calendar_dnd_action_restores_label_icon_and_scene_header():
             'Template("ScheduleOverviewNextEventHero@1",'
             '{"headerLabel":"下一场日程"}),'
             'Template("PillAction@1",{"actionId":"event.open.settings.dnd",'
-            '"label":"免打扰","icon":"resources/base/media/icon_focus.svg"}));'
+            '"label":"免打扰"}));'
         ),
     )
 
@@ -3637,7 +3765,7 @@ async def test_calendar_dnd_action_restores_label_icon_and_scene_header():
     assert "events/0/eventLocation" in output.a2ui
     assert "免打扰" in output.a2ui
     assert "专注模式" not in output.a2ui
-    assert "resources/base/media/icon_focus.svg" in output.a2ui
+    assert "resources/base/media/icon_focus.svg" not in output.a2ui
     assert "resources/base/media/icon_schedule.svg" not in output.a2ui
     messages = [json.loads(line) for line in output.a2ui.splitlines()]
     components = messages[1]["updateComponents"]["components"]
@@ -3662,12 +3790,12 @@ async def test_calendar_dnd_action_restores_label_icon_and_scene_header():
     assert hero_content.get("itemMargin") == 2
     action = next(component for component in components if component.get("onClick"))
     assert action["styles"]["backgroundColor"] == "#331F4799"
-    focus_icon = next(
-        component
-        for component in components
-        if component.get("src") == "resources/base/media/icon_focus.svg"
-    )
-    assert focus_icon["styles"]["fillColor"] == "#FF1F4799"
+    assert action.get("component") == "Button"
+    assert action.get("label") == "免打扰"
+    assert not action.get("children")
+    action_styles = action.get("styles")
+    assert isinstance(action_styles, dict)
+    assert action_styles.get("fontColor") == "#FF1F4799"
     assert model.second_layer_prompt is not None
     second_layer_rule = model.second_layer_prompt[1]["content"]
     assert "HeroActionLayout@1" in second_layer_rule
@@ -3752,8 +3880,7 @@ async def test_calendar_reminder_hero_keeps_start_and_advance_notice():
             'Template("ScheduleOverviewReminderHero@1",'
             '{"headerLabel":"明天提醒"}),'
             'Template("PillAction@1",{"actionId":"event.open.clock.alarm",'
-            '"label":"设置闹钟",'
-            '"icon":"resources/base/media/alarm_fill_1.svg"}));'
+            '"label":"设置闹钟"}));'
         ),
     )
 
@@ -3771,7 +3898,7 @@ async def test_calendar_reminder_hero_keeps_start_and_advance_notice():
     assert "提前" in output.a2ui
     assert "分钟提醒" in output.a2ui
     assert "设置闹钟" in output.a2ui
-    assert "resources/base/media/alarm_fill_1.svg" in output.a2ui
+    assert "resources/base/media/alarm_fill_1.svg" not in output.a2ui
     assert "resources/base/media/icon_schedule.svg" not in output.a2ui
     messages = [json.loads(line) for line in output.a2ui.splitlines()]
     components = messages[1]["updateComponents"]["components"]
@@ -3814,7 +3941,7 @@ async def test_calendar_reminder_hero_keeps_start_and_advance_notice():
     assert "ScheduleOverviewReminderHero@1" in second_layer_rule
     assert "设置闹钟" in second_layer_rule
     assert "Action 图标必须与动作语义一致" in second_layer_rule
-    assert "PillAction@1` 没有匹配素材时省略 `icon`" in second_layer_rule
+    assert "PillAction@1` 暂时禁止设置 `icon`，只展示文本" in second_layer_rule
 
 
 def test_calendar_timezone_full_keeps_reference_geometry():
@@ -5449,12 +5576,19 @@ async def test_2x2_battery_pill_action_uses_generic_hero_template():
         line for line in second_layer_user.splitlines() if line.startswith("actionContracts=")
     )
     action_contracts = json.loads(action_contract_line.removeprefix("actionContracts="))
-    assert action_contracts[0]["templateId"] == "PillAction@1"
-    assert action_contracts[0]["callSyntax"] == (
+    pill_contract = next(
+        item for item in action_contracts if item.get("templateId") == "PillAction@1"
+    )
+    assert pill_contract.get("callSyntax") == (
         'Template("PillAction@1", <props matching propsSchema>)'
     )
-    assert action_contracts[0]["propsSchema"]["required"] == ["actionId", "label"]
-    assert action_contracts[0]["propsSchema"]["additionalProperties"] is False
+    pill_schema = pill_contract.get("propsSchema")
+    assert isinstance(pill_schema, dict)
+    assert pill_schema.get("required") == ["actionId", "label"]
+    assert pill_schema.get("additionalProperties") is False
+    properties = pill_schema.get("properties")
+    assert isinstance(properties, dict)
+    assert set(properties) == {"actionId", "label"}
     action_candidate_line = next(
         line
         for line in second_layer_user.splitlines()
@@ -5469,7 +5603,7 @@ async def test_2x2_battery_pill_action_uses_generic_hero_template():
         line for line in second_layer_user.splitlines() if line.startswith("layoutContracts=")
     )
     layout_contracts = json.loads(layout_contract_line.removeprefix("layoutContracts="))
-    assert layout_contracts[0]["templateId"] == "HeroActionLayout@1"
+    assert any(item.get("templateId") == "HeroActionLayout@1" for item in layout_contracts)
     template_contract_line = next(
         line for line in second_layer_user.splitlines() if line.startswith("templateContracts=")
     )
@@ -5531,7 +5665,9 @@ async def test_2x2_battery_pill_action_uses_generic_hero_template():
     assert hero_slot["styles"] == {"width": "matchParent", "layoutWeight": 1}
     assert action_slot["styles"] == {"width": "matchParent", "height": 36}
     action = components[action_slot["children"][0]]
-    assert action["component"] == "Stack"
+    assert action.get("component") == "Button"
+    assert action.get("label") == "省电模式"
+    assert not action.get("children")
     assert action["onClick"] == [
         {
             "call": "clickToIntent",
@@ -5839,9 +5975,9 @@ async def test_2x2_battery_generic_compact_accepts_two_pill_actions():
         "fusionBallBackground",
         "template_root",
     ]
-    assert components["fusionBallLarge"]["styles"]["backgroundColor"] == "#FF17734C"
-    assert components["fusionBallMedium"]["styles"]["backgroundColor"] == "#FF26BFA6"
-    assert components["fusionBallSmall"]["styles"]["backgroundColor"] == "#FF60BF98"
+    assert components["fusionBallLarge"]["styles"]["backgroundColor"] == "#FF1F9985"
+    assert components["fusionBallMedium"]["styles"]["backgroundColor"] == "#FF24B3B3"
+    assert components["fusionBallSmall"]["styles"]["backgroundColor"] == "#FF5AB38E"
     assert components["template_root"]["children"] == [
         "__genui_render_component__template_root"
     ]
@@ -6141,7 +6277,7 @@ async def test_generic_countdown_query_uses_countdown_overview_without_workout_s
         assert isinstance(root_styles, dict)
         assert root_styles.get("backgroundColor") == "#FFFFF0E6"
     expected_ball_colors = {
-        "fusionBallLarge": "#FFB33024",
+        "fusionBallLarge": "#FFF24131",
         "fusionBallMedium": "#FFFF8833",
         "fusionBallSmall": "#FFE68073",
     }
@@ -7188,7 +7324,7 @@ async def test_terse_entry_uses_compact_template_source_with_fusion_ball_theme(m
     )
 
     assert components["fusionBallGlassLayer"]["styles"]["backdropBlur"] == {
-        "radius": 120
+        "radius": 210
     }
     assert components["fusionBallMedium"]["styles"]["backgroundColor"] == _WEATHER_PALETTE[1]
     assert "linearGradient" not in components[content_id]["styles"]
@@ -7685,7 +7821,6 @@ async def test_calendar_event_entity_id_stays_out_of_second_layer_and_visible_te
     assert set(action_contracts[0]["propsSchema"]["properties"]) == {
         "actionId",
         "label",
-        "icon",
     }
     assert len(action_contracts) == 1
     messages = [json.loads(line) for line in output.a2ui.splitlines()]

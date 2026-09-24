@@ -37,7 +37,7 @@
 | calendar | `GetCalendarEvents` | `/data/calendar` | 29 | 启用 |
 | countdown | `GetCountdownDays` | `/data/countdown` | 6 | 启用 |
 | earphone | `GetEarphoneInfo` | `/data/earphone` | 15 | 启用 |
-| health-sport | `GetHealthAndSportSummary` | `/data/healthSport` | 27 | 启用 |
+| health-sport | `GetHealthAndSportSummary` | `/data/healthSport` | 32 | 启用 |
 | system-memory | `GetSystemMemInfo` | `/data/systemMem` | 3 | 启用 |
 | weather | `ViewWeather` | `/data/weather` | 23 | 启用 |
 
@@ -63,6 +63,7 @@
 | ✅ | `BatteryOverviewStatusSupport@1` | 约 2x1；左侧双行文本展示充电状态与充电器类型，右侧可选 24vp 电池图标，事件在模板内部 | `/chargingStatusDesc` | `/pluggedTypeDesc` | 无 |
 | ✅ | `BatteryOverviewChargingProgressHero@1` | 约 2x1.7；充电状态 Hero + 1 个 PillAction | `/batterySOCText` | 无 | `/chargingStatusDesc`<br>`/healthStatusDesc` |
 | ✅ | `BatteryOverviewHealthLevelHero@1` | 约 2x1.7；电池体检 Hero + 1 个 PillAction | `/healthStatusDesc` | `/batteryCapacityLevelDesc` | 无 |
+| ✅ | `BatteryOverviewPercentLevelHero@1` | 单电量 2×2；旧模板无完整覆盖且显式要求文本百分比与等级时，Hero + 1 个 PillAction | `/batterySOCText` | `/batteryCapacityLevelDesc` | 无 |
 | ✅ | `BatteryOverviewChargingProgressFull@1` | 完整 2x2；充电进度单 Full | `/batterySOC` | `/chargingStatusDesc`<br>`/healthStatusDesc`<br>`/pluggedTypeDesc` | 无 |
 | ✅ | `BatteryOverviewChargingDiagnosticsHero@1` | 约 2x1.7；充电诊断 Hero + 1 个 PillAction | `/nowCurrentText`<br>`/voltageText` | `/batteryCapacityLevelDesc`<br>`/isBatteryPresentText` | 无 |
 | ✅ | `BatteryOverviewChargingDiagnosticsWideFull@1` | 完整 4x2；充电诊断 WideFull，标题+图标+电量进度条+三胶囊，无 Action | `/batterySOC` | `/nowCurrentText`<br>`/voltageText`<br>`/isBatteryPresentText` | 无 |
@@ -122,7 +123,7 @@
 | ✅ | `BluetoothDeviceOverviewEarbudsDynamicWideFull@1` | 完整 4x2；单 WideFull | `/isConnected`<br>`/earphoneName` | 无 | `/batteryLevel`<br>`/leftBatteryLevel`<br>`/rightBatteryLevel` |
 | ✅ | `BluetoothDeviceOverviewEarbudsSupport@1` | 约 2x1；双 Support，事件在模板内部 | `/leftBatteryLevel`<br>`/rightBatteryLevel` | 无 | 无 |
 | ✅ | `BluetoothDeviceOverviewConnectionSupport@1` | 约 2x1；连接状态主行加粗、可选仓电量次行与 40vp 电量环，事件在模板内部 | `/isConnected` | 无 | `/batteryLevel` |
-| ✅ | `BluetoothDeviceOverviewEarbudPairFull@1` | 完整 2x2；无 Action 或加一个 IconAction | `/isConnected`<br>`/earphoneName` | `/batteryLevel`<br>`/leftBatteryLevel`<br>`/rightBatteryLevel` | 无 |
+| ✅ | `BluetoothDeviceOverviewEarbudPairFull@1` | 完整 2x2；无 Action 或加一个 IconAction | `/isConnected`<br>`/earphoneName` | `/batteryLevel`<br>`/leftBatteryLevel`<br>`/rightBatteryLevel` | `/leftChargingStatusDesc`<br>`/rightChargingStatusDesc`<br>`/chargingStatusDesc`（三项齐全才展示） |
 | ✅ | `BluetoothDeviceOverviewCompleteWideFull@1` | 完整 4x2；单 WideFull | `/isConnected`<br>`/earphoneName` | `/batteryLevel`<br>`/leftBatteryLevel`<br>`/rightBatteryLevel` | 无 |
 | ✅ | `BluetoothDeviceOverviewEarbudPairCompact@1` | 约 2x1；单 Compact + 2 个 PillAction | `/earphoneName` | `/leftBatteryLevel`<br>`/rightBatteryLevel` | 无 |
 | ✅ | `BluetoothDeviceOverviewCompletePhoneWideFull@1` | 完整 4x2；单 WideFull | `/isConnected`<br>`/earphoneName` | `/batteryLevel`<br>`/leftBatteryLevel`<br>`/rightBatteryLevel` | 无 |
@@ -155,13 +156,13 @@
 
 | 状态 | 模板 | 布局场景 | 主数据 | 次要数据 | 可选数据 |
 | --- | --- | --- | --- | --- | --- |
-| ✅ | `WorkoutOverviewFull@1` | 完整 2x2；无 Action 的单 Full | `/exerciseTypeName`<br>`/exerciseDurationText` | `/exerciseCalorieText`<br>`/exerciseEndTimeText` | 无 |
+| ✅ | `WorkoutOverviewFull@1` | 完整 2x2；无 Action 的单 Full | `/exerciseDurationText` | `/exerciseCalorieText` | `/exerciseEndTimeText`<br>`/exerciseTypeName` |
 | ✅ | `WorkoutOverviewSupport@1` | 约 2x1；双 Support，事件在模板内部 | `/exerciseCalorieText` | `/exerciseDurationText` | `/exerciseTypeName` |
 
 ## HeartRateOverview
 
 - Provider：`com.huawei.health-sport.cli`；运行状态：启用。
-- 数据能力：`GetHealthAndSportSummary`；模板数：9。
+- 数据能力：`GetHealthAndSportSummary`；模板数：10。
 
 | 状态 | 模板 | 布局场景 | 主数据 | 次要数据 | 可选数据 |
 | --- | --- | --- | --- | --- | --- |
@@ -233,3 +234,12 @@ HeroTitle 的温度与现象均可选：同时可用时显示“现象 | 温度�
 - 模板 `$path` 只能引用主数据或次要数据；`$optionalPath` 只能引用可选数据。
 - 模板展开前确定性校验布局尺寸、业务模板数量、Action 数量和 Action 类型。
 - Earphone 与 Calendar 均已启用并进入线上候选。
+
+新增三电量模板（独立于既有成对模板）：
+
+| 模板 | 展示 | 必需字段 |
+| --- | --- | --- |
+| `BluetoothDeviceOverviewEarbudTripleFull@1` | 固定小标题、大字名称、左右耳与盒电量，无动作 | 名称、三处电量 |
+| `BluetoothDeviceOverviewEarbudTripleHero@1` | 三列图标电量及下方充电状态，单个 PillAction | 名称、三处电量、三处充电状态 |
+
+EarbudPairCompact 的可选字段：`/batteryLevel`、`/isConnected`；必需字段不变。

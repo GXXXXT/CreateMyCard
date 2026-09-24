@@ -73,7 +73,7 @@ def test_every_support_asset_slot_has_executable_semantics(
         for name, tags in definition.asset_parameter_semantic_tags.items():
             assert tags, f"{definition.wire_id}.{name}"
             slot_count += 1
-    assert slot_count == 21
+    assert slot_count == 20
 
 
 @pytest.mark.parametrize(("template_id", "parameter", "filename"), _SLOTS)
@@ -172,9 +172,7 @@ def test_weather_slot_separates_single_and_dual_business_assets(
         )
 
 
-@pytest.mark.parametrize("template_id", (
-    "CountdownOverviewSupport@1", "CountdownOverviewTravelSupport@1",
-))
+@pytest.mark.parametrize("template_id", ("CountdownOverviewSupport@1",))
 def test_countdown_slot_only_accepts_timing_assets(
     definitions: dict[str, TemplateDefinition],
     catalog_contract: HybridBodyContract,
@@ -202,6 +200,15 @@ def test_countdown_slot_only_accepts_timing_assets(
             catalog_contract,
             required_parameters=frozenset(),
         )
+
+
+def test_countdown_travel_support_declares_no_asset_slot(
+    definitions: dict[str, TemplateDefinition],
+) -> None:
+    """出行倒计时 Support 已删除 timerIcon 槽位，不得再声明任何素材参数。"""
+    definition = definitions.get("CountdownOverviewTravelSupport@1")
+    assert definition is not None
+    assert definition.asset_parameter_semantic_tags == {}
 
 
 @pytest.mark.parametrize(("template_id", "parameter", "filename"), _SLOTS)
@@ -305,7 +312,6 @@ def test_gallery_both_slots_have_their_own_assets_and_cloudy_keeps_temperature_i
         "WeatherOverviewDaily2TravelSupport@1": "asset.icon_weather_thermometer",
         "WeatherOverviewTravelSupport@1": "asset.icon_weather_thermometer",
         "CountdownOverviewSupport@1": "asset.icon_timing",
-        "CountdownOverviewTravelSupport@1": "asset.icon_timing",
         "ActivityOverviewSupport@1": "asset.figure_run",
         "WorkoutOverviewSupport@1": "asset.figure_run",
         "SleepOverviewSupport@1": "asset.moon_z_fill_1",

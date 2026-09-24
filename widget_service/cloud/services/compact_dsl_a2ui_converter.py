@@ -318,6 +318,8 @@ _COLOR_TOKENS = {
     "mask_sixth": "#0C000000",
 }
 _DEFAULT_ROOT_BACKGROUND = "#FFE5EDFE"
+_TWO_BY_TWO_SINGLE_RING_SIZE = 48
+_TWO_BY_TWO_DUAL_RING_SIZE = 44
 _PLAIN_BACKGROUND_INKS = {
     "#FFE5EDFE": "#FF1F4799",
     "#FFEDE6FF": "#FF401F99",
@@ -650,6 +652,7 @@ def convert_compact_dsl_to_a2ui(
     components, data_rows = _split_component_rows(rows)
     validate_card_header_layout(components, size=size)
     validate_timeline_unit_scope(components)
+    validate_timeline_unit_layout(components, size=size)
     fusion_palette = fusion_ball_palette_for_root(
         components,
         size=size,
@@ -664,6 +667,9 @@ def convert_compact_dsl_to_a2ui(
     normalized_components = _normalize_ring_stack_children(
         normalized_components,
         size=size,
+    )
+    normalized_components = _normalize_large_value_unit_alignment(
+        normalized_components
     )
     normalized_components = _normalize_timeline_unit_spacing(normalized_components)
     normalized_components = _normalize_small_backboard_icon_alignment(
@@ -826,6 +832,52 @@ def validate_timeline_unit_scope(components: list[ComponentRow]) -> None:
         )
 
 
+def validate_timeline_unit_layout(
+    components: list[ComponentRow], *, size: str
+) -> None:
+    if not any(item.component_type == "TimelineUnit" for item in components):
+        return
+    if size != "2x2":
+        raise CompactDslConversionError("TimelineUnit requires a 2x2 card.")
+
+    components_by_id = {item.component_id: item for item in components}
+    root = components_by_id.get("root")
+    if root is None or root.component_type != "Column" or not root.children:
+        raise CompactDslConversionError(
+            "TimelineUnit requires a root Column with a left-aligned date row."
+        )
+
+    day_area = components_by_id.get(root.children[0])
+    expected_layout = {
+        "width": 126,
+        "height": 16,
+        "justifyContent": "start",
+        "alignItems": "center",
+        "flexShrink": 0,
+    }
+    has_expected_layout = day_area is not None and all(
+        day_area.props.get(name) == value
+        for name, value in expected_layout.items()
+    )
+    is_expected_row = day_area is not None and day_area.component_type == "Row"
+    has_single_child = day_area is not None and len(day_area.children) == 1
+    if not all((is_expected_row, has_expected_layout, has_single_child)):
+        raise CompactDslConversionError(
+            "TimelineUnit date context must be the first root child and use a "
+            "left-aligned 126x16 Row with exactly one Text child."
+        )
+
+    day_text = components_by_id.get(day_area.children[0])
+    if day_text is None or day_text.component_type != "Text":
+        raise CompactDslConversionError(
+            "TimelineUnit date context Row must contain exactly one Text child."
+        )
+    if day_text.props.get("textAlign", "start") != "start":
+        raise CompactDslConversionError(
+            "TimelineUnit date context Text must be left-aligned."
+        )
+
+
 def _normalize_timeline_unit_spacing(
     components: list[ComponentRow],
 ) -> list[ComponentRow]:
@@ -878,7 +930,7 @@ def _is_non_calendar_data_path(value: Any) -> bool:
 def _convert_card_header(component: ComponentRow, size: str = "2x2") -> list[dict[str, Any]]:
     props = component.props
     icon = props.get("icon")
-    row_width = 136 if size == "2x2" else 276
+    row_width = 126 if size == "2x2" else 276
     title_width = row_width - 28 if icon else row_width
     title_id = f"{component.component_id}_title"
     icon_id = f"{component.component_id}_icon"
@@ -1052,6 +1104,23 @@ def _action_ink_for_root(components: list[ComponentRow]) -> str | None:
     return None
 
 
+def _template_subtree_component_ids(
+    components: list[ComponentRow],
+    components_by_id: dict[str, ComponentRow],
+) -> set[str]:
+    if len(components) != len(components_by_id):
+        return set()
+    root = components_by_id.get("root")
+    template = components_by_id.get("template_root")
+    if root is None or template is None:
+        return set()
+    if template.component_id not in root.children:
+        return set()
+    template_ids = {template.component_id}
+    template_ids.update(_descendant_component_ids(template_ids, components_by_id))
+    return template_ids
+
+
 def _normalize_ring_stack_children(
     components: list[ComponentRow],
     *,
@@ -1074,6 +1143,7 @@ def _normalize_ring_stack_children(
         dual_zone_ids,
         components_by_id,
     )
+    template_component_ids = _template_subtree_component_ids(components, components_by_id)
     normalized: list[ComponentRow] = []
     for component in components:
         props = component.props
@@ -1087,9 +1157,12 @@ def _normalize_ring_stack_children(
             if components_by_id[child].props.get("type") == "ring"
         ]
         is_ring = component.component_type == "Progress" and props.get("type") == "ring"
-        if size == "2x2" and (is_ring or ring_progress_ids):
+        resize_ring = size == "2x2" and (is_ring or bool(ring_progress_ids))
+        if resize_ring and component.component_id not in template_component_ids:
             ring_size = (
-                44 if component.component_id in dual_zone_descendants else 52
+                _TWO_BY_TWO_DUAL_RING_SIZE
+                if component.component_id in dual_zone_descendants
+                else _TWO_BY_TWO_SINGLE_RING_SIZE
             )
             props = {**props, "width": ring_size, "height": ring_size}
             if is_ring:
@@ -1111,7 +1184,108 @@ def _normalize_ring_stack_children(
                 tuple(children),
             )
         )
-    return normalized
+    normalized_by_id = {
+        component.component_id: component for component in normalized
+    }
+    ring_stack_ids: set[str] = set()
+    for component in normalized:
+        if component.component_type != "Stack":
+            continue
+        for child_id in component.children:
+            child = normalized_by_id.get(child_id)
+            if (
+                child is not None
+                and child.component_type == "Progress"
+                and child.props.get("type") == "ring"
+            ):
+                ring_stack_ids.add(component.component_id)
+                break
+
+    centered: list[ComponentRow] = []
+    for component in normalized:
+        if component.component_type != "Column":
+            centered.append(component)
+            continue
+        has_ring_stack = any(
+            child_id in ring_stack_ids for child_id in component.children
+        )
+        direct_text_count = 0
+        for child_id in component.children:
+            child = normalized_by_id.get(child_id)
+            if child is not None and child.component_type == "Text":
+                direct_text_count += 1
+        if not has_ring_stack or direct_text_count > 1:
+            centered.append(component)
+            continue
+        centered.append(
+            ComponentRow(
+                component.component_id,
+                component.component_type,
+                {**component.props, "alignItems": "center"},
+                component.children,
+            )
+        )
+    return centered
+
+
+def _normalize_large_value_unit_alignment(
+    components: list[ComponentRow],
+) -> list[ComponentRow]:
+    components_by_id = {
+        component.component_id: component for component in components
+    }
+    replacements: dict[str, ComponentRow] = {}
+    for row in components:
+        if row.component_type != "Row":
+            continue
+        text_children: list[ComponentRow] = []
+        for child_id in row.children:
+            child = components_by_id.get(child_id)
+            if child is None or child.component_type != "Text":
+                continue
+            font_size = child.props.get("fontSize")
+            if isinstance(font_size, (int, float)):
+                text_children.append(child)
+        if len(text_children) < 2:
+            continue
+
+        max_font_size = max(child.props["fontSize"] for child in text_children)
+        min_font_size = min(child.props["fontSize"] for child in text_children)
+        if max_font_size == min_font_size:
+            continue
+
+        row_props = {**row.props, "alignItems": "bottom"}
+        replacements[row.component_id] = ComponentRow(
+            row.component_id,
+            row.component_type,
+            row_props,
+            row.children,
+        )
+        for child in text_children:
+            child_font_size = child.props["fontSize"]
+            if child_font_size == max_font_size:
+                continue
+            bottom_padding = int(round((max_font_size - child_font_size) / 2))
+            child_props = {**child.props}
+            padding = child_props.get("padding")
+            if isinstance(padding, dict):
+                child_props["padding"] = {
+                    **padding,
+                    "bottom": bottom_padding,
+                }
+            else:
+                child_props["padding"] = {"bottom": bottom_padding}
+            height = child_props.get("height")
+            if isinstance(height, (int, float)) and height > 24:
+                child_props.pop("height")
+            replacements[child.component_id] = ComponentRow(
+                child.component_id,
+                child.component_type,
+                child_props,
+                child.children,
+            )
+
+    return [replacements.get(component.component_id, component) for component in components]
 
 
 def _two_by_two_dual_zone_ids(
@@ -1120,11 +1294,13 @@ def _two_by_two_dual_zone_ids(
     root = components_by_id.get("root")
     if root is None or root.component_type != "Column" or len(root.children) != 2:
         return set()
+    if root.props.get("padding") != 8 or root.props.get("itemMargin") != 8:
+        return set()
     zones = [components_by_id.get(child_id) for child_id in root.children]
     if any(zone is None for zone in zones):
         return set()
     if not all(
-        zone.props.get("width") == 136 and zone.props.get("height") == 64
+        zone.props.get("width") == 134 and zone.props.get("height") == 63
         for zone in zones
         if zone is not None
     ):
@@ -1143,26 +1319,36 @@ def _normalize_small_backboard_icon_alignment(
     }
     if size == "2x2":
         candidate_ids = _two_by_two_dual_zone_ids(components_by_id)
-        backboard_width = 136
-        backboard_height = 64
-        text_width = 84
+        backboard_width = 134
+        backboard_height = 63
+        text_width = 82
     elif size == "2x4":
         candidate_ids = set()
         for component in components:
-            if component.props.get("width") != 134:
-                continue
-            if component.props.get("height") == 59:
+            dimensions = (
+                component.props.get("width"),
+                component.props.get("height"),
+            )
+            if dimensions in {(138, 63), (130, 59)}:
                 candidate_ids.add(component.component_id)
-        backboard_width = 134
-        backboard_height = 59
-        text_width = 82
     else:
         return components
 
     replacements: dict[str, ComponentRow] = {}
     for candidate_id in candidate_ids:
         backboard = components_by_id[candidate_id]
-        if backboard.component_type != "Row" or len(backboard.children) != 2:
+        if size == "2x4" and backboard.props.get("width") == 130:
+            backboard_width = 130
+            backboard_height = 59
+            text_width = 78
+        elif size == "2x4":
+            backboard_width = 138
+            backboard_height = 63
+            text_width = 86
+        if (
+            backboard.component_type not in {"Row", "Column"}
+            or not 1 <= len(backboard.children) <= 2
+        ):
             continue
         children = [components_by_id.get(child_id) for child_id in backboard.children]
         text = next(
@@ -1177,6 +1363,21 @@ def _normalize_small_backboard_icon_alignment(
             (child for child in children if child and child.component_type == "Image"),
             None,
         )
+        if icon is None and backboard.component_type == "Column":
+            replacements[backboard.component_id] = ComponentRow(
+                backboard.component_id,
+                backboard.component_type,
+                {
+                    **backboard.props,
+                    "width": backboard_width,
+                    "height": backboard_height,
+                    "padding": {"left": 12, "right": 12, "top": 0, "bottom": 0},
+                    "justifyContent": "center",
+                    "alignItems": "start",
+                },
+                backboard.children,
+            )
+            continue
         if text is None or icon is None:
             continue
 
@@ -1191,14 +1392,21 @@ def _normalize_small_backboard_icon_alignment(
         }
         replacements[backboard.component_id] = ComponentRow(
             backboard.component_id,
-            backboard.component_type,
+            "Row",
             backboard_props,
             (text.component_id, icon.component_id),
         )
+        text_props = {**text.props, "width": text_width}
+        if text.component_type == "Column":
+            text_props["justifyContent"] = "center"
+            text_props["alignItems"] = "start"
+        else:
+            text_props["maxLines"] = 1
+            text_props["textAlign"] = "start"
         replacements[text.component_id] = ComponentRow(
             text.component_id,
             text.component_type,
-            {**text.props, "width": text_width},
+            text_props,
             text.children,
         )
         replacements[icon.component_id] = ComponentRow(
@@ -1547,6 +1755,14 @@ def _canonicalize_component_order(rows: list[CompactRow]) -> list[CompactRow]:
     )
     if not is_complete:
         return rows
+    unreachable_ids = sorted(set(components_by_id) - visited)
+    if unreachable_ids:
+        unreachable_text = ", ".join(unreachable_ids)
+        raise CompactDslConversionError(
+            "Component rows must form one tree rooted at root. "
+            f"Unreachable component(s): {unreachable_text}. "
+            "Attach each component to a reachable parent's children list."
+        )
     return [*ordered_components, *data_rows]
 
 

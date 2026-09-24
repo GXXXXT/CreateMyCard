@@ -31,4 +31,5 @@ contractVersion: hybrid-body-contract/0.5
 7. 只按动态契约选择完整模板，不判断运行时数据值或按样例数据改写模板；当前不支持 IF/If 组件。
 8. 当 `WideFullHeroActionLayout@1` 与 `WideHeroActionFullLayout@1` 同时可用时，比较两个业务 Template
    的最大文本字号：字号更大的业务必须位于左侧；两者相同时使用 `WideFullHeroActionLayout@1`。
+9. PillAction@1 暂时只展示文本，仅允许 actionId、label Props，禁止设置 icon；IconAction@1 仍按签名填写图标。
 <!-- prompt:end -->

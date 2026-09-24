@@ -98,7 +98,7 @@ def test_production_prompt_uses_current_wide_canvas():
 
 @pytest.mark.parametrize(
     ("size", "row_height", "overflows"),
-    [("2x4", 59, False), ("2x4", 64, True), ("2x2", 64, False)],
+    [("2x4", 59, False), ("2x4", 64, True), ("2x2", 59, False), ("2x2", 64, True)],
 )
 def test_prompt_row_budget_matches_validator(size, row_height, overflows):
     source = "\n".join(
