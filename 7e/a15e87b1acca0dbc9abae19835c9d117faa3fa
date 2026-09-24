@@ -33,6 +33,7 @@ widget_service/cloud/services/template_generation/resources/source/providers/hea
 widget_service/cloud/services/template_generation/docs/template-generation-design.md
   h_22e274a52827b7 40,42,125,127,129-132,150,202,204-207
   h_22e274a52827b7 181,203
+  s_cc10cf51b0c507::t_d72bddad1ed02e 201
 widget_service/cloud/services/template_generation/tests/test_ux_title_policy.py
   h_22e274a52827b7 19
 widget_service/cloud/services/template_generation/engine/cardplan/parser.py
@@ -285,6 +286,8 @@ widget_service/cloud/services/template_generation/tests/test_template_preview_da
   h_22e274a52827b7 24-26,28-30,70-75,77-81,83-91,188-193
   s_52a59f8672dc51::t_2c40d9994e0b2e 116
   h_22e274a52827b7 76,82,92-93
+  s_cc10cf51b0c507::t_98e9580d0287cf 20,27,32-33
+  s_cc10cf51b0c507::t_8ad00cb3f9277c 42
 widget_service/cloud/services/template_generation/resources/source/themes/fusion-weather-blue/first-layer.md
   s_afa21b5bb31967::t_33041e3c472c5b 3-4
 widget_service/cloud/services/template_generation/engine/advanced/ux_mixed_framer.py
@@ -537,6 +540,7 @@ widget_service/cloud/services/template_generation/tests/test_template_generation
   s_cc10cf51b0c507::t_3ecbfb77249eca 6459-6461
   s_cc10cf51b0c507::t_7fda90a6f20a0e 7260-7262
   h_22e274a52827b7 154-178,293,306-312,321,333,356-367,410,418-422,1108-1124,1176,1178,1187,1664,1841,1940-1941,1945-1951,1959-1994,2927-2929,2970,2983-2985,3001-3003,3024,3066-3076,3084,3192-3193,3209,3321,3325-3329,3348-3351,3366,3395,3412,3417,3419-3427,3436-3453,3822,3859,5420-5492,5796-5797,5828-5830,5835-5898,6462-6532,6565,6571-6579,6707,6715-6718,6720-6746,7259,7287-7292,7295,7304,7314
+  s_cc10cf51b0c507::t_59f0e2860dc455 285
 widget_service/cloud/services/template_generation/docs/modules.md
   h_22e274a52827b7 129-130
 widget_service/cloud/services/template_generation/tests/test_q073_wide_full.py
@@ -598,6 +602,7 @@ widget_service/cloud/services/template_generation/engine/cardplan/compiler.py
   h_22e274a52827b7 15,69,83-87,92,96-98,100-109,112-114,116-122,297,326,407-409,450-461,498,938-946,949-975,1034-1041,1081-1102,1119-1120,1131-1142,1148-1163,1186,1194,1196-1197,1203-1208,1210,1246-1251,1287-1300,1321-1331,1345-1347,1364-1377,1410,1428,1431,4503,4506-4510,4750,4752-4758,4769,4772,4775,4777,4786,4828-5045,5618,5637,5881,5899,6273,6286,6289,6371,6586-6590,6596-6655,6699,6709-6710,6761-6762,6781,6809-6811,7175,7726-7731,9135,9137-9139,9218-9219,9228-9238,9242-9264,9400,9421-9423,9435-9440,9446-9448,9450-9451,9689,9720-9721,9724-9726
 widget_service/cloud/services/template_generation/engine/cardplan/template_retrieval.py
   h_22e274a52827b7 32-36,46,69,139,221-228,250,305,415-417,458,470-472,561-564,571-572,624-747,753-755,765-773,776-784,786-792,794-831,848-896,898,916-920,1192-1292,1302,1341,1348-1366,1389-1390,1494-1501,1510,1545-1560,1877-1879
+  s_cc10cf51b0c507::t_2946d4894eec5b 793
 widget_service/cloud/services/template_generation/engine/compact_dsl_a2ui_converter.py
   h_22e274a52827b7 414-415
 widget_service/cloud/services/template_generation/resources/source/providers/battery/templates/battery-overview.cardtpl
