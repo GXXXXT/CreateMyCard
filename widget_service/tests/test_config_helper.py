@@ -22,7 +22,7 @@ def test_missing_spec_uses_default_config(
 
     assert helper.config_file.name == "default_config.yaml"
     assert helper.get("obs.expire.time") == 3600
-    assert helper.get("enable_a2ui_model_mock") == "true"
+    assert helper.get("enable_a2ui_model_mock") == "false"
     assert "# 一、任务目标与优先级" in helper.get("system.prompt")
     assert "编辑模式附加规则" in helper.get("edit.system.prompt")
     assert "DSL 转换或校验错误修复" in helper.get("repair.system.prompt")

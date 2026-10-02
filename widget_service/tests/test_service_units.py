@@ -217,9 +217,9 @@ def test_plugin_error_explanation_distinguishes_business_failures(
 def test_anyio_thread_pool_uses_configured_capacity(monkeypatch):
     assert Settings(_env_file=None).anyio_thread_pool_tokens == 80
     assert Settings(_env_file=None).enable_sensitive_log_fields is True
-    assert Settings(_env_file=None).a2ui_form_model_backend == "mep"
+    assert Settings(_env_file=None).a2ui_form_model_backend == "openai"
     assert Settings(_env_file=None).design_compact_model_backend == "openai"
-    assert Settings(_env_file=None).openai_master_client == "deepseek_platform"
+    assert Settings(_env_file=None).openai_master_client == "deepseek_api"
     assert Settings(_env_file=None).openai_fallback_client == "llmclient"
     assert Settings(_env_file=None).enable_default_protocol_profile_fallback is True
     assert Settings(_env_file=None).model_max_concurrency == 20
@@ -4010,6 +4010,7 @@ async def test_design_compact_skips_validator_when_validation_is_disabled(monkey
         validation_calls.append(artifact.genui)
         return []
 
+    monkeypatch.setattr(settings, "enable_a2ui_model_mock", True)
     monkeypatch.setattr(settings, "enable_artifact_validation", False)
     monkeypatch.setattr(ArtifactValidator, "validate", validate_design)
     monkeypatch.setattr(
@@ -4040,6 +4041,7 @@ async def test_design_compact_validation_error_without_repair_fails(monkeypatch)
     def unexpected_save(*_args, **_kwargs):
         pytest.fail("invalid Design Compact output must not be saved")
 
+    monkeypatch.setattr(settings, "enable_a2ui_model_mock", True)
     monkeypatch.setattr(settings, "enable_artifact_validation", True)
     monkeypatch.setattr(settings, "enable_validation_failure_retry", False)
     monkeypatch.setattr(ArtifactValidator, "validate", validation_error)

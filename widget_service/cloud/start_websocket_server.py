@@ -89,7 +89,8 @@ def run_local_server() -> None:
     入参：无。
     出参：无；函数会阻塞当前进程并启动 Uvicorn 服务。
     """
-    # 支持 `python cloud` 直接启动，默认监听 127.0.0.1:8855。
+    # 支持 `python start_websocket_server.py` 直接启动；监听地址读取配置文件
+    # server_host / server_port，默认 0.0.0.0:8855，局域网内可通过本机 IP 访问。
     settings = get_settings()
     uvicorn.run(
         app,

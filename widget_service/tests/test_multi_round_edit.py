@@ -101,6 +101,7 @@ def editable_artifact_storage(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "artifact_base_url", "https://obs.test/widget")
     monkeypatch.setattr(settings, "enable_widget_edit", True)
     monkeypatch.setattr(settings, "enable_artifact_download_mock", True)
+    monkeypatch.setattr(settings, "enable_a2ui_model_mock", True)
     monkeypatch.setattr(
         "services.artifact_store.file_obs",
         UploadFileOSMS(
