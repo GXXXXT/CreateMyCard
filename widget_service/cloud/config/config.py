@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2026-2026. All rights reserved.
 import json
+import logging
 import platform
 import socket
 from functools import lru_cache
@@ -14,8 +15,17 @@ from config.config_helper import ConfigHelper
 
 
 def get_container_ip():
+    """获取本机 IP；主机名解析失败时（本地开发机常见）回退到回环地址。"""
     hostname = socket.gethostname()
-    return socket.gethostbyname(hostname)
+    try:
+        return socket.gethostbyname(hostname)
+    except OSError as exc:
+        logging.getLogger(__name__).warning(
+            "container ip resolve failed, fallback to 127.0.0.1: %s: %s",
+            type(exc).__name__,
+            exc,
+        )
+        return "127.0.0.1"
 
 
 def _parse_json_config(value: str, fallback):
@@ -30,7 +40,8 @@ def _parse_json_config(value: str, fallback):
 
 class Settings(BaseSettings):
     container_ip: str = get_container_ip()
-    if platform.system() == "Windows":
+    # Windows / macOS 视为本地开发环境；云侧部署在 Linux 上。
+    if platform.system() in ("Windows", "Darwin"):
         LOCAL_FLAG: bool = True
         HTTP_SERVER_URL: str = "http://localhost:8080"
     else:
@@ -60,9 +71,10 @@ class Settings(BaseSettings):
     ids_calling_uid: str = "decisionhub"
     ids_dev_fake_id: str = "123**********postmantestdevFakeId"
     ids_sign_secret: str = "postman-test-secret"
-    artifact_base_url: str = "https://obs.todo.local/widget"
-    server_host: str = "127.0.0.1"
-    server_port: int = 8855
+    # 产物 mock 访问地址前缀；本地联调时可覆盖为云侧下载接口地址，host 与端侧访问地址保持一致。
+    artifact_base_url: str = str(CONFIG.get("artifact_base_url", "https://obs.todo.local/widget"))
+    server_host: str = str(CONFIG.get("server_host", "127.0.0.1"))
+    server_port: int = int(CONFIG.get("server_port", 8855))
     sts_server: str = CONFIG.get("sts_serverDomain")
     ids_request_timeout_seconds: int = 30
     ids_access_key: str = CONFIG.get("ids_access_key")
@@ -191,6 +203,11 @@ class Settings(BaseSettings):
         CONFIG.get("deepseek_debug_usage") == "true"
     )  # bool类型需要str转bool
     deepseek_recv_timeout: int = CONFIG.get("deepseek_recv_timeout")
+    # DeepSeek OpenAI 兼容 API 配置；auth_key 可用环境变量 DEEPSEEK_API_AUTH_KEY 覆盖。
+    deepseek_api_base_url: str = CONFIG.get("deepseek_api_base_url")
+    deepseek_api_auth_key: str = CONFIG.get("deepseek_api_auth_key")
+    deepseek_api_model: str = CONFIG.get("deepseek_api_model")
+    deepseek_api_max_tokens: int = int(CONFIG.get("deepseek_api_max_tokens"))
     deepseek_platform_model_select: bool = (
         CONFIG.get("deepseek_platform_model_select") == "true"
     )  # 模型选择

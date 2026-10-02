@@ -9,7 +9,8 @@ import uuid
 from contextlib import suppress
 from typing import Any
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, ValidationError
 from starlette.concurrency import run_in_threadpool
 
@@ -1253,3 +1254,18 @@ async def generate_widget_card_terse_dsl_nested2_ws(websocket: WebSocket):
         heartbeat_interval=6.0,
         handler_in_threadpool=False,
     )
+
+
+@router.get("/widget/artifact/{artifact_name}")
+async def download_widget_artifact(artifact_name: str):
+    """下载 mock OBS 中保存的卡片产物文件，供端侧按 artifactUrl 拉取。"""
+    settings = get_settings()
+    storage_root = (settings.WORKSPACE_ROOT / "mock_obs").resolve()
+    file_path = (storage_root / artifact_name).resolve()
+    if file_path.parent != storage_root:
+        raise HTTPException(status_code=400, detail="invalid artifact name")
+    if not file_path.is_file():
+        logger.warning(f"{_MODULE} artifact_download_not_found name={artifact_name}")
+        raise HTTPException(status_code=404, detail="artifact not found")
+    logger.info(f"{_MODULE} artifact_download_served name={artifact_name}")
+    return FileResponse(file_path, media_type="text/markdown; charset=utf-8")

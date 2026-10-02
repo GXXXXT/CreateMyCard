@@ -1637,5 +1637,6 @@ class WidgetGenerationService:
 
     def _enable_card_template(self) -> bool:
         """Whether use template for UI generation."""
+        return True
         settings = get_settings()
         return settings.CONFIG.get("enable_card_template") == "true"
