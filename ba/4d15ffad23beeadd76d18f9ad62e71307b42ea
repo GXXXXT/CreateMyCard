@@ -1,0 +1,48 @@
+widget_service/cloud/services/template_generation/tests/helpers/generate_q053_preview.py
+  s_c83836caf63673::t_c98a2d31fa9802 38-39
+  s_c83836caf63673::t_5b7888a699c6fb 68-69
+widget_service/cloud/services/template_generation/tests/helpers/generate_q059_preview.py
+  s_c83836caf63673::t_703150cb145a41 54-55
+  s_c83836caf63673::t_5bdb254c351f3c 64-65
+  s_c83836caf63673::t_b1d661e341aa9d 31-32
+  s_c83836caf63673::t_43d3cb7516d915 30
+widget_service/cloud/services/template_generation/tests/helpers/generate_q073_preview.py
+  s_c83836caf63673::t_a47669078bb0bc 38-39
+  s_c83836caf63673::t_d6fee5ead99fae 68-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.2",
+  "base_commit_sha": "ba4d15ffad23beeadd76d18f9ad62e71307b42ea",
+  "prompts": {},
+  "sessions": {
+    "s_c83836caf63673": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_a921cb76-b1fc-43cb-a13a-0493a6477b4c",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": null,
+      "total_additions": 0,
+      "total_deletions": 0,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_5b7888a699c6fb": "glm-5.3-flash",
+        "t_5bdb254c351f3c": "glm-5.3-flash",
+        "t_703150cb145a41": "glm-5.3-flash",
+        "t_9016e1133fd90c": "glm-5.3-flash",
+        "t_a47669078bb0bc": "glm-5.3-flash",
+        "t_b1d661e341aa9d": "glm-5.3-flash",
+        "t_c98a2d31fa9802": "glm-5.3-flash",
+        "t_d6fee5ead99fae": "glm-5.3-flash",
+        "t_edb9e856df5213": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 15,
+          "deletions": 8
+        }
+      }
+    }
+  }
+}
