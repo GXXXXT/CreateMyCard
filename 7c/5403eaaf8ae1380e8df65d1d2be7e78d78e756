@@ -1,0 +1,40 @@
+docs/云侧方案设计.md
+  h_22e274a52827b7 1202-1211
+widget_service/cloud/api/routes.py
+  h_22e274a52827b7 12-13,1257-1271
+widget_service/cloud/config/config.py
+  h_22e274a52827b7 4,18,20-28,43-44,74-77,206-210
+widget_service/cloud/config/default_config.yaml
+  h_22e274a52827b7 18-25,27,57,65,97-107
+widget_service/cloud/custom/deepseek_api_client.py
+  h_22e274a52827b7 1-168
+widget_service/cloud/custom/model_runtime.py
+  h_22e274a52827b7 11,52,62-64,78,153-155
+widget_service/cloud/custom/model_transport.py
+  h_22e274a52827b7 9
+widget_service/cloud/services/widget_generation_service.py
+  h_22e274a52827b7 1640
+widget_service/cloud/start_websocket_server.py
+  h_22e274a52827b7 92-93
+widget_service/tests/test_config_helper.py
+  h_22e274a52827b7 25
+widget_service/tests/test_model_routing.py
+  h_22e274a52827b7 246-250,268-272,291-295,318,352-353
+widget_service/tests/test_multi_round_edit.py
+  h_22e274a52827b7 104
+widget_service/tests/test_service_units.py
+  h_22e274a52827b7 220,222,4013,4044
+widget_service/tests/test_tool_dispatch_routes.py
+  h_22e274a52827b7 10-11,62,70,1051-1093
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.2",
+  "base_commit_sha": "7c5403eaaf8ae1380e8df65d1d2be7e78d78e756",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  }
+}
