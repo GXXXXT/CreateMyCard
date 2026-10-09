@@ -7,6 +7,8 @@ import sys
 import uuid
 from pathlib import Path
 
+import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from ws_response_parser import parse_legacy_stream_content
@@ -57,6 +59,7 @@ IDSDeviceCapabilityState = importlib.import_module(
 ArtifactSaveResult = importlib.import_module("models.service").ArtifactSaveResult
 ArtifactStore = importlib.import_module("services.artifact_store").ArtifactStore
 Settings = importlib.import_module("config.config").Settings
+ConfigHelper = importlib.import_module("config.config_helper").ConfigHelper
 get_settings = importlib.import_module("config.config").get_settings
 WidgetGenerationService = importlib.import_module(
     "services.widget_generation_service"
@@ -64,6 +67,7 @@ WidgetGenerationService = importlib.import_module(
 compact_dsl_argument_issue_tracker = importlib.import_module(
     "services.compact_dsl_argument_repair"
 ).compact_dsl_argument_issue_tracker
+download_widget_artifact = importlib.import_module("api.routes").download_widget_artifact
 
 
 def _tool_payload(
@@ -1044,3 +1048,46 @@ def test_compact_protocol_fallback_switch_off_returns_unsupported(monkeypatch):
     assert message["data"]["status"] == "unsupported"
     assert message["data"]["errorCode"] == "APP_VERSION_UNSUPPORTED"
     assert "App 或 ROM 版本不在服务支持范围内" in message["explanation"]
+
+
+def test_artifact_download_returns_file_content(monkeypatch, tmp_path):
+    """验证产物下载接口返回 mock_obs 中的文件内容。"""
+    mock_obs = tmp_path / "mock_obs"
+    mock_obs.mkdir()
+    artifact_file = mock_obs / "artifact_download_test.md"
+    artifact_file.write_text("```genui\n[]\n```\n", encoding="utf-8")
+    monkeypatch.setattr(get_settings(), "WORKSPACE_ROOT", tmp_path)
+    client = TestClient(app)
+    response = client.get("/api/v1/widget/artifact/artifact_download_test.md")
+
+    assert response.status_code == 200
+    assert "```genui" in response.text
+
+
+def test_artifact_download_missing_file_returns_404(monkeypatch, tmp_path):
+    """验证产物下载接口对不存在文件返回 404。"""
+    (tmp_path / "mock_obs").mkdir()
+    monkeypatch.setattr(get_settings(), "WORKSPACE_ROOT", tmp_path)
+    client = TestClient(app)
+    response = client.get("/api/v1/widget/artifact/artifact_missing.md")
+
+    assert response.status_code == 404
+
+
+def test_artifact_download_rejects_path_escape(monkeypatch, tmp_path):
+    """验证产物下载接口拒绝携带路径穿越的文件名。"""
+    (tmp_path / "mock_obs").mkdir()
+    (tmp_path / "secret.md").write_text("outside", encoding="utf-8")
+    monkeypatch.setattr(get_settings(), "WORKSPACE_ROOT", tmp_path)
+    with pytest.raises(HTTPException) as exc_info:
+        asyncio.run(download_widget_artifact("../secret.md"))
+
+    assert exc_info.value.status_code == 400
+
+
+def test_artifact_base_url_follows_config():
+    """验证 artifact_base_url 从配置读取，未配置时回退云端 mock 默认地址。"""
+    expected = str(
+        ConfigHelper("local").get("artifact_base_url", "https://obs.todo.local/widget")
+    )
+    assert Settings.model_fields["artifact_base_url"].default == expected

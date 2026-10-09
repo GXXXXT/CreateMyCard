@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from app.logger import logger
 from config.config import Settings, get_settings
+from custom.deepseek_api_client import DeepSeekAPIClient
 from custom.deepseek_platform_client import DeepSeekPlatformClient
 from custom.llmclient import LLMClientOptions, stream_genui
 from custom.mep_model_transport import MepModelTransport
@@ -48,6 +49,7 @@ class ModelExecutionRuntime:
         *,
         mep_transport: MepModelTransport | None = None,
         deepseek_platform_transport: ModelTransport | None = None,
+        deepseek_api_transport: DeepSeekAPIClient | None = None,
         llmclient_transport: ModelTransport | None = None,
     ) -> None:
         self.settings = settings or get_settings()
@@ -56,6 +58,9 @@ class ModelExecutionRuntime:
         self._deepseek_platform_transport = (
             deepseek_platform_transport
             or DeepSeekPlatformClient(self.settings)
+        )
+        self._deepseek_api_transport = (
+            deepseek_api_transport or DeepSeekAPIClient(self.settings)
         )
         self._llmclient_generate = (
             llmclient_transport.generate
@@ -70,6 +75,7 @@ class ModelExecutionRuntime:
     async def aclose(self) -> None:
         """关闭共享 HTTP 连接池并停止接收新的 llmclient 线程任务。"""
         await self._mep_transport.aclose()
+        await self._deepseek_api_transport.aclose()
         self._llmclient_executor.shutdown(wait=False, cancel_futures=False)
 
     async def generate_once(
@@ -143,6 +149,9 @@ class ModelExecutionRuntime:
                 messages,
                 request_context,
             )
+            return await self._await_async_provider(provider, operation)
+        if provider == "deepseek_api":
+            operation = self._deepseek_api_transport.generate(messages, request_context)
             return await self._await_async_provider(provider, operation)
         if provider == "llmclient":
             return await self._generate_llmclient(messages)

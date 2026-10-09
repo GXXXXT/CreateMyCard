@@ -15,8 +15,16 @@ obs.expire.time: 3600
 # 模型使用原始 src；转换成标准 A2UI 后按本映射替换，未命中保留原路径。
 asset.src.url.mapping: ""
 
+# 本地服务监听地址；0.0.0.0 表示监听所有网卡，局域网内可通过本机 IP（如 192.168.3.53:8855）访问。
+server_host: 0.0.0.0
+server_port: 8855
+
+# 产物 mock 访问地址前缀；本地联调时指向本服务下载接口，host 需与端侧访问的地址保持一致
+# （端侧 WebSocket 用 ws://192.168.3.53:8855 时，此处应为 http://192.168.3.53:8855/api/v1/widget/artifact）。
+artifact_base_url: "http://192.168.3.53:8855/api/v1/widget/artifact"
+
 enable_artifact_validation: true
-enable_a2ui_model_mock: true
+enable_a2ui_model_mock: false
 enable_ids_mock: true
 ai_widget_data_huashan_enable: false
 enable_default_capability_registry_fallback: true
@@ -46,7 +54,7 @@ system.prompt: "@file:../data/protocol_profiles/design-compact-dsl/PROMPT.md"
 edit.system.prompt: "@file:../data/protocol_profiles/design-compact-dsl/EDIT_SYSTEM_PROMPT.md"
 repair.system.prompt: "@file:../data/protocol_profiles/design-compact-dsl/REPAIR_SYSTEM_PROMPT.md"
 
-a2ui_form_model_backend: mep
+a2ui_form_model_backend: openai
 design_compact_model_backend: openai
 validation_failure_max_repair_attempts: 1
 model_max_concurrency: 20
@@ -54,7 +62,7 @@ model_queue_timeout_seconds: 120
 model_request_timeout_seconds: 120
 model_prompt_log_preview_chars: 30
 
-openai_master_client: deepseek_platform
+openai_master_client: deepseek_api
 openai_fallback_client: llmclient
 deepseek_platform_access_key: ""
 deepseek_platform_secret_key_sts_config_key: genui.deepseek.platform.secret.key
@@ -86,3 +94,14 @@ deepseek_enable_thinking: false
 deepseek_include_usage: true
 deepseek_debug_usage: true
 deepseek_recv_timeout: 120
+
+# DeepSeek OpenAI 兼容 API（供应商提供，本地直连）。
+# 使用前请填写下面两项：
+#   deepseek_api_base_url  供应商提供的接口地址（无需拼接 /chat/completions），例如 https://api.deepseek.com
+#   deepseek_api_auth_key  供应商提供的 API Key；优先从环境变量 DEEPSEEK_API_AUTH_KEY 读取，留空时模型调用会明确报错
+# 注意：deepseek_api_key 是 llmclient 内部网关的业务标识，勿与本项混淆。
+deepseek_api_base_url: "https://st8tp3ajl0df3n8b8l8qu.apigateway-cn-beijing.volceapi.com/v1"
+deepseek_api_auth_key: ""
+deepseek_api_model: deepseek-4.1-flash
+# 单次输出 token 上限；0 表示不传该参数，使用 DeepSeek 服务端默认值。
+deepseek_api_max_tokens: 8192
