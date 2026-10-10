@@ -1,0 +1,148 @@
+docs/云侧方案设计.md
+  h_22e274a52827b7 1202-1211
+widget_service/cloud/services/template_generation/docs/provider-template-capability-checklist.md
+  s_94777403981e5f::t_6976ebfb888077 101-102
+  s_94777403981e5f::t_1d7849ca5a504a 109
+  s_94777403981e5f::t_87215d03d60ed8 53
+  s_94777403981e5f::t_4a6cd234d8eafa 103-104
+  s_94777403981e5f::t_7ca04c42d6e5b8 7
+  s_94777403981e5f::t_c737375062e808 36
+  s_94777403981e5f::t_2fc29e5ab2643e 105-106
+  s_94777403981e5f::t_6abeb341e48721 42
+  s_94777403981e5f::t_e0c625fb36526b 37
+  s_94777403981e5f::t_e8620c302a4a52 231
+  s_94777403981e5f::t_89d961ecf97d3e 85
+  s_94777403981e5f::t_81ab1552fed8f6 242
+  s_94777403981e5f::t_357703be6fe780 66
+widget_service/cloud/services/template_generation/engine/advanced/content_selectors.py
+  s_94777403981e5f::t_10e93ce560862e 74-79
+  s_94777403981e5f::t_24b94b2e38dbd3 112
+  s_94777403981e5f::t_7a4414ee41583e 73
+  s_94777403981e5f::t_2cadda061fb93a 755-756
+  s_94777403981e5f::t_d3c3110b67af65 80-97
+widget_service/cloud/services/template_generation/resources/source/providers/calendar/provider.json
+  s_94777403981e5f::t_2a11e797c76ccd 564-593
+  s_94777403981e5f::t_be5afe437b3375 594-625
+  s_94777403981e5f::t_af22b1fd5d8281 626-670
+widget_service/cloud/services/template_generation/tests/test_calendar_full_extensions.py
+  s_94777403981e5f::t_39cf62942f15ab 51-57
+  s_94777403981e5f::t_43a53e6dcfa3f1 58-64
+  s_94777403981e5f::t_b75f420935994c 65-70
+widget_service/cloud/services/template_generation/tests/test_provider_gallery_batch.py
+  s_94777403981e5f::t_88d4393d520aa6 212
+  s_94777403981e5f::t_12d22a41523f65 826-827,830
+  s_94777403981e5f::t_4f79e2d0d73eb9 216
+  s_94777403981e5f::t_3e1a1709fca3c4 657,660
+  s_94777403981e5f::t_f3b1c21a941da8 214-215
+  s_94777403981e5f::t_9d031aa657ec9e 307
+  s_94777403981e5f::t_c1d0a5bc8b3c43 213
+  s_94777403981e5f::t_a563e6e61fa871 799-800
+widget_service/cloud/services/template_generation/resources/source/providers/calendar/layer-docs/first-layer.md
+  s_94777403981e5f::t_dbf0a4f4c5d740 45-47
+  s_94777403981e5f::t_9462359f31c7d1 62
+  s_94777403981e5f::t_e69d5c8fefbb0a 38-41
+  s_94777403981e5f::t_1ef0c453df54ec 35-37
+widget_service/cloud/services/template_generation/resources/source/providers/calendar/layer-docs/second-layer.md
+  s_94777403981e5f::t_1e0311c32bbd08 77-80
+  s_94777403981e5f::t_c65bd18bcce2e0 106-111
+  s_94777403981e5f::t_cdbd24c4d3c5fa 100-105
+widget_service/cloud/services/template_generation/resources/source/providers/calendar/templates/schedule-detail-full.cardtpl
+  s_94777403981e5f::t_24dbea893dff39 292-451
+  s_94777403981e5f::t_202ce2973e607e 452-609
+widget_service/cloud/services/template_generation/tests/test_template_generation.py
+  s_94777403981e5f::t_a40a6bca3e6797 3368-3369
+  s_94777403981e5f::t_b00945a33f238e 3364,3372-3374
+  s_94777403981e5f::t_65a33d66fd7c53 1193
+  s_94777403981e5f::t_b72da77f48ed2d 3370-3371
+  s_94777403981e5f::t_1709c0abaa2b56 285
+  s_94777403981e5f::t_8ab0521ec67444 4983-5003
+widget_service/cloud/services/template_generation/resources/source/providers/weather/provider.json
+  s_94777403981e5f::t_3e0ab6fdb2beba 837-856
+widget_service/cloud/services/template_generation/resources/source/providers/weather/templates/weather-overview.cardtpl
+  s_94777403981e5f::t_330e89fe4280b4 3970-4022,4066-4068
+  s_94777403981e5f::t_3d1211465fa3ac 4023-4024,4026-4038,4040-4052,4054-4065
+  s_94777403981e5f::t_3fc0c23d330ecd 4025,4039,4053
+widget_service/cloud/services/template_generation/resources/source/providers/weather/layer-docs/first-layer.md
+  s_94777403981e5f::t_3a516e16af72be 52-54
+widget_service/cloud/services/template_generation/resources/source/providers/weather/layer-docs/second-layer.md
+  s_94777403981e5f::t_d4019099bed95f 22-25
+widget_service/cloud/services/template_generation/tests/test_calendar_action_policy.py
+  s_94777403981e5f::t_87e26677117a7c 115-116,120
+widget_service/cloud/services/template_generation/tests/test_calendar_requested_case_templates.py
+  s_94777403981e5f::t_56381adae7ddd0 326-331
+widget_service/cloud/services/template_generation/resources/source/providers/battery/provider.json
+  s_94777403981e5f::t_9482a81f447151 462-485
+widget_service/cloud/services/template_generation/resources/source/providers/calendar/templates/schedule-overview.cardtpl
+  s_94777403981e5f::t_177c9040199225 2938-3149
+widget_service/cloud/services/template_generation/resources/source/providers/battery/templates/battery-overview.cardtpl
+  s_94777403981e5f::t_f2c089230ac5c9 2051-2118
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/second-layer.md
+  s_94777403981e5f::t_b59fcee63e44a8 28-32
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/first-layer.md
+  s_94777403981e5f::t_96252f6678b7f6 26-28
+widget_service/cloud/services/template_generation/engine/cardplan/compiler.py
+  s_94777403981e5f::t_27506ac4bc5a76 1199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.2",
+  "base_commit_sha": "20d15ead6c6aa02e4f64688c9707af8bb7102bfc",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_772e1642396b76": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0467e-0bb4-7843-9c0b-c5d30652632f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yan_shuifeng <yanshuifeng@huawei.com>",
+      "total_additions": 0,
+      "total_deletions": 798,
+      "overridden_lines": 0
+    },
+    "s_94777403981e5f": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_b33ce9f0-eee8-4df5-8998-dfedded76f70",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 231,
+      "total_deletions": 12,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_01a6d7e94d5c84": "glm-5.3-flash",
+        "t_039e7268e10015": "glm-5.3-flash",
+        "t_10e93ce560862e": "glm-5.3-flash",
+        "t_1e0311c32bbd08": "glm-5.3-flash",
+        "t_24b94b2e38dbd3": "glm-5.3-flash",
+        "t_24dbea893dff39": "glm-5.3-flash",
+        "t_2a11e797c76ccd": "glm-5.3-flash",
+        "t_2cadda061fb93a": "glm-5.3-flash",
+        "t_36bb606068081e": "glm-5.3-flash",
+        "t_39cf62942f15ab": "glm-5.3-flash",
+        "t_501ea4831543bd": "glm-5.3-flash",
+        "t_6976ebfb888077": "glm-5.3-flash",
+        "t_88d4393d520aa6": "glm-5.3-flash",
+        "t_898ded48a3ae3f": "glm-5.3-flash",
+        "t_9462359f31c7d1": "glm-5.3-flash",
+        "t_a40a6bca3e6797": "glm-5.3-flash",
+        "t_be2e2850ccafa0": "glm-5.3-flash",
+        "t_d27358e9d3856e": "glm-5.3-flash",
+        "t_dbf0a4f4c5d740": "glm-5.3-flash",
+        "t_f1d1ab01c426cd": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 231,
+          "deletions": 12
+        }
+      }
+    }
+  }
+}
