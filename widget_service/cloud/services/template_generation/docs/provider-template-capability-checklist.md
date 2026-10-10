@@ -4,7 +4,7 @@
 
 ## 整改总览
 
-- [x] 170 个业务模板全部使用 `HeroTitle`、`HeroContent`、`Support`、`Compact`、`Hero`、`Full`、`WideHero`、`WideFull`、`WideHalf` 后缀。
+- [x] 172 个业务模板全部使用 `HeroTitle`、`HeroContent`、`Support`、`Compact`、`Hero`、`Full`、`WideHero`、`WideFull`、`WideHalf` 后缀。
 - [x] 业务模板尺寸和动作组合由后缀推导，不再由 Provider 重复声明。
 - [x] Provider 数据统一拆为 `primaryData`、`secondaryData`、`optionalData`。
 - [x] `primaryData` 与 `secondaryData` 均参与模板准入硬校验。
@@ -34,7 +34,7 @@
 | Provider | 数据能力 | 数据根 | 模板数 | 当前状态 |
 | --- | --- | --- | ---: | --- |
 | battery | `GetPhoneBatteryInfo` | `/data/phoneBattery` | 25 | 启用 |
-| calendar | `GetCalendarEvents` | `/data/calendar` | 31 | 启用 |
+| calendar | `GetCalendarEvents` | `/data/calendar` | 33 | 启用 |
 | countdown | `GetCountdownDays` | `/data/countdown` | 11 | 启用 |
 | earphone | `GetEarphoneInfo` | `/data/earphone` | 27 | 启用 |
 | health-sport | `GetHealthAndSportSummary` | `/data/healthSport` | 38 | 启用 |
@@ -81,7 +81,7 @@
 ## CalendarOverview
 
 - Provider：`com.huawei.calendar.cli`；运行状态：启用。
-- 数据能力：`GetCalendarEvents`；模板数：31。
+- 数据能力：`GetCalendarEvents`；模板数：33。
 - 当前没有 Compact；真实日期通过 `ScheduleOverviewDateFull@1` 或
   `ScheduleOverviewDatedMeetingHero@1` 与同一首项日程共同展示。
 
@@ -97,6 +97,8 @@
 | ✅ | `ScheduleOverviewTimezoneTimeFull@1` | 完整 2x2；沿用时区日期日程版式 | `/events/0/timeZone`<br>`/events/0/title` | `/events/0/dtStart`<br>`/events/0/dtEnd` | 无 |
 | ✅ | `ScheduleOverviewDateLocationFull@1` | 完整 2x2；沿用时区日期日程版式 | `/events/0/startDate`<br>`/events/0/title` | `/events/0/eventLocation` | 无 |
 | ✅ | `ScheduleOverviewReminderDetailsFull@1` | 完整 2x2；沿用时区日期日程版式 | `/events/0/senderName` | `/events/0/importantEventType`<br>`/events/0/remindTime/0`<br>`/updatedAt` | 无 |
+| ✅ | `ScheduleOverviewReminderSourceFull@1` | 完整 2x2；沿用提醒详情 Full 时间轴版式，只展示发起人与提前提醒 | `/events/0/senderName` | `/events/0/remindTime/0` | 无 |
+| ✅ | `ScheduleOverviewDateLocationTimeFull@1` | 完整 2x2；沿用日期地点 Full 版式，展示标题、日期、开始时间与地点 | `/events/0/title`<br>`/events/0/startDate`<br>`/events/0/dtStart` | `/events/0/eventLocation` | 无 |
 | ✅ | `ScheduleOverviewMeetingWideFull@1` | 完整 4x2；单 WideFull | `/events/0/title`<br>`/events/0/dtStart` | `/events/0/dtEnd`<br>`/events/0/eventLocation` | 无 |
 | ✅ | `ScheduleOverviewMeetingSourceWideFull@1` | 完整 4x2；单 WideFull | `/events/0/title`<br>`/events/0/dtStart` | `/events/0/dtEnd`<br>`/events/0/eventLocation` | 无 |
 | ✅ | `ScheduleOverviewTimeSupport@1` | 约 2x1；双 Support，事件在模板内部 | `/events/0/dtStart` | 无 | `/events/0/title`<br>`/events/0/dtEnd`<br>`/events/0/eventLocation` |
