@@ -1,0 +1,102 @@
+widget_service/cloud/services/template_generation/resources/source/providers/weather/provider.json
+  s_94777403981e5f::t_3e0ab6fdb2beba 837-856
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/first-layer.md
+  s_94777403981e5f::t_96252f6678b7f6 26-28
+widget_service/cloud/services/template_generation/tests/test_template_generation.py
+  s_94777403981e5f::t_1709c0abaa2b56 285
+  s_94777403981e5f::t_8ab0521ec67444 4983-5003
+widget_service/cloud/services/template_generation/resources/source/providers/weather/layer-docs/first-layer.md
+  s_94777403981e5f::t_3a516e16af72be 52-54
+widget_service/cloud/services/template_generation/resources/source/providers/battery/layer-docs/second-layer.md
+  s_94777403981e5f::t_b59fcee63e44a8 28-32
+widget_service/cloud/services/template_generation/resources/source/providers/battery/provider.json
+  s_94777403981e5f::t_9482a81f447151 462-485
+widget_service/cloud/services/template_generation/resources/source/providers/battery/templates/battery-overview.cardtpl
+  s_94777403981e5f::t_f2c089230ac5c9 2051-2118
+widget_service/cloud/services/template_generation/tests/test_provider_gallery_batch.py
+  s_94777403981e5f::t_3e1a1709fca3c4 657,660
+  s_94777403981e5f::t_9d031aa657ec9e 307
+  s_94777403981e5f::t_4f79e2d0d73eb9 216
+  s_94777403981e5f::t_a563e6e61fa871 799-800
+  s_94777403981e5f::t_12d22a41523f65 826-827,830
+widget_service/cloud/services/template_generation/docs/provider-template-capability-checklist.md
+  s_94777403981e5f::t_c737375062e808 36
+  s_94777403981e5f::t_357703be6fe780 66
+  s_94777403981e5f::t_87215d03d60ed8 53
+  s_94777403981e5f::t_e8620c302a4a52 231
+  s_94777403981e5f::t_6abeb341e48721 42
+  s_94777403981e5f::t_81ab1552fed8f6 242
+  s_94777403981e5f::t_7ca04c42d6e5b8 7
+widget_service/cloud/services/template_generation/engine/cardplan/compiler.py
+  s_94777403981e5f::t_27506ac4bc5a76 1199
+widget_service/cloud/services/template_generation/resources/source/providers/weather/layer-docs/second-layer.md
+  s_94777403981e5f::t_d4019099bed95f 22-25
+widget_service/cloud/services/template_generation/resources/source/providers/weather/templates/weather-overview.cardtpl
+  s_94777403981e5f::t_3d1211465fa3ac 4023-4024,4026-4038,4040-4052,4054-4065
+  s_94777403981e5f::t_330e89fe4280b4 3970-4022,4066-4068
+  s_94777403981e5f::t_3fc0c23d330ecd 4025,4039,4053
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.2",
+  "base_commit_sha": "50176d836471b081852c6d166d737dfe0f4b7df2",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_94777403981e5f": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_b33ce9f0-eee8-4df5-8998-dfedded76f70",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 292,
+      "total_deletions": 42,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_12d22a41523f65": "glm-5.3-flash",
+        "t_1709c0abaa2b56": "glm-5.3-flash",
+        "t_27506ac4bc5a76": "glm-5.3-flash",
+        "t_2d3d600c898d41": "glm-5.3-flash",
+        "t_2ffe0f53bcb993": "glm-5.3-flash",
+        "t_330e89fe4280b4": "glm-5.3-flash",
+        "t_357703be6fe780": "glm-5.3-flash",
+        "t_3a516e16af72be": "glm-5.3-flash",
+        "t_3d1211465fa3ac": "glm-5.3-flash",
+        "t_3e0ab6fdb2beba": "glm-5.3-flash",
+        "t_3e1a1709fca3c4": "glm-5.3-flash",
+        "t_3fc0c23d330ecd": "glm-5.3-flash",
+        "t_4b0dce6955b3cb": "glm-5.3-flash",
+        "t_4f79e2d0d73eb9": "glm-5.3-flash",
+        "t_5029cfd334f0f5": "glm-5.3-flash",
+        "t_6abeb341e48721": "glm-5.3-flash",
+        "t_7ab63232768c34": "glm-5.3-flash",
+        "t_7ca04c42d6e5b8": "glm-5.3-flash",
+        "t_81ab1552fed8f6": "glm-5.3-flash",
+        "t_87215d03d60ed8": "glm-5.3-flash",
+        "t_8ab0521ec67444": "glm-5.3-flash",
+        "t_9482a81f447151": "glm-5.3-flash",
+        "t_96252f6678b7f6": "glm-5.3-flash",
+        "t_9d031aa657ec9e": "glm-5.3-flash",
+        "t_a563e6e61fa871": "glm-5.3-flash",
+        "t_b59fcee63e44a8": "glm-5.3-flash",
+        "t_b8e9b94f00f44b": "glm-5.3-flash",
+        "t_c14e5107585ebd": "glm-5.3-flash",
+        "t_c737375062e808": "glm-5.3-flash",
+        "t_d4019099bed95f": "glm-5.3-flash",
+        "t_e8620c302a4a52": "glm-5.3-flash",
+        "t_f2c089230ac5c9": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 292,
+          "deletions": 42
+        }
+      }
+    }
+  }
+}
