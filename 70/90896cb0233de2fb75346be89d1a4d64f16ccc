@@ -11,6 +11,8 @@ widget_service/cloud/services/template_generation/docs/provider-template-capabil
   s_94777403981e5f::t_89d961ecf97d3e 85
   s_94777403981e5f::t_81ab1552fed8f6 239
   s_94777403981e5f::t_357703be6fe780 66
+  s_f0bebedab6cf20::t_d9f864a96836a6 37
+  s_f0bebedab6cf20::t_6958b4e80c54a4 36
 widget_service/cloud/services/template_generation/engine/advanced/content_selectors.py
   s_94777403981e5f::t_10e93ce560862e 74-79
   s_94777403981e5f::t_24b94b2e38dbd3 112
@@ -21,12 +23,18 @@ widget_service/cloud/services/template_generation/resources/source/providers/cal
   s_94777403981e5f::t_2a11e797c76ccd 563,580-594,596-597,600,625,636-638,669-670
   s_94777403981e5f::t_be5afe437b3375 671-672,674-675,764-765,780-784,821-823,825-826,846,847-854
   s_94777403981e5f::t_af22b1fd5d8281 855-856,858-859,861-862,864-868,869-899
+  s_f0bebedab6cf20::t_511a76137c6953 857,860,863
 widget_service/cloud/services/template_generation/tests/test_calendar_full_extensions.py
   s_94777403981e5f::t_39cf62942f15ab 51-57
   s_94777403981e5f::t_43a53e6dcfa3f1 58-61
   s_94777403981e5f::t_b75f420935994c 62-67
 widget_service/cloud/services/template_generation/tests/test_provider_gallery_batch.py
   s_94777403981e5f::t_88d4393d520aa6 242
+  s_f0bebedab6cf20::t_9ace4272da1109 862-863,866
+  s_f0bebedab6cf20::t_270d102003bc5c 337
+  s_f0bebedab6cf20::t_30aea8448eb238 244-246
+  s_f0bebedab6cf20::t_6f846a8b0f3ccb 693,696
+  s_f0bebedab6cf20::t_5dcd3293e6e920 835-836
 widget_service/cloud/services/template_generation/resources/source/providers/calendar/layer-docs/first-layer.md
   s_94777403981e5f::t_dbf0a4f4c5d740 45-47
   s_94777403981e5f::t_9462359f31c7d1 62
@@ -44,6 +52,9 @@ widget_service/cloud/services/template_generation/tests/test_template_generation
   s_94777403981e5f::t_b00945a33f238e 3394-3396
   s_94777403981e5f::t_b72da77f48ed2d 3392-3393
   s_94777403981e5f::t_8ab0521ec67444 5002-5022
+  s_f0bebedab6cf20::t_8895ab626fbe20 1203,3386
+  s_f0bebedab6cf20::t_a8048585719e91 3504
+  s_f0bebedab6cf20::t_3753c1080ee8fa 285
 widget_service/cloud/services/template_generation/resources/source/providers/weather/provider.json
   s_94777403981e5f::t_3e0ab6fdb2beba 837-856
 widget_service/cloud/services/template_generation/resources/source/providers/weather/templates/weather-overview.cardtpl
@@ -60,6 +71,7 @@ widget_service/cloud/services/template_generation/tests/test_calendar_requested_
   s_94777403981e5f::t_56381adae7ddd0 326-331
 widget_service/cloud/services/template_generation/resources/source/providers/battery/provider.json
   s_94777403981e5f::t_9482a81f447151 524,617-639
+  s_f0bebedab6cf20::t_037160b3c98eb0 616
 widget_service/cloud/services/template_generation/resources/source/providers/calendar/templates/schedule-overview.cardtpl
   s_94777403981e5f::t_177c9040199225 4100,4121,4137-4216
 widget_service/cloud/services/template_generation/resources/source/providers/battery/templates/battery-overview.cardtpl
@@ -129,6 +141,44 @@ widget_service/cloud/services/template_generation/engine/cardplan/compiler.py
         "glm-5.3-flash": {
           "additions": 231,
           "deletions": 12
+        }
+      }
+    },
+    "s_f0bebedab6cf20": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_1d55f1b2-85e4-4b4b-a5eb-e25d0e18d9b7",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 839,
+      "total_deletions": 247,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_037160b3c98eb0": "glm-5.3-flash",
+        "t_270d102003bc5c": "glm-5.3-flash",
+        "t_30aea8448eb238": "glm-5.3-flash",
+        "t_3753c1080ee8fa": "glm-5.3-flash",
+        "t_3aa3e506b76c70": "glm-5.3-flash",
+        "t_40cbf8adfdd0cb": "glm-5.3-flash",
+        "t_42d56793402621": "glm-5.3-flash",
+        "t_511a76137c6953": "glm-5.3-flash",
+        "t_5dcd3293e6e920": "glm-5.3-flash",
+        "t_6958b4e80c54a4": "glm-5.3-flash",
+        "t_6f846a8b0f3ccb": "glm-5.3-flash",
+        "t_8895ab626fbe20": "glm-5.3-flash",
+        "t_9ace4272da1109": "glm-5.3-flash",
+        "t_a0b7417d2b3ac3": "glm-5.3-flash",
+        "t_a8048585719e91": "glm-5.3-flash",
+        "t_a83e7c1bdc7cbe": "glm-5.3-flash",
+        "t_c71e86576f50cc": "glm-5.3-flash",
+        "t_d9f864a96836a6": "glm-5.3-flash",
+        "t_df7411a16b8854": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 839,
+          "deletions": 247
         }
       }
     }
