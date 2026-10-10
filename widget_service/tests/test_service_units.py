@@ -244,6 +244,12 @@ def test_anyio_thread_pool_uses_configured_capacity(monkeypatch):
     assert asyncio.run(configure_and_read_tokens()) == (80, 80)
 
 
+def test_settings_keeps_inline_multiline_prompt_without_path_probe() -> None:
+    prompt = "第一行\n第二行"
+
+    assert Settings.load_prompt_file_alias(prompt) == prompt
+
+
 def test_prompt_log_summary_only_keeps_configured_system_prompt_prefix():
     system_prompt = "系统提示词" * 10
     prompt = [
@@ -528,6 +534,17 @@ def test_widget_directive_commands_are_disabled_by_default(monkeypatch):
     monkeypatch.delenv("WIDGET_SERVICE_ENABLE_WIDGET_DIRECTIVE_COMMANDS", raising=False)
 
     assert Settings(_env_file=None).enable_widget_directive_commands is False
+
+
+def test_design_compact_few_shots_are_disabled_by_default_and_can_be_enabled(
+    monkeypatch,
+):
+    variable = "WIDGET_SERVICE_ENABLE_DESIGN_COMPACT_FEW_SHOTS"
+    monkeypatch.delenv(variable, raising=False)
+    assert Settings(_env_file=None).enable_design_compact_few_shots is False
+
+    monkeypatch.setenv(variable, "true")
+    assert Settings(_env_file=None).enable_design_compact_few_shots is True
 
 
 def test_compact_dsl_argument_repair_defaults_to_one_reminder(monkeypatch):
@@ -2907,13 +2924,13 @@ async def test_a2ui_model_client_returns_mock_dat_without_processing():
 
 
 @pytest.mark.parametrize(
-    ("size", "expected_width"),
-    [("2x2", 160), ("2x4", 320)],
+    ("size", "expected_component"),
+    [("2x2", "Column"), ("2x4", "Stack")],
 )
 @pytest.mark.asyncio
 async def test_a2ui_model_client_selects_design_compact_mock_by_task_size(
     size,
-    expected_width,
+    expected_component,
 ):
     """验证第四接口 mock 根据 TaskSpec 尺寸返回可转换的 Design DSL。"""
     prompt = [
@@ -2938,9 +2955,9 @@ async def test_a2ui_model_client_selects_design_compact_mock_by_task_size(
     )
     converted_rows = [json_module.loads(line) for line in converted.splitlines()]
 
-    assert root[0:2] == ["root", "Column"]
-    assert root[2]["width"] == expected_width
-    assert root[2]["height"] == 160
+    assert root[0:2] == ["root", expected_component]
+    assert root[2]["width"] == "matchParent"
+    assert root[2]["height"] == "matchParent"
     assert len(converted_rows) == 3
     assert "width" not in converted_rows[0]["createSurface"]
     assert "height" not in converted_rows[0]["createSurface"]
@@ -3148,8 +3165,8 @@ def test_design_converter_expands_latest_design_tokens():
     assert component_by_id["hero"]["styles"]["width"] == "matchParent"
     assert component_by_id["hero"]["styles"]["fillColor"] == "#33000000"
     assert component_by_id["title"]["styles"]["fontSize"] == 36
-    assert component_by_id["button"]["styles"]["width"] == 30
-    assert component_by_id["button"]["styles"]["borderRadius"] == 15
+    assert component_by_id["button"]["styles"]["width"] == 36
+    assert component_by_id["button"]["styles"]["borderRadius"] == 18
     assert component_by_id["progress"]["styles"]["type"] == "ring"
     assert component_by_id["progress"]["styles"]["strokeWidth"] == 6
     assert component_by_id["progress"]["styles"]["color"] == "#FFF9A01E"
