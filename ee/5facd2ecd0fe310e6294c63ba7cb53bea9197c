@@ -1,0 +1,48 @@
+widget_service/cloud/services/template_generation/tests/test_calendar_no_action_fallback.py
+  s_c5615e9102e800::t_4afabc39bef7c6 147-189
+  s_c5615e9102e800::t_4c698ff4ce65c5 92-97
+widget_service/cloud/services/template_generation/tests/test_support_action_policy.py
+  s_c5615e9102e800::t_1a9ef4fe17ec11 66-68
+  s_c5615e9102e800::t_b929777eefe0df 86-90
+  s_c5615e9102e800::t_3525f9b42e3b10 412
+widget_service/cloud/services/template_generation/test_support/provider_gallery.py
+  s_c5615e9102e800::t_383ad0f77e1021 177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.2",
+  "base_commit_sha": "ee5facd2ecd0fe310e6294c63ba7cb53bea9197c",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_c5615e9102e800": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_5b758f38-72b7-4ca9-8b0e-696117426869",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 59,
+      "total_deletions": 1,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_1a9ef4fe17ec11": "glm-5.3-flash",
+        "t_3525f9b42e3b10": "glm-5.3-flash",
+        "t_383ad0f77e1021": "glm-5.3-flash",
+        "t_4afabc39bef7c6": "glm-5.3-flash",
+        "t_4c698ff4ce65c5": "glm-5.3-flash",
+        "t_b929777eefe0df": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 59,
+          "deletions": 1
+        }
+      }
+    }
+  }
+}
