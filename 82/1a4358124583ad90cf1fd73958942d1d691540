@@ -1,0 +1,43 @@
+widget_service/cloud/services/asset_url_mapper.py
+  s_402cd4e2739ed4::t_2951f5eac059a8 101,103
+  s_402cd4e2739ed4::t_52085bb346901a 79,102
+widget_service/tests/test_asset_url_mapper.py
+  s_402cd4e2739ed4::t_52085bb346901a 212,226,250-257,260-262
+  s_402cd4e2739ed4::t_03b3df7d02d94c 209-211,213-225,227-228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.2",
+  "base_commit_sha": "821a4358124583ad90cf1fd73958942d1d691540",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_402cd4e2739ed4": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_40d1e626-3601-43ae-b195-163fdfa06aeb",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "hanjiajie2000 <hanjiajie1@h-partners.com>",
+      "total_additions": 46,
+      "total_deletions": 19,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_03b3df7d02d94c": "glm-5.3-flash",
+        "t_2951f5eac059a8": "glm-5.3-flash",
+        "t_52085bb346901a": "glm-5.3-flash",
+        "t_c988c8eb7de686": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 46,
+          "deletions": 19
+        }
+      }
+    }
+  }
+}
