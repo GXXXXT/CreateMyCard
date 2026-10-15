@@ -1,0 +1,54 @@
+widget_service/cloud/services/template_generation/tests/public_processing.py
+  s_54702fcb3ce791::t_61a96f45c8b7bb 12-15,23-26
+widget_service/cloud/services/template_generation/tests/helpers/generate_q073_preview.py
+  s_54702fcb3ce791::t_a2e39d06973562 54-55,57-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "5.30.2",
+  "base_commit_sha": "90ba8cec5487a7c5a28be1ab9dfdc554b3180e1b",
+  "prompts": {},
+  "humans": {
+    "h_22e274a52827b7": {
+      "author": "hanjiajie2000 <hanjiajie1@h-partners.com>"
+    }
+  },
+  "sessions": {
+    "s_54702fcb3ce791": {
+      "agent_id": {
+        "tool": "zcode",
+        "id": "sess_a9f11383-a38b-4fa8-906c-38931de55bde",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": null,
+      "total_additions": 61,
+      "total_deletions": 51,
+      "overridden_lines": 0,
+      "turn_models": {
+        "t_05ed73007fc24c": "glm-5.3-flash",
+        "t_10d20646200d3d": "glm-5.3-flash",
+        "t_20d73f3c81d26a": "glm-5.3-flash",
+        "t_3a56396b1adcd7": "glm-5.3-flash",
+        "t_3f36364846bb15": "glm-5.3-flash",
+        "t_50809d9a0b0a29": "glm-5.3-flash",
+        "t_5e64fa97a04adb": "glm-5.3-flash",
+        "t_61a96f45c8b7bb": "glm-5.3-flash",
+        "t_6377a9e1558075": "glm-5.3-flash",
+        "t_7b041dd79d7aaf": "glm-5.3-flash",
+        "t_826f8b31c7b08a": "glm-5.3-flash",
+        "t_a2e39d06973562": "glm-5.3-flash",
+        "t_be14d0c565a3e3": "glm-5.3-flash",
+        "t_c209377643a9b4": "glm-5.3-flash",
+        "t_c2bb396c02a5a4": "glm-5.3-flash",
+        "t_e4705b1f9f4e77": "glm-5.3-flash",
+        "t_ea2e3f92f46fd9": "glm-5.3-flash"
+      },
+      "model_totals": {
+        "glm-5.3-flash": {
+          "additions": 106,
+          "deletions": 94
+        }
+      }
+    }
+  }
+}
